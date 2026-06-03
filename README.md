@@ -92,7 +92,7 @@ Claude cherche dans le vault et répond avec les backlinks vers les notes source
 | **`rag/`** | Moteur RAG (MCP server TypeScript) : chunking, embeddings Gemini, recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
 | **`vault/`** | Ton contenu Markdown (notes d'exemple fournies) | 🔧 à remplir |
 | **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🔧 template à adapter |
-| **`.claude/skills/`** | Skills `sync` + `improve` (génériques) + idées d'autres skills | 🔧 à étoffer |
+| **`.claude/skills/`** | Skills livrées : `sync`, `improve`, `coach` (le **coach vénère** à la Radical Candor) + `tdd-discipline` (vendorée) — détail ci-dessous — et des idées d'autres skills | 🔧 à étoffer |
 | **`.claude/settings.json`** | Hooks (auto-commit, statut au démarrage) + permissions | ✅ généré |
 | **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage (`session-status`), commit auto (`auto-commit`) | ✅ prêt |
 | **`bootstrap.mjs`** | Installateur interactif (macOS / Linux / Windows) | ✅ |
