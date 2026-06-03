@@ -99,15 +99,16 @@ Claude cherche dans le vault et répond avec les backlinks vers les notes source
 
 ### Les skills incluses
 
-Le starter est volontairement **frugal en skills** — il en livre trois, génériques :
+Le starter reste volontairement **frugal en skills** — il en livre quatre, génériques :
 
 | Skill | Ce qu'elle fait |
 |---|---|
 | **`/sync`** | synchronise le repo git entre tes machines (commit, `pull --rebase`, gestion de conflits, push) |
 | **`/improve`** | fait évoluer ton harnais : lit les frictions, propose et applique les améliorations les plus utiles |
+| **`/coach`** | **sparring partner « vénère »** branché sur ton vault : brutalement honnête et bienveillant, il challenge tes décisions et tes raisonnements, nomme tes angles morts. *Coaching de soi uniquement.* |
 | **`/tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD (utile surtout si tu le modifies) |
 
-Tout le reste — `prepare-1-1`, `briefing`, `coach`, `prepare-meeting`… — n'est **pas livré** :
+Tout le reste — `prepare-1-1`, `briefing`, `prepare-meeting`… — n'est **pas livré** :
 ce sont des **idées** à construire toi-même selon tes usages, décrites dans
 [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). C'est voulu : un second cerveau ne
 vaut que calé sur *tes* cas d'usage (cf. la section « adapte-le à tes cas d'usage » plus bas).

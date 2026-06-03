@@ -1,7 +1,9 @@
 # Skills à construire toi-même — exemples d'inspiration
 
-Ce starter ne fournit que **2 skills génériques** : `sync` (synchro git inter-machines) et
-`improve` (amélioration du harnais). Le reste est à toi de le construire, **selon tes usages**.
+Ce starter ne fournit que quelques skills génériques : `sync` (synchro git inter-machines),
+`improve` (amélioration du harnais) et `coach` (sparring partner « vénère » sur soi — une
+**implémentation de référence** dont tu peux t'inspirer). Le reste est à toi de le construire,
+**selon tes usages**.
 
 C'est là que ton second cerveau devient *le tien* : un skill = un angle d'attaque sur le
 même vault. Voici des idées courantes (à adapter, pas à copier tel quel).
@@ -36,7 +38,7 @@ version: 1.0.0
 |---|---|---|
 | **prepare-meeting** | Avant une réunion : ramène l'historique, les points ouverts, le contexte des participants | Calendar, vault, transcripts |
 | **prepare-1-1** | Brief avant un entretien individuel : derniers échanges, engagements, signaux faibles | Calendar, Slack, vault/backlog |
-| **coach** | Sparring partner branché sur le vault : challenge les raisonnements, rappelle les engagements | vault entier |
+| **coach** ✅ livré | Sparring partner branché sur le vault : challenge les raisonnements, rappelle les engagements (coaching de soi) | vault entier |
 | **briefing** | Après une absence : synthèse de ce qui s'est passé sur les canaux suivis | Slack, mail |
 | **debrief** | En fin de journée : transforme les événements en notes structurées (daily, topics) | conversation, vault |
 | **weekly-review** | Revue hebdo : ce qui a avancé, ce qui stagne, ce qui arrive | vault/backlog, Calendar |
