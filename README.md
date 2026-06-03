@@ -37,6 +37,15 @@ de nouveau depuis la dernière fois (**en mode delta** — uniquement les nouvea
 re-télécharger). Tout est persisté dans un vault Markdown *append-only* versionné par git
 (ton cerveau te suit d'une machine à l'autre).
 
+Corollaire : **zéro couplage temporel, zéro charge cognitive.** Le moteur RAG comme le harnais
+fonctionnent en **foolproof** — tu n'as *jamais* à orchestrer la mécanique : pas de « appelle
+tel skill avant tel autre », pas de synchro à déclencher à la main, pas besoin de savoir quand
+l'index se reconstruit. Tu poses ta question ; la recherche, la synchro delta, l'indexation et
+la persistance s'enchaînent toutes seules, au bon moment. L'**usage est volontairement découplé
+de l'implémentation** — fluide, souple, simple au point que *n'importe qui* pourrait s'en servir.
+Tout l'objectif : **alléger ta charge mentale** pour que tu te concentres sur les bons sujets,
+au bon moment.
+
 ---
 
 ## Démarrage en 3 étapes
