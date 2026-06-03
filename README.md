@@ -161,7 +161,7 @@ dépose tout. Le launcher n'est **jamais modifié** : il reste en **lecture seul
 **réutilisable** — un même launcher peut générer plusieurs cerveaux.
 
 ```
-1.  Tu donnes UNE instruction à Claude Code :
+Tu donnes UNE instruction à Claude Code :
         │   « Installe-moi un second cerveau nommé "mon-cerveau" à partir
         │     de ce générateur : https://github.com/tpierrain/second-brain-generator »
         ▼
@@ -179,6 +179,11 @@ dépose tout. Le launcher n'est **jamais modifié** : il reste en **lecture seul
         │   tu rouvres Claude Code DANS le cerveau
         ▼
     → tu poses tes questions
+        │
+        │   (optionnel, quand tu veux) tu demandes à Claude, DANS ton cerveau :
+        │   « Pousse mon second cerveau sur un dépôt distant GitHub (pour un backup) »
+        ▼
+    ☁️  dépôt distant            ← backup + multi-machine (push opt-in, cf. § Sauvegarder)
 ```
 
 Pour lever les doutes qu'on a tous au début :
