@@ -34,7 +34,11 @@ du web appliqué à ta mémoire : le cache prime sur la fraîcheur immédiate.
 
 Et **à chaque question posée, le substrat se rattrape** : il aspire tout ce qui s'est passé
 de nouveau depuis la dernière fois (**en mode delta** — uniquement les nouveautés, pas tout
-re-télécharger). Tout est persisté dans un vault Markdown *append-only* versionné par git
+re-télécharger). Concrètement, selon les outils que tu utilises au travail : les réunions
+ajoutées à ton **Google Calendar**, les transcripts déposés dans **Google Drive** ou **Notion**,
+les échanges dans tes **mails**… — bref, *tes* sources de données primaires. Cela suppose de
+brancher au départ les **connecteurs MCP** correspondants (le bootstrap t'y aide via un wizard,
+cf. [SETUP.md §6](SETUP.md)). Tout est persisté dans un vault Markdown *append-only* versionné par git
 (ton cerveau te suit d'une machine à l'autre). Et comme tout vit dans un **repo git privé**,
 un laptop perdu ou volé n'est plus un drame : tu re-clones ailleurs et tu **reprends ton
 activité exactement là où tu en étais**.
