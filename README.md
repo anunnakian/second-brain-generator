@@ -107,18 +107,18 @@ fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur
 ### Installation — Claude installe tout pour toi
 
 Tu utilises Claude Code et tu as l'URL du générateur ? Laisse **Claude tout installer pour toi** —
-c'est le seul geste à faire. Ouvre Claude Code (même hors du repo) et **copie-colle cette unique
-instruction** (adapte le nom et l'URL) :
+c'est le seul geste à faire. Ouvre Claude Code dans **n'importe quel dossier vide de ton poste** (un
+répertoire de travail temporaire fait l'affaire — c'est juste là que le launcher sera cloné), et
+**copie-colle cette unique instruction** (adapte le nom et l'URL) :
 
 ```text
 Installe-moi un second cerveau nommé "mon-cerveau" à partir de ce générateur : <URL_DU_REPO>
 ```
 
-> 📍 **Depuis quel dossier ?** Peu importe — ouvre Claude Code dans n'importe quel dossier de
-> travail (un sous-dossier `second-brain-generator/`, jetable, y sera cloné). **Le dossier courant
-> ne décide pas où va ton cerveau** : par défaut il est créé dans ton home (`~/<nom>`). Pour un
-> autre emplacement, précise-le dans l'instruction (« …dans `~/cerveaux` ») — pas besoin de t'y
-> placer toi-même.
+> 📍 **Et mon cerveau, il atterrit où ?** **Pas dans ce dossier courant** : par défaut il est créé
+> dans ton home (`~/<nom>`). Le répertoire d'où tu lances Claude ne sert qu'à accueillir le clone
+> (jetable) du launcher. Pour un autre emplacement, précise-le dans l'instruction (« …dans
+> `~/cerveaux` ») — pas besoin de t'y placer toi-même.
 
 C'est tout : pas besoin de préciser « ne touche pas au launcher » ni « ne demande pas ma clé » —
 **le générateur enforce lui-même la sûreté** (le launcher reste en lecture seule, le cerveau est un
@@ -141,14 +141,15 @@ fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 ges
 
 Une fois installé, essaie par exemple :
 
-> *« Quelle base de données a-t-on choisie pour la facturation, et pourquoi ? »*
+> *« Comment l'Alliance Rebelle a-t-elle décidé d'attaquer l'Étoile de la Mort, et pourquoi ? »*
 
 Claude cherche dans ton vault et répond avec les liens vers les notes sources.
 
-> 🧪 **Les notes d'exemple.** Le générateur est livré avec quelques **fausses notes de démo** pour que
-> tu voies tout de suite à quoi ça ressemble, dès la première question. En fin d'installation, le
-> bootstrap te **propose de les effacer** d'un coup — histoire de repartir d'un vault propre, sans
-> polluer ton second cerveau avec ces données factices.
+> 🧪 **Les notes d'exemple.** Le vault est livré avec quelques notes de démo **tirées de Star Wars**
+> — juste assez pour que la première question marche tout de suite, et **impossibles à confondre**
+> avec de vraies notes de travail. Garde-les comme gabarits, ou efface-les quand tu démarres ton vrai
+> vault (supprime les fichiers du dossier `vault/`, ou relance l'installateur en mode interactif qui
+> propose de les vider).
 
 ### Le dessous de l'installation — launcher vs cerveau
 

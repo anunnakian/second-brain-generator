@@ -389,7 +389,7 @@ if (keyMissing) {
 console.log(`Prochaines étapes :`);
 console.log(`  1. ${c.C}cd ${toPosix(TARGET)} && claude${c.X}   ← ouvre Claude Code dans le dossier cerveau`);
 console.log(`  2. Pose une question, ex. :`);
-console.log(`     ${c.C}"Quelle base de données a-t-on choisie pour la facturation et pourquoi ?"${c.X}`);
+console.log(`     ${c.C}"Comment l'Alliance Rebelle a-t-elle décidé d'attaquer l'Étoile de la Mort et pourquoi ?"${c.X}`);
 console.log(`     → Claude répond depuis le vault, sources citées.`);
 console.log(`  3. Remplace les notes d'exemple par les tiennes, édite ${c.C}CLAUDE.md${c.X} à ton image.`);
 console.log(`\nDoc complète : ${c.C}SETUP.md${c.X}`);

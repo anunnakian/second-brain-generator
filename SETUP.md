@@ -128,8 +128,8 @@ node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" --l
 cd <emplacement>/<nom>   # le dossier cerveau créé par le bootstrap (ex. ~/mon-cerveau)
 claude
 ```
-Puis : *« Quelle base de données a-t-on choisie pour la facturation et pourquoi ? »*
-Claude doit citer `[[decisions/2026-01-10-choix-base-de-donnees]]`.
+Puis : *« Comment l'Alliance Rebelle a-t-elle décidé d'attaquer l'Étoile de la Mort et pourquoi ? »*
+Claude doit citer `[[decisions/2026-01-10-attaque-etoile-de-la-mort]]`.
 
 > **Clé ajoutée après coup ?** Si tu as lancé Claude Code sans la clé, colle-la dans `.env` puis
 > **repose ta question** : le serveur relit `.env` à la volée et la prend en compte — pas besoin de
