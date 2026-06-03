@@ -115,6 +115,11 @@ Une fois installé, essaie par exemple :
 
 Claude cherche dans ton vault et répond avec les liens vers les notes sources.
 
+> 🧪 **Les notes d'exemple.** Le starter est livré avec quelques **fausses notes de démo** pour que
+> tu voies tout de suite à quoi ça ressemble, dès la première question. En fin d'installation, le
+> bootstrap te **propose de les effacer** d'un coup — histoire de repartir d'un vault propre, sans
+> polluer ton second cerveau avec ces données factices.
+
 ## Et la confidentialité de mes données ?
 
 Question légitime : ton vault peut être **confidentiel**. Deux services voient ton contenu — et
