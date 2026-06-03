@@ -105,7 +105,7 @@ Le starter reste volontairement **frugal en skills** — il en livre quatre, gé
 |---|---|
 | **`/sync`** | synchronise le repo git entre tes machines (commit, `pull --rebase`, gestion de conflits, push) |
 | **`/improve`** | fait évoluer ton harnais : lit les frictions, propose et applique les améliorations les plus utiles |
-| **`/coach`** | **sparring partner « vénère »** branché sur ton vault : brutalement honnête et bienveillant, il challenge tes décisions et tes raisonnements, nomme tes angles morts. *Coaching de soi uniquement.* |
+| **`/coach`** | **coach « vénère », sparring partner branché sur ton vault**, dans l'esprit *Radical Candor* (Care Personally + Challenge Directly) : brutalement honnête ET bienveillant, il challenge tes décisions et tes raisonnements, nomme tes angles morts. *Coaching de soi uniquement.* |
 | **`/tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD (utile surtout si tu le modifies) |
 
 Tout le reste — `prepare-1-1`, `briefing`, `prepare-meeting`… — n'est **pas livré** :
