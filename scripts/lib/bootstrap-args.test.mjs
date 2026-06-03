@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseAnswers } from "./bootstrap-args.mjs";
+import { join } from "node:path";
+import { parseAnswers, resolveTargetDir } from "./bootstrap-args.mjs";
 
 test("parseAnswers — forme --x=v", () => {
   const r = parseAnswers(["--name=mon-cerveau"], {}, {});
@@ -28,6 +29,34 @@ test("parseAnswers — aucune clé/secret n'est jamais reconnue (sécurité)", (
   }
   // le reste continue de parser normalement malgré le flag parasite
   assert.equal(parseAnswers(["--gemini-key", "SECRET", "--name", "ok"], {}, {}).projectName, "ok");
+});
+
+test("resolveTargetDir — sans destParent → join(home, name)", () => {
+  assert.equal(
+    resolveTargetDir({ name: "perso", destParent: undefined, home: "/home/me" }),
+    join("/home/me", "perso"),
+  );
+});
+
+test("resolveTargetDir — avec destParent → join(destParent, name)", () => {
+  assert.equal(
+    resolveTargetDir({ name: "boulot", destParent: "/data/brains", home: "/home/me" }),
+    join("/data/brains", "boulot"),
+  );
+});
+
+test("parseAnswers — --dest (formes v et =v) → destParent", () => {
+  assert.equal(parseAnswers(["--dest", "/parent"], {}, {}).destParent, "/parent");
+  assert.equal(parseAnswers(["--dest=/parent"], {}, {}).destParent, "/parent");
+});
+
+test("parseAnswers — destParent : précédence flag (--dest) > env (SB_DEST) > défaut", () => {
+  // env gagne sur défaut
+  assert.equal(parseAnswers([], { SB_DEST: "/env" }, {}).destParent, "/env");
+  // flag gagne sur env
+  assert.equal(parseAnswers(["--dest=/flag"], { SB_DEST: "/env" }, {}).destParent, "/flag");
+  // défaut sinon
+  assert.equal(parseAnswers([], {}, { destParent: "/def" }).destParent, "/def");
 });
 
 test("parseAnswers — --non-interactive et ses alias → nonInteractive:true", () => {
@@ -62,6 +91,7 @@ test("parseAnswers — précédence flag > env > default", () => {
     ownerName: "def-owner",
     ownerContext: "def-ctx",
     language: "def-lang",
+    destParent: undefined,
     nonInteractive: false,
   });
 });
