@@ -167,7 +167,7 @@ dépose tout. Le launcher n'est **jamais modifié** : il reste en **lecture seul
         ▼
     📁 second-brain-generator/   ← le LAUNCHER (Claude le clone) : lecture seule, réutilisable, jamais modifié
         │
-        │   Claude y lance l'installateur  →  il CRÉE un dossier AILLEURS
+        │   Claude y lance l'installateur  →  qui CRÉE un dossier AILLEURS
         ▼
     📁 ~/mon-cerveau/            ← TON second cerveau : dossier NEUF (copie des fichiers + git init)
         ├── CLAUDE.md          (ta constitution — générée à partir de l'amorce)
