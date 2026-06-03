@@ -50,7 +50,7 @@ quel que soit son niveau technique :
 > lis des réponses. Seule l'**installation** (une fois, ~15 min) suppose d'avoir git, Node et une
 > clé API — on te guide pas à pas, et un installateur vérifie tout pour toi.
 
-## En quoi c'est différent de ChatGPT, de Notion AI ou de la recherche Slack ?
+## En quoi c'est différent de ChatGPT, Claude, Notion AI ou de la recherche Slack ?
 
 | | Ce qui leur manque | Ce que fait ton second cerveau |
 |---|---|---|
