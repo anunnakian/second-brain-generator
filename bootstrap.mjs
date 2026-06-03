@@ -135,6 +135,9 @@ if (interactive) {
 
 // ── 3. Clé Gemini ───────────────────────────────────────────────────────────
 step("3/9 · Clé API Google Gemini (pour le RAG)");
+warn(
+  "Confidentialité : sur le palier GRATUIT, Google peut exploiter tes contenus (amélioration produit, relecture humaine). Pour un vault confidentiel, active la FACTURATION (palier payant) — quelques centimes. Détails : SETUP §9.",
+);
 let geminiKey = "";
 const envPath = join(ROOT, ".env");
 const envHasKey =

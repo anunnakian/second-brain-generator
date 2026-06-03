@@ -7,10 +7,15 @@
 | **Node.js ≥ 18** | Fait tourner le moteur RAG **et** tout le harnais (installateur + hooks sont en Node, multi-OS) | https://nodejs.org (macOS : `brew install node` · Windows : `winget install OpenJS.NodeJS`) |
 | **git** | Versionnement + portabilité entre machines | https://git-scm.com |
 | **Claude Code** | L'agent qui interroge le vault | https://claude.com/claude-code |
-| **Clé Gemini** | Embeddings + recherche sémantique (gratuit) | https://aistudio.google.com/apikey |
+| **Clé Gemini** | Embeddings + recherche sémantique (gratuit pour démarrer) | https://aistudio.google.com/apikey |
 
 > **Multi-OS** : macOS, Linux et Windows (cmd ou PowerShell). L'installateur et les hooks
 > sont en Node — pas besoin de bash, `jq` ni `sqlite3`. Node est le seul prérequis runtime.
+
+> 🔒 **Confidentialité** : sur le **palier gratuit**, Gemini peut utiliser tes contenus pour
+> améliorer ses produits (relecture humaine possible). Pour un vault **confidentiel**, active la
+> **facturation** (palier payant). Côté Claude, pense aussi à désactiver le partage pour
+> l'amélioration. **Détails en §9 (Confidentialité des données).**
 
 ## 2. Installation
 
@@ -140,3 +145,48 @@ session, le skill `/sync` récupère les changements de l'autre machine.
 | Statut RAG « indisponible » au démarrage | Moteur RAG pas encore installé / DB en cours d'écriture | `cd rag && npm install` ; le statut se rétablit une fois l'index construit |
 | Le serveur MCP n'apparaît pas | `.mcp.json` absent / mauvais chemin | relance `node bootstrap.mjs`, accepte le serveur dans Claude Code |
 | **Smoke-test MCP ❌** en fin de bootstrap (« connexion MCP KO ») | `rag/` pas installé, `.mcp.json` mal généré, ou `npx`/`tsx` indisponible | `cd rag && npm install` puis relance `node bootstrap.mjs` ; vérifie que `.mcp.json` pointe `npx tsx rag/src/index.ts` avec le bon `cwd`. Test manuel : `npx tsx rag/src/index.ts` doit démarrer sans crash (la clé Gemini n'est **pas** requise pour ce test). |
+
+## 9. Confidentialité des données
+
+Ton vault peut contenir du **professionnel / confidentiel**. Deux services voient ton contenu —
+et dans les deux cas, tu peux **empêcher son exploitation**.
+
+### Claude (le raisonnement)
+
+Claude Code lit ton vault pour répondre.
+- **API, Team, Enterprise** : par défaut, tes données **ne servent pas** à entraîner les modèles.
+- **Grand public** (claude.ai Free/Pro/Max) : va dans **Réglages → Confidentialité** et **désactive**
+  l'utilisation de tes conversations pour l'amélioration des modèles.
+
+### Gemini (le RAG / embeddings)
+
+Le moteur envoie le **texte de tes notes** (et de tes requêtes) à l'API Gemini pour calculer les
+**embeddings** — c'est tout : Gemini ne « répond » jamais, et les vecteurs sont stockés **en local**
+(`rag/.cache`).
+- **Palier gratuit** : ⚠️ Google **peut utiliser ces contenus pour améliorer ses produits**, et une
+  **relecture humaine** est possible. À éviter pour du confidentiel.
+- **Palier payant** (facturation activée sur ta clé / projet Google) : Google s'engage à **ne pas**
+  utiliser tes contenus pour l'entraînement, sans relecture humaine. **C'est le geste qui met tes
+  données à l'abri.**
+
+**Et ça ne coûte presque rien** (`gemini-embedding-001`, ordre de grandeur ~0,15 $ / million de
+tokens indexés) :
+
+| Ce que tu indexes | Coût approximatif (one-shot) |
+|---|---|
+| ~1 000 notes (≈ 500 mots chacune) | **~0,10 €** (une dizaine de centimes) |
+| ~10 000 notes | **~1 €** |
+| Tes **requêtes** (quelques dizaines de tokens) | **négligeable** — des dizaines de milliers de questions pour ~1 centime |
+
+> L'index est **incrémental** : seules les notes **modifiées** sont ré-embeddées → le coût récurrent
+> est quasi nul. Bilan : pour le prix d'un café (sur toute une année), tu sors tes données du
+> périmètre d'entraînement.
+
+### Pour aller plus loin (100 % local)
+
+Pour que **rien** ne sorte de ta machine, on pourrait brancher un **modèle d'embeddings local**
+(Ollama / open-source) à la place de Gemini. Le moteur est modulaire (`EMBEDDING_MODEL` dans
+`rag/src/lib/config.ts` + `embedder.ts`), mais cette option **n'est pas livrée** aujourd'hui.
+
+> Les conditions d'Anthropic et de Google **évoluent** : vérifie-les au moment où tu lis (Anthropic
+> Privacy Center · *Gemini API Additional Terms of Service*).

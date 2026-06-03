@@ -67,6 +67,10 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
   5/8 du bootstrap (catalogue `scripts/lib/connectors-catalog.mjs` + merge idempotent
   `connectors-merge.mjs`/`connectors-apply.mjs`), doc `SETUP.md §6`. Suite : enrichir le
   catalogue (plus de connecteurs MCP communautaires) au fil des besoins.
+- **Embedder local (mode 100 % privé)** : permettre de remplacer Gemini par un modèle
+  d'embeddings local (Ollama / open-source) via `EMBEDDING_MODEL` (`rag/src/lib/config.ts` +
+  `embedder.ts`), pour que rien ne sorte de la machine. Aujourd'hui seulement documenté
+  (README/SETUP §9 : palier payant Gemini = données hors entraînement).
 - Bootstrap : option `--non-interactive` avec fichier de réponses (pour CI / re-provisioning).
 - Internationalisation : les templates sont en français. Prévoir une variante EN ?
 - Skills d'exemple réellement fonctionnels (un `prepare-meeting` générique branché Calendar).

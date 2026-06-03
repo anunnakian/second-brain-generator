@@ -66,6 +66,26 @@ d'**amélioration continue** (c'est l'objet de la skill `improve`).
   milliers de notes coûte typiquement quelques dizaines de centimes ; *vérifie le tarif courant, il
   évolue*).
 
+## Et la confidentialité de mes données ?
+
+Question légitime : ton vault peut être **confidentiel**. Deux services voient ton contenu — et
+dans les deux cas tu peux **fermer la porte à leur exploitation** :
+
+- **Claude (le raisonnement)** lit ton vault pour répondre. Par **API / Team / Enterprise**, tes
+  données ne servent **pas** à l'entraînement. Sur le **grand public** (claude.ai Free/Pro/Max),
+  va dans **Réglages → Confidentialité** et **décoche** l'usage de tes conversations pour
+  l'amélioration des modèles.
+- **Gemini (le RAG)** reçoit le **texte de tes notes** pour calculer les embeddings (rien d'autre ;
+  les vecteurs restent en local). ⚠️ Sur le **palier gratuit**, Google **peut exploiter** ces
+  contenus (amélioration produit, relecture humaine possible). **Activer la facturation (palier
+  payant) = le geste qui protège** : Google s'engage alors à **ne pas** s'en servir pour
+  l'entraînement.
+
+Et ça ne coûte **presque rien** : indexer **~1 000 notes ≈ 0,10 €**, **~10 000 notes ≈ 1 €**, les
+requêtes négligeables, l'index incrémental → coût récurrent quasi nul. **Pour le prix d'un café à
+l'année, tes données sortent du périmètre d'entraînement.** Détails et abaque :
+[SETUP — §9 Confidentialité](SETUP.md). *(Les conditions des deux fournisseurs évoluent : vérifie-les.)*
+
 ### La série d'articles (le « pourquoi » derrière ce repo)
 
 À lire dans l'ordre — chaque épisode raconte une étape de la construction :
