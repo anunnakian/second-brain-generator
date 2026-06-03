@@ -58,25 +58,26 @@ Améliorer l'expérience MCP de `bootstrap.mjs` :
 
 ---
 
-## Session B — Connecteurs : cœur logique (TDD pur)  ⬜
+## Session B — Connecteurs : cœur logique (TDD pur)  ✅
 
 **Livrable** : catalogue + fonctions de fusion idempotentes, entièrement testées. Aucun interactif.
 
-- [ ] `scripts/lib/connectors-catalog.mjs` — tableau de connecteurs :
+- [x] `scripts/lib/connectors-catalog.mjs` — tableau `CONNECTORS` :
       `{ id, label, kind: 'mcp'|'native', serverConfig?, permissions?: string[], credentialsHint }`.
-      - `kind:'mcp'` (self-hosted/communautaire) : `serverConfig` = bloc `.mcp.json` prêt à fusionner,
-        env en **placeholders** (`"<CHEMIN_CREDENTIALS>"`), `permissions` = noms d'outils
-        `mcp__<server>__*` à autoriser.
-      - `kind:'native'` (Slack/Gmail/Calendar via claude.ai) : **pas** de `.mcp.json` → juste un
-        `credentialsHint` pointant vers les *Connectors* du compte. Ne RIEN écrire pour ceux-là.
-      - Garder 2-4 entrées neutres et crédibles (ex. Google Drive communautaire, Notion…).
-- [ ] `scripts/lib/connectors-merge.mjs` — fonctions **pures** :
+      - `kind:'mcp'` : `serverConfig` = bloc `.mcp.json` prêt à fusionner, env en **placeholders**
+        (`"<…>"`), `permissions` = outils `mcp__<server>__*`.
+      - `kind:'native'` : **pas** de `serverConfig` → juste un `credentialsHint` vers les
+        *Connectors* claude.ai. Ne RIEN écrire pour ceux-là.
+      - 4 entrées neutres : Google Drive (mcp), Notion (mcp), Slack (native), Google Calendar (native).
+- [x] `scripts/lib/connectors-merge.mjs` — fonctions **pures** :
       `addServerToMcpJson(mcpObj, connector) → mcpObj'` et
-      `addPermissions(settingsObj, perms[]) → settingsObj'`. **Idempotentes** (pas de doublon si
-      le serveur/permission existe déjà). Ne mutent pas l'entrée (retour d'une copie).
-- [ ] `scripts/lib/connectors-merge.test.mjs` (TDD) : ajout, ré-ajout (idempotence), fusion de
-      permissions sans doublon, conservation des serveurs/permissions existants.
-- [ ] `node --test` vert.
+      `addPermissions(settingsObj, perms[]) → settingsObj'`. **Idempotentes** (dédup),
+      **non mutantes** (retour d'une copie).
+- [x] `scripts/lib/connectors-merge.test.mjs` (TDD, 6 tests) : ajout, non-mutation + conservation
+      des existants, idempotence serveur, ajout de permissions, dédup, non-mutation settings.
+      `scripts/lib/connectors-catalog.test.mjs` (4 tests) : taille 2-4, champs requis + ids uniques,
+      invariants mcp (serverConfig + permissions `mcp__*` + env placeholders), natifs sans serverConfig.
+- [x] `node --test scripts/lib/*.test.mjs` vert (14) + `cd rag && npx tsc --noEmit` OK. Neutralité OK.
 - [ ] **Commit** : `feat: catalogue connecteurs + merge idempotent (core testé)`
 
 ---
@@ -118,3 +119,8 @@ Améliorer l'expérience MCP de `bootstrap.mjs` :
 - **Session A (faite)** — smoke-test MCP livré : `scripts/lib/mcp-smoke.mjs` (+ test + stub),
   étape 7/7 du bootstrap, doc SETUP §8. Tout vert, E2E jetable OK. **Prochain point d'entrée : Session B**
   (catalogue connecteurs + merge idempotent, TDD pur, aucun interactif).
+- **Session B (faite)** — cœur logique livré : `connectors-catalog.mjs` (`CONNECTORS`, 4 entrées
+  neutres) + `connectors-merge.mjs` (`addServerToMcpJson`, `addPermissions` — purs, idempotents,
+  non mutants) + tests (6 merge, 4 catalogue). `node --test` vert (14), tsc OK, neutralité OK.
+  **Prochain point d'entrée : Session C** (wizard interactif optionnel dans `bootstrap.mjs` qui
+  consomme catalogue + merge, + réécriture `SETUP.md §6`).
