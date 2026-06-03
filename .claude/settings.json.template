@@ -7,6 +7,7 @@
       "Glob",
       "Grep",
       "Agent",
+      "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",

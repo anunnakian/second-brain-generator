@@ -27,6 +27,8 @@ import { CONNECTORS } from "./scripts/lib/connectors-catalog.mjs";
 import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
 import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
 import { isBootstrapStub } from "./scripts/lib/claude-md.mjs";
+import { parseAnswers } from "./scripts/lib/bootstrap-args.mjs";
+import { shouldInitGit } from "./scripts/lib/git-init.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 process.chdir(ROOT);
@@ -107,7 +109,23 @@ if (missing) {
 
 // ── 2. Personnalisation ─────────────────────────────────────────────────────
 step("2/9 · Personnalisation du harnais");
-const interactive = stdin.isTTY;
+
+const defaultProject = ROOT.split(/[\\/]/).filter(Boolean).pop() ?? "second-brain";
+const gitUser = run("git", ["config", "user.name"]).out.trim();
+
+// Réponses pilotables sans clavier : flags CLI > variables d'env > défauts.
+// Sert au flux « onboarding piloté par Claude » (cf. CLAUDE.md amorce) : Claude
+// récolte les réponses en chat puis appelle UNE commande --non-interactive.
+// La clé Gemini n'est JAMAIS un argument (sécurité) — toujours différée en .env.
+const cli = parseAnswers(process.argv.slice(2), process.env, {
+  projectName: defaultProject,
+  ownerName: gitUser,
+  ownerContext: "usage professionnel",
+  language: "français",
+});
+
+// Interactif seulement si vrai TTY ET pas de --non-interactive demandé.
+const interactive = stdin.isTTY && !cli.nonInteractive;
 const rl = interactive ? createInterface({ input: stdin, output: stdout }) : null;
 
 async function ask(prompt, def = "") {
@@ -117,21 +135,19 @@ async function ask(prompt, def = "") {
   return ans || def;
 }
 
-const defaultProject = ROOT.split(/[\\/]/).filter(Boolean).pop() ?? "second-brain";
-const gitUser = run("git", ["config", "user.name"]).out.trim();
-
 let projectName, ownerName, ownerContext, language;
 if (interactive) {
-  projectName = await ask("Nom du projet", defaultProject);
-  ownerName = await ask("Ton nom", gitUser);
-  ownerContext = await ask("Ton contexte (ex: CTO d'une scale-up)", "usage professionnel");
-  language = await ask("Langue par défaut des notes", "français");
+  // Prompts pré-remplis avec les réponses CLI/env (ou les défauts) comme valeur proposée.
+  projectName = await ask("Nom du projet", cli.projectName);
+  ownerName = await ask("Ton nom", cli.ownerName);
+  ownerContext = await ask("Ton contexte (ex: CTO d'une scale-up)", cli.ownerContext);
+  language = await ask("Langue par défaut des notes", cli.language);
 } else {
-  warn("Entrée non interactive — valeurs par défaut utilisées.");
-  projectName = defaultProject;
-  ownerName = "";
-  ownerContext = "usage professionnel";
-  language = "français";
+  warn("Mode non interactif — réponses prises des flags/env (ou défauts).");
+  projectName = cli.projectName;
+  ownerName = cli.ownerName;
+  ownerContext = cli.ownerContext;
+  language = cli.language;
 }
 
 // ── 3. Clé Gemini ───────────────────────────────────────────────────────────
@@ -192,6 +208,27 @@ if (geminiKey) {
     : `${env}\nGOOGLE_GEMINI_API_KEY=${geminiKey}\n`;
   writeFileSync(envPath, env);
   ok("clé Gemini enregistrée dans .env");
+}
+
+// Dépôt git local — socle de l'auto-commit. Dans le flux « copie détachée »
+// (le .git d'origine a été retiré), il n'y a pas encore de dépôt : on l'initialise.
+// Idempotent : si un .git existe déjà (clone / Use this template), on ne touche à rien.
+if (shouldInitGit(ROOT)) {
+  const init = run("git", ["init", "-q"], { cwd: ROOT });
+  if (init.ok) {
+    run("git", ["add", "-A"], { cwd: ROOT });
+    const commit = run(
+      "git",
+      ["commit", "-q", "-m", "chore: initialisation du second cerveau"],
+      { cwd: ROOT },
+    );
+    if (commit.ok) ok("dépôt git local initialisé (1er commit)");
+    else warn("dépôt git initialisé mais 1er commit impossible (configure git user.name/email).");
+  } else {
+    warn("git init impossible — l'auto-commit sera inactif tant qu'il n'y a pas de dépôt.");
+  }
+} else {
+  ok("dépôt git déjà présent — conservé.");
 }
 
 // ── 5. Connecteurs externes (optionnel) ─────────────────────────────────────
