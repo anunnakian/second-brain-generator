@@ -1,8 +1,10 @@
 <!-- second-brain-generator:bootstrap-stub -->
 # 🧠 Second Brain Generator — notice d'auto-installation (pour Claude)
 
-> **Ce repo n'est pas encore installé.** Ce fichier est une **amorce** : le bootstrap la
-> **remplacera** par la vraie constitution (`CLAUDE.md` personnalisé) une fois l'install faite.
+> **Ce dossier est le LAUNCHER (le générateur), pas un second cerveau.** Ce fichier est une
+> **amorce** : le bootstrap **crée un dossier cerveau séparé** et y dépose la vraie constitution
+> (`CLAUDE.md` personnalisé). Le launcher, lui, **n'est jamais modifié** : il reste en lecture
+> seule et **réutilisable** (un même launcher peut générer plusieurs cerveaux).
 >
 > **Pour Claude.** Si l'utilisateur te demande de créer / installer son second cerveau (ou pose
 > une question au second cerveau alors que cette amorce est encore là), **suis EXACTEMENT les
@@ -10,23 +12,24 @@
 > mode **non-interactif** (`--non-interactive`) — tu n'as donc PAS besoin que l'utilisateur le
 > lance au clavier. Tu récoltes les réponses **en chat**, puis tu appelles **une seule commande**.
 
-## Étape 1 — Récupérer le générateur (clone normal)
+## Étape 1 — Récupérer le launcher (clone normal)
 
 *(Souvent déjà fait si tu lis ce fichier depuis l'intérieur du dossier.)* Si tu pars d'une URL :
 
 ```bash
-git clone --depth 1 <URL_DU_REPO> <nom-du-cerveau>
-cd <nom-du-cerveau>
+git clone --depth 1 <URL_DU_REPO> <dossier-launcher>
+cd <dossier-launcher>
 ```
 
-**Pas besoin de « détacher » quoi que ce soit toi-même** : le bootstrap garantit qu'il ne reste
-**aucun lien vers le générateur** (il retire le remote hérité, sans jamais toucher à l'historique),
-et le hook auto-commit **ne pousse rien tant que l'utilisateur n'a pas branché SON dépôt distant**
-(push opt-in). C'est le *générateur* qui enforce la sûreté — pas le prompt.
+Le launcher est **réutilisable** et **n'est jamais touché** par l'install : le bootstrap **crée
+ailleurs** un dossier cerveau neuf, y copie les fichiers, puis `git init` **dedans** → **aucun
+lien vers le launcher, par construction** (pas de remote hérité à retirer). Le hook auto-commit du
+cerveau **ne pousse rien tant que l'utilisateur n'a pas branché SON dépôt distant** (push opt-in).
 
 ## Étape 2 — Poser les questions EN CHAT (groupées)
 
-Demande, en une fois : **nom du projet/dossier**, **nom de l'utilisateur**, **son contexte**
+Demande, en une fois : **nom du cerveau** (= nom du dossier à créer), **emplacement** (dossier
+parent ; défaut : le home de l'utilisateur → `~/<nom>`), **nom de l'utilisateur**, **son contexte**
 (ex. « CTO d'une scale-up »), **langue par défaut des notes**.
 
 > ⚠️ **Ne demande PAS la clé Gemini.** Elle ne transite **jamais** par le chat ni par la ligne de
@@ -35,39 +38,48 @@ Demande, en une fois : **nom du projet/dossier**, **nom de l'utilisateur**, **so
 ## Étape 3 — Lancer LA commande exacte (copier, ne pas paraphraser)
 
 ```bash
-node bootstrap.mjs --non-interactive --name "<nom>" --owner "<nom user>" --context "<contexte>" --lang "<langue>"
+node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>" --owner "<nom user>" --context "<contexte>" --lang "<langue>"
 ```
 
+- `--dest` est **optionnel** : sans lui, le cerveau est créé sous le home (`~/<nom>`).
 - `--non-interactive` est **obligatoire** (sinon le script attend le clavier et bloque ta session).
-- **Idempotent** : relançable sans casse.
-- Le **script fait TOUT** (git init, génération des fichiers, install du moteur RAG, smoke-test MCP)
-  et **juge lui-même** la réussite : une **sortie non-zéro = échec** → relaie l'erreur telle quelle,
-  **ne fais pas semblant** que ça a marché.
+- Le script **CRÉE le dossier cerveau** (`<emplacement-parent>/<nom>`) et **refuse si ce dossier
+  existe déjà** (sortie non-zéro) — garantit que c'est bien lui qui le crée.
+- Le **script fait TOUT** (copie des fichiers, génération personnalisée, `git init` du cerveau,
+  install du moteur RAG, smoke-test MCP) et **juge lui-même** la réussite : une **sortie non-zéro
+  = échec** → relaie l'erreur telle quelle, **ne fais pas semblant** que ça a marché.
 
 ## Étape 4 — Relayer le résultat + 3 consignes finales
 
-1. **Clé Gemini** : « Colle ta clé dans `.env` (ligne `GOOGLE_GEMINI_API_KEY=`). » L'index se
-   construira au 1er démarrage du serveur MCP. *(Clé gratuite : https://aistudio.google.com/apikey ;
-   pour un vault confidentiel, active la facturation — cf. SETUP §9.)*
+> Le script affiche le chemin du cerveau créé (`<emplacement-parent>/<nom>`). Utilise-le ci-dessous.
+
+1. **Clé Gemini** : « Colle ta clé dans `<cerveau>/.env` (ligne `GOOGLE_GEMINI_API_KEY=`). »
+   L'index se construira au 1er démarrage du serveur MCP. *(Clé gratuite :
+   https://aistudio.google.com/apikey ; pour un vault confidentiel, active la facturation — cf.
+   SETUP §9.)*
 2. **Dépôt distant (optionnel)** : demande — *« Veux-tu un dépôt git **distant** pour que ton
    second cerveau ait un **backup**, voire soit **utilisable depuis plusieurs machines** ? »*
    - **Si non** → ne fais rien. Tout reste versionné en local, rien ne se perd ; le hook
      auto-commit **ne pousse nulle part** (push opt-in désactivé par défaut). On pourra en ajouter
      un plus tard.
-   - **Si oui** → demande la **plateforme** (GitHub / GitLab / Azure DevOps…) et le **nom**, puis
-     crée/branche le remote (`gh repo create` si dispo, sinon `git remote add` + `git push -u`,
-     sinon guide l'utilisateur). **Puis active explicitement le push** (sans ça, l'auto-commit
-     reste en local) :
+   - **Si oui** → demande la **plateforme** (GitHub / GitLab / Azure DevOps…) et le **nom**, puis,
+     **depuis le dossier cerveau**, crée/branche le remote (`gh repo create` si dispo, sinon
+     `git remote add` + `git push -u`, sinon guide l'utilisateur). **Puis active explicitement le
+     push** (sans ça, l'auto-commit reste en local) :
      ```bash
      git config secondbrain.autopush true
      ```
      GitHub = cas simple ; autres plateformes = best-effort + guidage.
-3. **Redémarrage** : « Ferme et rouvre Claude Code dans le dossier `<nom>` » → cela active le
-   serveur MCP `vault-rag` (chargé au démarrage), qui indexe le vault.
+3. **Redémarrage** : « Ferme et rouvre Claude Code **dans le dossier cerveau créé**
+   (`<emplacement-parent>/<nom>`) » → cela active le serveur MCP `vault-rag` (chargé au démarrage),
+   qui indexe le vault. (Le launcher, lui, peut être laissé tel quel ou réutilisé pour un autre cerveau.)
 
 ## Garde-fous (à ne jamais enfreindre)
 
 - **Commande exacte** de l'étape 3 — copie-la, ne l'invente/ne la paraphrase pas.
 - **La clé Gemini n'est JAMAIS un argument** ni un message de chat — toujours `.env`.
-- **Idempotence** : en cas de doute, relancer la commande est sûr.
+- **Le launcher reste en lecture seule** : le bootstrap n'écrit jamais dedans (il crée un dossier
+  cerveau à part). Pour générer un autre cerveau, relance avec un **autre `--name`** (ou `--dest`).
+- **Refus si le dossier existe** : relancer avec le **même nom + emplacement** échoue proprement
+  (sortie non-zéro, rien n'est modifié). Pour recommencer : autre nom/emplacement, ou supprime le dossier.
 - **Ne fais pas semblant** : si le script sort en erreur, dis-le et relaie le message.

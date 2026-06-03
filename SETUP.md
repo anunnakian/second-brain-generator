@@ -41,41 +41,46 @@ démarrer.
 
 ## 2. Installation
 
-> **Installation sur place — un seul dossier.** Le bootstrap s'exécute **dans le dossier où tu l'as
-> cloné** et y génère ta config : ce dossier **devient** ton second cerveau. Il ne crée **aucun**
-> autre répertoire ailleurs. Le nom de ton second cerveau = le **nom du dossier** (celui de ton
-> repo, choisi au « Use this template »). Le « Nom du projet » qu'il te demande n'est qu'une
-> **étiquette** de config (défaut = nom du dossier) ; il ne renomme ni ne déplace rien.
+> **Un launcher, un cerveau — deux dossiers.** Le bootstrap s'exécute depuis le **launcher** (ce
+> dépôt cloné) et **crée un dossier cerveau séparé** où il génère toute ta config. Le launcher reste
+> **en lecture seule** et **réutilisable** (plusieurs cerveaux depuis un même launcher). Le nom du
+> cerveau = `--name` (ou la question « Nom du cerveau ») ; son emplacement = `--dest` (défaut : ton
+> home → `~/<nom>`). Le bootstrap **refuse si le dossier cible existe déjà** — c'est lui qui le crée.
 
 ```bash
-cd mon-cerveau        # le dossier cloné depuis ton repo (issu du template)
-node bootstrap.mjs
+cd second-brain-generator   # le launcher cloné
+node bootstrap.mjs          # interactif : demande nom, emplacement, contexte, langue
 ```
 
 Le script :
 1. vérifie les prérequis (et s'arrête proprement s'il en manque) ;
-2. te demande nom / contexte / langue / nom de projet ;
+2. te demande **nom du cerveau / emplacement / ton nom / contexte / langue** ;
 3. te demande ta clé Gemini (ou plus tard) ;
-4. génère tes fichiers personnalisés : `CLAUDE.md` (qui **remplace l'amorce de pré-installation**),
-   `.mcp.json`, `.claude/settings.json`, `.env` — puis **initialise un dépôt git local** s'il n'y
-   en a pas encore (socle de l'auto-commit ; idempotent) ;
-5. propose de **brancher des sources externes** (optionnel — cf. §6) ;
-6. propose de **vider les notes d'exemple** (optionnel — garde-les pour le 1er test, vide-les ensuite pour ne pas polluer ton RAG) ;
-7. installe les dépendances du moteur (`npm install`) ;
-8. indexe le vault d'exemple ;
-9. **smoke-test MCP** : vérifie que Claude Code pourra parler au serveur `vault-rag` (cf. §8).
+4. **crée le dossier cerveau** (`<emplacement>/<nom>`, **refus s'il existe**) et y **copie les
+   fichiers suivis du launcher**, puis génère tes fichiers personnalisés dedans : `CLAUDE.md` (qui
+   **remplace l'amorce**), `.mcp.json`, `.claude/settings.json`, `.env` ;
+5. **initialise un dépôt git dans le cerveau** (1er commit, **0 remote** — socle de l'auto-commit) ;
+6. propose de **brancher des sources externes** (optionnel — cf. §6) ;
+7. propose de **vider les notes d'exemple** (optionnel — garde-les pour le 1er test, vide-les ensuite pour ne pas polluer ton RAG) ;
+8. installe les dépendances du moteur (`npm install`) dans le cerveau ;
+9. indexe le vault d'exemple ;
+10. **smoke-test MCP** : vérifie que Claude Code pourra parler au serveur `vault-rag` (cf. §8).
 
-Idempotent : tu peux le relancer. Les fichiers déjà générés ne sont pas écrasés (supprime-les pour
-régénérer) — seule exception, le `CLAUDE.md` **amorce** est remplacé au premier passage ; ta vraie
-constitution `CLAUDE.md`, une fois en place, est ensuite préservée.
+**Refus si le dossier existe.** Pour ne jamais écraser un cerveau, le bootstrap **refuse** quand le
+dossier cible existe déjà (sortie non-zéro, rien n'est touché). Pour recommencer : choisis un autre
+`--name`/`--dest`, ou supprime le dossier. Le **launcher**, lui, reste réutilisable à l'infini.
 
 ### Installation manuelle (si tu préfères)
-1. Copie `.env.example` → `.env` et renseigne ta clé Gemini.
-2. Copie chaque `*.template` vers son fichier final (`CLAUDE.md.template` → `CLAUDE.md`,
+> Le bootstrap **crée le dossier cerveau** pour toi (copie + génération + `git init`). En manuel,
+> crée d'abord un dossier vide à part, puis depuis le launcher :
+1. Copie tout le contenu du launcher dans ton nouveau dossier cerveau (hors `.git`, `node_modules`,
+   `DEVELOPING.md`).
+2. Dans le cerveau : copie `.env.example` → `.env` et renseigne ta clé Gemini.
+3. Copie chaque `*.template` vers son fichier final (`CLAUDE.md.template` → `CLAUDE.md`,
    `.mcp.json.template` → `.mcp.json`, `.claude/settings.json.template` → `.claude/settings.json`)
    puis remplace les placeholders `{{...}}` (notamment `{{PROJECT_ROOT}}` = chemin absolu du
-   repo en slashes `/`, et `{{TMP_DIR}}` = dossier temp de l'OS).
-3. `cd rag && npm install && npm run index`
+   **cerveau** en slashes `/`, et `{{TMP_DIR}}` = dossier temp de l'OS).
+4. `git init` dans le cerveau, puis `cd rag && npm install && npm run index`.
 
 > En pratique, `node bootstrap.mjs` fait tout ça pour toi, sur tous les OS — préfère-le.
 
@@ -88,24 +93,20 @@ en chat, puis appelle **une seule commande** :
 ```bash
 node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" \
   --context "CTO d'une scale-up" --lang "français"
+# → crée ~/mon-cerveau. Ajoute --dest <dossier-parent> pour choisir l'emplacement.
 ```
 
-- **Flags** : `--name` (étiquette de projet), `--owner` (ton nom), `--context`, `--lang`. Formes
-  `--x valeur` **et** `--x=valeur`. Alias du mode : `--non-interactive`, `--yes`, `--no-input`.
-- **Précédence** : flag CLI > variable d'environnement (`SB_PROJECT_NAME`, `SB_OWNER_NAME`,
+- **Flags** : `--name` (nom du dossier cerveau créé), `--dest` (dossier parent ; défaut = ton home),
+  `--owner` (ton nom), `--context`, `--lang`. Formes `--x valeur` **et** `--x=valeur`. Alias du
+  mode : `--non-interactive`, `--yes`, `--no-input`.
+- **Précédence** : flag CLI > variable d'environnement (`SB_PROJECT_NAME`, `SB_DEST`, `SB_OWNER_NAME`,
   `SB_OWNER_CONTEXT`, `SB_LANGUAGE`) > valeur par défaut.
 - **La clé Gemini n'est JAMAIS un argument** (sécurité : pas de secret en ligne de commande). En
-  mode non-interactif elle est **toujours différée** → renseigne-la ensuite dans `.env` ; l'index
-  se construit au 1er démarrage du serveur MCP.
-- **Dépôt git local + aucun lien vers le générateur (enforced, sans rien détruire).** Le bootstrap
-  garantit un dépôt local **sans aucun lien vers le repo d'origine**, quelle que soit la façon dont
-  les fichiers sont arrivés :
-  - pas de `.git` (copie/zip) → `git init` + 1er commit ;
-  - un `.git` hérité d'un **clone** → il **retire le remote hérité** (`git remote remove`, non
-    destructif et recouvrable) et **conserve l'historique** — aucun `rm -rf .git`.
-
-  Idempotent, et **il ne touche pas** au repo de dev du template (détecté via `CLAUDE.local.md`).
-  C'est le socle de l'auto-commit — **pas** une question posée.
+  mode non-interactif elle est **toujours différée** → renseigne-la ensuite dans `<cerveau>/.env` ;
+  l'index se construit au 1er démarrage du serveur MCP.
+- **Aucun lien vers le launcher, par construction.** Le bootstrap **crée un dossier neuf**, y copie
+  les fichiers suivis (jamais le `.git` du launcher), puis y fait `git init` + 1er commit. Le cerveau
+  n'a donc **aucun remote** — rien à détacher, aucune chirurgie git. Le launcher n'est jamais modifié.
 - **Aucune fuite possible : le push est opt-in.** Le hook auto-commit **ne pousse que si tu as
   explicitement activé** `git config secondbrain.autopush true` (posé par l'étape « dépôt distant »
   ci-dessous). Par défaut **off** → même un remote qui traînerait ne reçoit jamais tes notes.
@@ -115,11 +116,13 @@ node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" \
   risque.
 
 > ⚠️ En mode non-interactif, les étapes **connecteurs** (§6) et **purge des notes d'exemple** sont
-> sautées (elles restent interactives) — tu les feras à la main ou en relançant le bootstrap.
+> sautées (elles restent interactives) — tu les feras à la main ou en relançant le bootstrap **vers
+> un nouveau cerveau**.
 
 ## 3. Premier test
 
 ```bash
+cd <emplacement>/<nom>   # le dossier cerveau créé par le bootstrap (ex. ~/mon-cerveau)
 claude
 ```
 Puis : *« Quelle base de données a-t-on choisie pour la facturation et pourquoi ? »*
@@ -220,9 +223,11 @@ git remote add origin <url-de-ton-repo-privé>
 git push -u origin main
 git config secondbrain.autopush true   # ← active le push automatique du hook
 ```
-Le hook auto-commit pushera ensuite à chaque modif. Sur l'autre machine, `git clone` +
-`node bootstrap.mjs` (récupère la clé / réinstalle), et tu retrouves ton cerveau. En cours de
-session, le skill `/sync` récupère les changements de l'autre machine.
+Le hook auto-commit pushera ensuite à chaque modif. Sur l'autre machine : `git clone <ton-repo-privé>`
+puis, **dans le dossier cloné**, `cd rag && npm install` et re-renseigne la clé dans `.env` (l'index
+se reconstruit au 1er démarrage). *(Pas besoin du bootstrap ici : il sert à **générer** un cerveau,
+pas à ré-hydrater un cerveau déjà existant.)* En cours de session, le skill `/sync` récupère les
+changements de l'autre machine.
 
 > ⚠️ Ne commite **jamais** `.env` (gitignoré). Sur une nouvelle machine, re-renseigne la clé.
 

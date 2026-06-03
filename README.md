@@ -104,39 +104,41 @@ fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur
 
 ### Comment ça s'installe — le modèle en un coup d'œil
 
-**Un seul dossier.** Le dossier que tu récupères depuis le template **devient** ton second cerveau :
-l'installation se fait **sur place**. Le générateur ne crée **aucun** autre dossier ailleurs sur ton
-disque — il transforme le dossier courant.
+**Un launcher, un cerveau — deux dossiers.** Tu récupères d'abord le **launcher** (ce générateur).
+L'installateur **crée ensuite un dossier cerveau séparé** et y dépose tout. Le launcher n'est
+**jamais modifié** : il reste en **lecture seule** et **réutilisable** — un même launcher peut
+générer plusieurs cerveaux.
 
 ```
-1.  GitHub — bouton « Use this template »
-        │   → crée TON repo privé ; c'est toi qui choisis son nom (ex. « mon-cerveau »)
+1.  Récupérer le launcher (ce générateur)
+        │   git clone …   (ou bouton « Use this template » sur GitHub — voir plus bas)
         ▼
-2.  git clone …/mon-cerveau.git
-        ▼
-    📁 mon-cerveau/            ← un dossier normal, encore « vierge » (juste le template)
+    📁 second-brain-generator/   ← le LAUNCHER : lecture seule, réutilisable, jamais modifié
         │
-        │   cd mon-cerveau  puis  node bootstrap.mjs   (l'installateur tourne DANS ce dossier)
+        │   node bootstrap.mjs --name mon-cerveau     (il CRÉE un dossier AILLEURS)
         ▼
-    📁 mon-cerveau/            ← LE MÊME dossier, devenu ton second cerveau
+    📁 ~/mon-cerveau/            ← TON second cerveau : dossier NEUF créé par le bootstrap
         ├── CLAUDE.md          (ta constitution — générée à partir de l'amorce)
         ├── vault/             (tes notes)
         ├── rag/               (le moteur de recherche)
+        ├── .git/             (dépôt NEUF, 0 remote — aucun lien vers le launcher)
         └── .mcp.json, .env …  (config générée)
         │
-        │   claude             (ouvre Claude Code DANS ce dossier)
+        │   cd ~/mon-cerveau  puis  claude   (ouvre Claude Code DANS le cerveau)
         ▼
     → tu poses tes questions
 ```
 
 Pour lever les doutes qu'on a tous au début :
 
-- **Le nom du dossier = le nom que TU choisis** au « Use this template » (le nom de ton repo). C'est
-  *lui*, le nom de ton second cerveau — **pas** « second-brain-generator ».
-- **Aucun second dossier** n'est créé : le générateur ne fabrique pas un cerveau « ailleurs », il
-  **transforme sur place** le dossier que tu viens de cloner.
-- L'installateur te demande un « **Nom du projet** » : c'est juste une **étiquette** affichée dans ta
-  config (par défaut, le nom du dossier). Ça **ne renomme ni ne déplace rien**.
+- **Le launcher n'est pas ton cerveau** : c'est l'outil qui le **produit**. Garde-le pour en
+  générer d'autres, ou jette-le — ton cerveau vit dans **son propre dossier**.
+- **Aucun lien vers le launcher**, par construction : le bootstrap **copie** les fichiers dans un
+  dossier neuf puis y fait `git init` (0 remote). Rien à « détacher » toi-même.
+- **`--name` = le nom du dossier cerveau créé** ; son emplacement se choisit avec `--dest` (par
+  défaut, ton home → `~/<nom>`). Le bootstrap **refuse si le dossier existe déjà**.
+- Le cerveau naît **sans dépôt distant** : pour un backup / multi-machine, tu branches TON dépôt
+  plus tard (push opt-in, cf. Option A geste 2).
 
 ### Option A — Démarrage assisté par Claude (le plus simple)
 
@@ -146,38 +148,43 @@ instruction — adapte le nom et l'URL :
 
 > *« Installe-moi un second cerveau nommé `mon-cerveau` à partir de ce générateur : `<URL_DU_REPO>`. »*
 
-C'est tout : pas besoin de préciser « fais-en une copie » ni « ne demande pas ma clé » — **le
-générateur enforce lui-même la sûreté** (aucun lien vers le repo d'origine, clé jamais demandée en
-chat). Claude clone le repo, te pose **en chat** les quelques questions (nom, ton contexte,
-langue), puis lance l'installateur en mode non-interactif — qui fait **tout** (dépôt git propre,
-fichiers, moteur RAG, vérification). Il te reste **3 gestes** :
+C'est tout : pas besoin de préciser « ne touche pas au launcher » ni « ne demande pas ma clé » —
+**le générateur enforce lui-même la sûreté** (le launcher reste en lecture seule, le cerveau est un
+dossier neuf sans lien distant, clé jamais demandée en chat). Claude clone le **launcher**, te pose
+**en chat** les quelques questions (nom du cerveau, emplacement, ton contexte, langue), puis lance
+l'installateur en mode non-interactif — qui **crée le dossier cerveau** et fait **tout** (copie,
+fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 gestes** :
 
-1. **Coller ta clé Gemini** dans `.env` (ligne `GOOGLE_GEMINI_API_KEY=`) — jamais dans le chat.
+1. **Coller ta clé Gemini** dans `<cerveau>/.env` (ligne `GOOGLE_GEMINI_API_KEY=`) — jamais dans le chat.
 2. **Dépôt distant ?** Claude te demandera si tu veux un dépôt git **distant** (backup +
    multi-machine). **Dire non est sans risque** : tout reste versionné en local, rien ne se perd,
    et l'auto-commit **ne pousse nulle part** (push opt-in désactivé par défaut). Tu pourras en
    ajouter un plus tard.
-3. **Rouvrir Claude Code** dans le dossier `mon-cerveau` (active le moteur de recherche).
+3. **Rouvrir Claude Code** dans le **dossier cerveau créé** (ex. `~/mon-cerveau`) — active le moteur
+   de recherche. (Le launcher, lui, peut être réutilisé pour un autre cerveau ou supprimé.)
 
 ### Option B — Manuel (`node bootstrap.mjs`)
 
 ```bash
-# 1. Sur GitHub : « Use this template » → crée TON repo privé (ex. « mon-cerveau »).
-#    Puis clone-le et entre dedans :
-git clone git@github.com:<toi>/mon-cerveau.git
-cd mon-cerveau
+# 1. Récupère le LAUNCHER (ce générateur) — clone normal (ou « Use this template » sur GitHub) :
+git clone <URL_DU_REPO> second-brain-generator
+cd second-brain-generator
 
-# 2. Lance l'installateur — il s'exécute DANS ce dossier : vérifie, personnalise, installe.
-#    Multi-OS : macOS / Linux / Windows (cmd ou PowerShell), aucun shell requis.
-node bootstrap.mjs
+# 2. Lance l'installateur — il CRÉE un dossier cerveau SÉPARÉ (par défaut ~/<nom>) et refuse
+#    si ce dossier existe déjà. Multi-OS : macOS / Linux / Windows (cmd ou PowerShell).
+node bootstrap.mjs                      # interactif : demande nom, emplacement, contexte, langue
+#   ou tout en une fois :
+#   node bootstrap.mjs --name mon-cerveau --dest ~/cerveaux --owner "Moi" --context "..." --lang français
 
-# 3. Ouvre Claude Code DANS ce dossier et pose ta première question
+# 3. Ouvre Claude Code DANS le dossier cerveau créé et pose ta première question
+cd ~/mon-cerveau
 claude
 ```
 
-> 💡 Pas de compte GitHub / pas envie de passer par « Use this template » ? Tu peux aussi cloner
-> directement ce générateur puis re-pointer `origin` vers un repo privé à toi — même résultat, c'est
-> juste un peu plus manuel ([SETUP §7](SETUP.md)).
+> 💡 Le launcher reste **réutilisable** : relance `node bootstrap.mjs --name autre-cerveau` pour en
+> générer un second sans tout recloner. « Use this template » (GitHub) n'est qu'**une façon
+> d'obtenir le launcher** — un simple `git clone` marche tout aussi bien, et le cerveau créé n'a
+> de toute façon **aucun lien distant** par défaut (tu branches le tien plus tard, [SETUP §7](SETUP.md)).
 
 Une fois installé, essaie par exemple :
 
@@ -219,14 +226,14 @@ méthode** — l'approche *use case driven* de **Thomas Pierrain** ([sa série d
 pour faire **émerger tes propres usages** au fil de tes questions. Tu pars d'une graine ; tu la
 fais pousser en t'en servant.
 
-**Chacun a son instance.** Un collègue qui veut le sien **repart du template** et crée **son** repo
-privé à lui. On ne partage pas un second cerveau à plusieurs — on partage la graine.
+**Chacun a son instance.** Un collègue qui veut le sien **repart du même launcher** et se **génère**
+son propre cerveau. On ne partage pas un second cerveau à plusieurs — on partage le générateur.
 
 C'est aussi pour ça que le `CLAUDE.md` (les règles que Claude suit) est **ta constitution**,
-propre à *tes* usages : l'installateur le **génère** sur mesure pour toi. Au départ, le repo
-contient juste une **amorce** qui signale à Claude qu'il n'est pas encore installé (et te guide
-vers l'installateur) ; le bootstrap la remplace par ta vraie constitution — et ne touche **jamais**
-à un `CLAUDE.md` que tu aurais déjà personnalisé.
+propre à *tes* usages : l'installateur le **génère** sur mesure pour toi. Le launcher ne contient
+qu'une **amorce** qui signale à Claude qu'il est encore un générateur (et te guide vers
+l'installateur) ; le bootstrap **génère ta vraie constitution dans le dossier cerveau** — et ne
+touche **jamais** à l'amorce du launcher (qui reste réutilisable).
 
 ## Sûr par construction : il observe, il répond
 
