@@ -137,18 +137,19 @@ Tu as **déjà accès au repo** (via ton compte GitHub) et tu utilises Claude Co
 **Claude tout installer pour toi**. Ouvre Claude Code (même hors du repo) et donne-lui cette
 instruction — adapte le nom et l'URL :
 
-> *« Crée-moi un second cerveau nommé `mon-cerveau` à partir de ce starter : `<URL_DU_REPO>`.
-> Fais-en une **copie** (pas un clone lié à ce repo), puis installe-le en suivant son `CLAUDE.md`.
-> Pose-moi les questions nécessaires, mais **ne me demande pas ma clé Gemini**. »*
+> *« Installe-moi un second cerveau nommé `mon-cerveau` à partir de ce starter : `<URL_DU_REPO>`. »*
 
-Claude récupère une copie détachée, te pose **en chat** les quelques questions (nom, ton contexte,
-langue), puis lance l'installateur en mode non-interactif — qui fait **tout** (dépôt git, fichiers,
-moteur RAG, vérification). Il te reste **3 gestes** :
+C'est tout : pas besoin de préciser « fais-en une copie » ni « ne demande pas ma clé » — **le
+starter enforce lui-même la sûreté** (aucun lien vers le repo d'origine, clé jamais demandée en
+chat). Claude clone le repo, te pose **en chat** les quelques questions (nom, ton contexte,
+langue), puis lance l'installateur en mode non-interactif — qui fait **tout** (dépôt git propre,
+fichiers, moteur RAG, vérification). Il te reste **3 gestes** :
 
 1. **Coller ta clé Gemini** dans `.env` (ligne `GOOGLE_GEMINI_API_KEY=`) — jamais dans le chat.
 2. **Dépôt distant ?** Claude te demandera si tu veux un dépôt git **distant** (backup +
    multi-machine). **Dire non est sans risque** : tout reste versionné en local, rien ne se perd,
-   et l'auto-commit ne tentera aucun push. Tu pourras en ajouter un plus tard.
+   et l'auto-commit **ne pousse nulle part** (push opt-in désactivé par défaut). Tu pourras en
+   ajouter un plus tard.
 3. **Rouvrir Claude Code** dans le dossier `mon-cerveau` (active le moteur de recherche).
 
 ### Option B — Manuel (`node bootstrap.mjs`)

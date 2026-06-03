@@ -97,13 +97,22 @@ node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" \
 - **La clé Gemini n'est JAMAIS un argument** (sécurité : pas de secret en ligne de commande). En
   mode non-interactif elle est **toujours différée** → renseigne-la ensuite dans `.env` ; l'index
   se construit au 1er démarrage du serveur MCP.
-- **Dépôt git local automatique** : si le dossier n'a pas de `.git` (cas d'une **copie détachée** —
-  `git clone` puis `rm -rf .git`), le bootstrap fait `git init` + 1er commit. Idempotent : s'il y a
-  déjà un dépôt, il n'y touche pas. C'est le socle de l'auto-commit — **pas** une question posée.
-- **Dépôt distant : décidé après coup, jamais imposé.** L'install ne crée aucun remote. **Sans
-  remote**, tout reste versionné en local et l'auto-commit **ne tente aucun push** (aucune erreur) ;
-  tu peux en brancher un quand tu veux (cf. §7). En démarrage assisté, Claude te **proposera** d'en
-  créer un (backup + multi-machine) — répondre non est sans risque.
+- **Dépôt git local + aucun lien vers le starter (enforced, sans rien détruire).** Le bootstrap
+  garantit un dépôt local **sans aucun lien vers le repo d'origine**, quelle que soit la façon dont
+  les fichiers sont arrivés :
+  - pas de `.git` (copie/zip) → `git init` + 1er commit ;
+  - un `.git` hérité d'un **clone** → il **retire le remote hérité** (`git remote remove`, non
+    destructif et recouvrable) et **conserve l'historique** — aucun `rm -rf .git`.
+
+  Idempotent, et **il ne touche pas** au repo de dev du template (détecté via `CLAUDE.local.md`).
+  C'est le socle de l'auto-commit — **pas** une question posée.
+- **Aucune fuite possible : le push est opt-in.** Le hook auto-commit **ne pousse que si tu as
+  explicitement activé** `git config secondbrain.autopush true` (posé par l'étape « dépôt distant »
+  ci-dessous). Par défaut **off** → même un remote qui traînerait ne reçoit jamais tes notes.
+- **Dépôt distant : décidé après coup, jamais imposé.** L'install ne crée aucun remote. Tu peux en
+  brancher un quand tu veux (cf. §7) — en pensant à activer `secondbrain.autopush`. En démarrage
+  assisté, Claude te **proposera** d'en créer un (backup + multi-machine) — répondre non est sans
+  risque.
 
 > ⚠️ En mode non-interactif, les étapes **connecteurs** (§6) et **purge des notes d'exemple** sont
 > sautées (elles restent interactives) — tu les feras à la main ou en relançant le bootstrap.
@@ -204,10 +213,12 @@ pour elles.
 
 ## 7. Portabilité multi-machines
 
-Configure un remote git privé :
+Configure un remote git privé, **puis active le push** (sans ça, l'auto-commit reste local — c'est
+le garde-fou opt-in qui empêche toute fuite par défaut) :
 ```bash
 git remote add origin <url-de-ton-repo-privé>
 git push -u origin main
+git config secondbrain.autopush true   # ← active le push automatique du hook
 ```
 Le hook auto-commit pushera ensuite à chaque modif. Sur l'autre machine, `git clone` +
 `node bootstrap.mjs` (récupère la clé / réinstalle), et tu retrouves ton cerveau. En cours de

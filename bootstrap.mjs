@@ -28,7 +28,7 @@ import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
 import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
 import { isBootstrapStub } from "./scripts/lib/claude-md.mjs";
 import { parseAnswers } from "./scripts/lib/bootstrap-args.mjs";
-import { shouldInitGit } from "./scripts/lib/git-init.mjs";
+import { planGitSetup } from "./scripts/lib/git-init.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 process.chdir(ROOT);
@@ -192,6 +192,11 @@ function gen(tpl, out, canOverwrite) {
   writeFileSync(out, content);
   ok(`généré : ${out}`);
 }
+// Capturé AVANT génération (gen() remplace l'amorce) : sert à décider du git.
+const claudeMdPath = join(ROOT, "CLAUDE.md");
+const wasStub = existsSync(claudeMdPath) && isBootstrapStub(readFileSync(claudeMdPath, "utf8"));
+const isMaintainer = existsSync(join(ROOT, "CLAUDE.local.md"));
+
 gen(join(ROOT, "CLAUDE.md.template"), join(ROOT, "CLAUDE.md"), isBootstrapStub);
 gen(join(ROOT, ".mcp.json.template"), join(ROOT, ".mcp.json"));
 gen(join(ROOT, ".claude", "settings.json.template"), join(ROOT, ".claude", "settings.json"));
@@ -210,25 +215,40 @@ if (geminiKey) {
   ok("clé Gemini enregistrée dans .env");
 }
 
-// Dépôt git local — socle de l'auto-commit. Dans le flux « copie détachée »
-// (le .git d'origine a été retiré), il n'y a pas encore de dépôt : on l'initialise.
-// Idempotent : si un .git existe déjà (clone / Use this template), on ne touche à rien.
-if (shouldInitGit(ROOT)) {
+// Dépôt git local — socle de l'auto-commit. AUCUNE opération irréversible : on
+// n'efface jamais le .git. Le starter enforce simplement « pas de lien vers le
+// template » sans détruire d'historique (cf. scripts/lib/git-init.mjs). La
+// garantie anti-fuite vient du push opt-in du hook (secondbrain.autopush).
+const plan = planGitSetup({
+  hasDotGit: existsSync(join(ROOT, ".git")),
+  wasStub,
+  isMaintainer,
+});
+if (isMaintainer) {
+  ok("repo de dev du template détecté (CLAUDE.local.md) — git laissé intact.");
+}
+if (plan.init) {
   const init = run("git", ["init", "-q"], { cwd: ROOT });
-  if (init.ok) {
-    run("git", ["add", "-A"], { cwd: ROOT });
-    const commit = run(
-      "git",
-      ["commit", "-q", "-m", "chore: initialisation du second cerveau"],
-      { cwd: ROOT },
-    );
-    if (commit.ok) ok("dépôt git local initialisé (1er commit)");
-    else warn("dépôt git initialisé mais 1er commit impossible (configure git user.name/email).");
-  } else {
-    warn("git init impossible — l'auto-commit sera inactif tant qu'il n'y a pas de dépôt.");
+  if (!init.ok) warn("git init impossible — l'auto-commit sera inactif tant qu'il n'y a pas de dépôt.");
+}
+if (plan.stripRemote) {
+  // Clone resté lié au starter : on retire le(s) remote(s) hérité(s).
+  // Non destructif et recouvrable (`git remote add …`). Le .git est conservé.
+  const remotes = run("git", ["remote"], { cwd: ROOT }).out.trim().split(/\s+/).filter(Boolean);
+  for (const r of remotes) run("git", ["remote", "remove", r], { cwd: ROOT });
+  if (remotes.length) {
+    ok(`lien vers le starter retiré (remote ${remotes.join(", ")} supprimé) — aucun push tant que tu n'as pas branché TON dépôt.`);
   }
-} else {
-  ok("dépôt git déjà présent — conservé.");
+}
+if (plan.commit) {
+  run("git", ["add", "-A"], { cwd: ROOT });
+  const commit = run(
+    "git",
+    ["commit", "-q", "-m", "chore: initialisation du second cerveau"],
+    { cwd: ROOT },
+  );
+  if (commit.ok) ok("dépôt git local prêt (commit d'installation)");
+  else warn("commit d'installation impossible (configure git user.name/email).");
 }
 
 // ── 5. Connecteurs externes (optionnel) ─────────────────────────────────────

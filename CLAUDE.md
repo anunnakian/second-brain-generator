@@ -10,18 +10,19 @@
 > mode **non-interactif** (`--non-interactive`) — tu n'as donc PAS besoin que l'utilisateur le
 > lance au clavier. Tu récoltes les réponses **en chat**, puis tu appelles **une seule commande**.
 
-## Étape 1 — Obtenir une COPIE détachée du starter
+## Étape 1 — Récupérer le starter (clone normal)
 
 *(Souvent déjà fait si tu lis ce fichier depuis l'intérieur du dossier.)* Si tu pars d'une URL :
 
 ```bash
 git clone --depth 1 <URL_DU_REPO> <nom-du-cerveau>
-rm -rf <nom-du-cerveau>/.git   # copie détachée : pas un clone lié au starter
 cd <nom-du-cerveau>
 ```
 
-Le bootstrap **réinitialisera un dépôt git local** (socle de l'auto-commit) — c'est automatique,
-pas une question à poser.
+**Pas besoin de « détacher » quoi que ce soit toi-même** : le bootstrap garantit qu'il ne reste
+**aucun lien vers le starter** (il retire le remote hérité, sans jamais toucher à l'historique),
+et le hook auto-commit **ne pousse rien tant que l'utilisateur n'a pas branché SON dépôt distant**
+(push opt-in). C'est le *starter* qui enforce la sûreté — pas le prompt.
 
 ## Étape 2 — Poser les questions EN CHAT (groupées)
 
@@ -51,10 +52,16 @@ node bootstrap.mjs --non-interactive --name "<nom>" --owner "<nom user>" --conte
 2. **Dépôt distant (optionnel)** : demande — *« Veux-tu un dépôt git **distant** pour que ton
    second cerveau ait un **backup**, voire soit **utilisable depuis plusieurs machines** ? »*
    - **Si non** → ne fais rien. Tout reste versionné en local, rien ne se perd ; le hook
-     auto-commit **ne tentera aucun push** (aucune erreur). On pourra en ajouter un plus tard.
+     auto-commit **ne pousse nulle part** (push opt-in désactivé par défaut). On pourra en ajouter
+     un plus tard.
    - **Si oui** → demande la **plateforme** (GitHub / GitLab / Azure DevOps…) et le **nom**, puis
      crée/branche le remote (`gh repo create` si dispo, sinon `git remote add` + `git push -u`,
-     sinon guide l'utilisateur). GitHub = cas simple ; autres plateformes = best-effort + guidage.
+     sinon guide l'utilisateur). **Puis active explicitement le push** (sans ça, l'auto-commit
+     reste en local) :
+     ```bash
+     git config secondbrain.autopush true
+     ```
+     GitHub = cas simple ; autres plateformes = best-effort + guidage.
 3. **Redémarrage** : « Ferme et rouvre Claude Code dans le dossier `<nom>` » → cela active le
    serveur MCP `vault-rag` (chargé au démarrage), qui indexe le vault.
 
