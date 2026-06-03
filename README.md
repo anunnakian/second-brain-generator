@@ -46,6 +46,12 @@ de l'implémentation** — fluide, souple, simple au point que *n'importe qui* p
 Tout l'objectif : **alléger ta charge mentale** pour que tu te concentres sur les bons sujets,
 au bon moment.
 
+Et comme **tout est persisté** — tes questions, les réponses, ce qui a été synchronisé et
+généré —, ton second cerveau accumule une trace exploitable. Au bout d'un moment, tu peux
+littéralement lui demander *« qu'est-ce qu'on pourrait améliorer ? »* : il observe tout cet
+historique et s'en sert comme base pour suggérer ses propres pistes d'**amélioration continue**
+(c'est tout l'objet de la skill `improve`).
+
 ---
 
 ## Démarrage en 3 étapes
