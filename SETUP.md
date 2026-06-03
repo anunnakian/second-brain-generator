@@ -24,9 +24,10 @@ Le script :
 3. te demande ta clé Gemini (ou plus tard) ;
 4. génère `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, `.env` personnalisés ;
 5. propose de **brancher des sources externes** (optionnel — cf. §6) ;
-6. installe les dépendances du moteur (`npm install`) ;
-7. indexe le vault d'exemple ;
-8. **smoke-test MCP** : vérifie que Claude Code pourra parler au serveur `vault-rag` (cf. §8).
+6. propose de **vider les notes d'exemple** (optionnel — garde-les pour le 1er test, vide-les ensuite pour ne pas polluer ton RAG) ;
+7. installe les dépendances du moteur (`npm install`) ;
+8. indexe le vault d'exemple ;
+9. **smoke-test MCP** : vérifie que Claude Code pourra parler au serveur `vault-rag` (cf. §8).
 
 Idempotent : tu peux le relancer. Les fichiers déjà générés ne sont pas écrasés (supprime-les pour régénérer).
 

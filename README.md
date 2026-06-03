@@ -2,7 +2,8 @@
 
 **C'est quoi un second cerveau ?** Une mémoire externe à toi : tes notes, décisions et échanges
 de travail réunis en un seul endroit que tu interroges **en langage naturel** — et qui te répond
-tout de suite, **sources à l'appui**, au lieu d'aller fouiller tes outils.
+tout de suite, **sources à l'appui**, au lieu d'aller fouiller dans **tous tes outils** (Slack,
+Teams, mails, Google Drive, CR de meetings, etc.).
 
 > Ce dépôt est une **graine** pour te construire ton propre **second cerveau** — à la façon
 > *use case driven* décrite par **Thomas Pierrain** dans sa série d'articles Medium. Concrètement : un vault

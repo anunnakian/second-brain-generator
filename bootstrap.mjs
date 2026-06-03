@@ -25,6 +25,7 @@ import { stdin, stdout } from "node:process";
 import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
 import { CONNECTORS } from "./scripts/lib/connectors-catalog.mjs";
 import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
+import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 process.chdir(ROOT);
@@ -72,7 +73,7 @@ function run(cmd, args, opts = {}) {
 }
 
 // ── 1. Prérequis ────────────────────────────────────────────────────────────
-step("1/8 · Vérification des prérequis");
+step("1/9 · Vérification des prérequis");
 let missing = false;
 
 // Node : on tourne déjà dedans, version lisible directement.
@@ -104,7 +105,7 @@ if (missing) {
 }
 
 // ── 2. Personnalisation ─────────────────────────────────────────────────────
-step("2/8 · Personnalisation du harnais");
+step("2/9 · Personnalisation du harnais");
 const interactive = stdin.isTTY;
 const rl = interactive ? createInterface({ input: stdin, output: stdout }) : null;
 
@@ -133,7 +134,7 @@ if (interactive) {
 }
 
 // ── 3. Clé Gemini ───────────────────────────────────────────────────────────
-step("3/8 · Clé API Google Gemini (pour le RAG)");
+step("3/9 · Clé API Google Gemini (pour le RAG)");
 let geminiKey = "";
 const envPath = join(ROOT, ".env");
 const envHasKey =
@@ -146,7 +147,7 @@ if (envHasKey) {
 }
 
 // ── 4. Génération des fichiers ──────────────────────────────────────────────
-step("4/8 · Génération des fichiers personnalisés");
+step("4/9 · Génération des fichiers personnalisés");
 const replacements = {
   "{{PROJECT_ROOT}}": toPosix(ROOT),
   "{{PROJECT_NAME}}": projectName,
@@ -191,7 +192,7 @@ if (geminiKey) {
 // (idempotent — relançable sans doublon). Pour les natifs claude.ai, on ne
 // touche à rien : on pointe juste vers les *Connectors* du compte.
 // Non interactif (CI / stdin non-TTY) → étape entièrement ignorée.
-step("5/8 · Brancher des sources externes (optionnel)");
+step("5/9 · Brancher des sources externes (optionnel)");
 if (interactive) {
   const want = await ask("Brancher des sources externes maintenant ? [o/N]", "N");
   if (/^o/i.test(want)) {
@@ -215,10 +216,33 @@ if (interactive) {
   warn("Entrée non interactive — étape connecteurs ignorée.");
 }
 
+// ── 6. Notes d'exemple (optionnel) ──────────────────────────────────────────
+// Le vault est livré avec des notes de démo (tag `exemple`) pour que le 1er test
+// fonctionne d'emblée. Une fois prêt à passer à tes vraies notes, mieux vaut les
+// vider : sinon elles polluent le RAG (réponses citant des faits fictifs). On
+// propose la purge ICI, avant l'indexation, pour que l'index reste propre.
+// La machinerie (vault/backlog/harnais.md) et la doc (README) sont préservées.
+step("6/9 · Nettoyer les notes d'exemple (optionnel)");
+const vaultDir = join(ROOT, "vault");
+if (interactive) {
+  const purge = await ask(
+    "Vider les notes d'exemple ? (garde-les pour tester le 1er run) [o/N]",
+    "N",
+  );
+  if (/^o/i.test(purge)) {
+    const deleted = clearExampleNotes(vaultDir);
+    ok(`${deleted.length} note(s) d'exemple supprimée(s) — vault prêt pour tes vraies notes.`);
+  } else {
+    warn("Notes d'exemple conservées (utiles pour le 1er test). Relance le bootstrap pour les vider plus tard.");
+  }
+} else {
+  warn("Entrée non interactive — notes d'exemple conservées.");
+}
+
 if (rl) rl.close();
 
 // ── 6. Installation du moteur RAG ───────────────────────────────────────────
-step("6/8 · Installation du moteur RAG (npm install)");
+step("7/9 · Installation du moteur RAG (npm install)");
 const rag = join(ROOT, "rag");
 const install = run(NPM, ["install", "--silent"], { cwd: rag, stdio: "inherit" });
 if (install.ok) ok("dépendances RAG installées");
@@ -228,7 +252,7 @@ else {
 }
 
 // ── 7. Indexation initiale (si clé présente) ────────────────────────────────
-step("7/8 · Indexation initiale du vault d'exemple");
+step("8/9 · Indexation initiale du vault d'exemple");
 const keyReady =
   existsSync(envPath) && /^GOOGLE_GEMINI_API_KEY=.+/m.test(readFileSync(envPath, "utf8"));
 if (keyReady) {
@@ -244,7 +268,7 @@ if (keyReady) {
 // (handshake stdio), avant de lancer `claude`. Non bloquant : un échec ici
 // n'empêche pas d'utiliser le starter, mais pointe vers le dépannage SETUP.
 // Pas de clé Gemini requise — lister les outils n'embedde rien.
-step("8/8 · Vérification de la connexion MCP");
+step("9/9 · Vérification de la connexion MCP");
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 try {
   const mcp = JSON.parse(readFileSync(join(ROOT, ".mcp.json"), "utf8"));
