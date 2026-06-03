@@ -111,7 +111,7 @@ générer plusieurs cerveaux.
 
 ```
 1.  Récupérer le launcher (ce générateur)
-        │   git clone …   (ou bouton « Use this template » sur GitHub — voir plus bas)
+        │   git clone <URL_DU_REPO>
         ▼
     📁 second-brain-generator/   ← le LAUNCHER : lecture seule, réutilisable, jamais modifié
         │
@@ -166,7 +166,7 @@ fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 ges
 ### Option B — Manuel (`node bootstrap.mjs`)
 
 ```bash
-# 1. Récupère le LAUNCHER (ce générateur) — clone normal (ou « Use this template » sur GitHub) :
+# 1. Récupère le LAUNCHER (ce générateur) — un simple clone :
 git clone <URL_DU_REPO> second-brain-generator
 cd second-brain-generator
 
@@ -182,9 +182,8 @@ claude
 ```
 
 > 💡 Le launcher reste **réutilisable** : relance `node bootstrap.mjs --name autre-cerveau` pour en
-> générer un second sans tout recloner. « Use this template » (GitHub) n'est qu'**une façon
-> d'obtenir le launcher** — un simple `git clone` marche tout aussi bien, et le cerveau créé n'a
-> de toute façon **aucun lien distant** par défaut (tu branches le tien plus tard, [SETUP §7](SETUP.md)).
+> générer un second sans tout recloner. Le cerveau créé n'a **aucun lien distant** par défaut — tu
+> branches le tien plus tard si tu veux un backup / du multi-machine ([SETUP §7](SETUP.md)).
 
 Une fois installé, essaie par exemple :
 
