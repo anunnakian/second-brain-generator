@@ -96,6 +96,26 @@ Claude cherche dans le vault et répond avec les backlinks vers les notes source
 | **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage (`session-status`), commit auto (`auto-commit`) | ✅ prêt |
 | **`bootstrap.mjs`** | Installateur interactif (macOS / Linux / Windows) | ✅ |
 
+### Les skills incluses
+
+Le starter est volontairement **frugal en skills** — il en livre trois, génériques :
+
+| Skill | Ce qu'elle fait |
+|---|---|
+| **`/sync`** | synchronise le repo git entre tes machines (commit, `pull --rebase`, gestion de conflits, push) |
+| **`/improve`** | fait évoluer ton harnais : lit les frictions, propose et applique les améliorations les plus utiles |
+| **`/tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD (utile surtout si tu le modifies) |
+
+Tout le reste — `prepare-1-1`, `briefing`, `coach`, `prepare-meeting`… — n'est **pas livré** :
+ce sont des **idées** à construire toi-même selon tes usages, décrites dans
+[`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). C'est voulu : un second cerveau ne
+vaut que calé sur *tes* cas d'usage (cf. la section « adapte-le à tes cas d'usage » plus bas).
+
+> **Skill ≠ connecteur.** Slack, Drive, Notion, Calendar sont des **connecteurs** (sources de
+> données), pas des skills. Tu les branches au bootstrap (wizard, cf. [SETUP §6](SETUP.md)) ;
+> les natifs (Slack, Calendar) se configurent côté compte claude.ai. Une *skill* est une
+> procédure qui exploite ces sources — à toi de l'écrire.
+
 ---
 
 ## Comment ça marche
