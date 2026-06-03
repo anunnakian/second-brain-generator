@@ -19,6 +19,10 @@ en l'utilisant.
 
 ### La spécificité en un paragraphe
 
+Tout ici est pensé **interaction et expérience** d'abord : tu veux une réponse **immédiate**,
+en quelques secondes, à *chacune* de tes questions — pas attendre qu'un agent ait fini de
+re-fouiller tous tes outils avant de te répondre. Tout le reste découle de cette exigence.
+
 Le parti-pris : **répondre tout de suite sur la base de ce qui a déjà été aspiré dans le
 substrat, vérifier ensuite** qu'il n'y a pas d'infos plus fraîches ou contradictoires. À ta
 question, le second cerveau répond en quelques secondes à partir du vault par **recherche
@@ -91,6 +95,31 @@ Sous le capot, le **moteur RAG** découpe chaque note en *chunks* (un par sectio
 transforme en vecteurs (embeddings Gemini) et retrouve les passages les plus proches du sens
 de ta question. L'index se reconstruit seul, incrémentalement ; un hook git committe et pushe
 à chaque modification (phase 4).
+
+---
+
+## Un second cerveau, c'est *personnel* — adapte-le à tes cas d'usage
+
+Un second cerveau n'a de valeur que **calé sur ton activité** : tes besoins, le **type de
+questions** que tu poses, le **type d'interaction** que tu veux avoir avec lui. C'est *toi*
+qui définis ça — pas le starter.
+
+**Par exemple, pour Thomas Pierrain — *Head of Engineering*** — le second cerveau doit l'aider à :
+
+- **suivre ses collaborateurs**, celles et ceux qu'il coache et mentore ;
+- **se coacher lui-même** (et se faire challenger) : prendre du recul quand on a la tête dans
+  le guidon, sur des postes où l'on se sent parfois un peu seul ;
+- **comprendre et consolider des concepts métier avancés** côté client — ici comptabilité et
+  fiscalité, des domaines loin d'être triviaux ;
+- **distinguer les acronymes métier des acronymes applicatifs** (les mêmes lettres ne veulent
+  pas dire la même chose) ;
+- **cartographier les équipes et l'organisation** : qui travaille sur quel périmètre, quelle
+  équipe porte quel sujet, à tout moment ;
+- **savoir en permanence ce qu'on attend de lui — et ce qu'il attend des autres**.
+
+Rien de tout cela n'est livré dans le starter : ce sont des **spécificités propres à son
+activité**. Le starter ne cherche surtout pas à les répliquer — il te donne le moteur et la
+méthode pour faire **émerger les tiennes**, au fil de tes questions et de tes interactions.
 
 ---
 
