@@ -95,3 +95,10 @@ La graine te donne le **moteur** et un **squelette de harnais** ; *ton* second c
 fais pousser en l'utilisant — tes notes, tes règles dans `CLAUDE.md`, tes skills. Pour aller
 plus loin : [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md) (idées de skills) et
 [SETUP.md](SETUP.md) (connecteurs Slack/Drive/Notion, troubleshooting, détails du RAG).
+
+---
+
+## À propos
+
+Par **Thomas Pierrain** — retrouve la série « second cerveau » et ses autres écrits sur
+[medium.com/@tpierrain](https://medium.com/@tpierrain).
