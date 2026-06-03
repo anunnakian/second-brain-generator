@@ -46,13 +46,20 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
    ```
 5. **Garder le moteur synchronisable** avec le second cerveau source : `rag/` est resté quasi
    identique à l'original → les correctifs peuvent être rapatriés dans un sens ou l'autre.
-6. **TDD strict sur le moteur (`rag/`).** Toute évolution de la logique du moteur se fait en
-   **red → green → refactor** : écrire d'abord le test qui échoue (`rag/src/lib/*.test.ts`,
-   runner `node --test`), le voir rouge pour la bonne raison, puis le minimum de code pour le
-   verdir, puis refactor à vert. Suite complète verte (`cd rag && npm test`) + typecheck
-   (`cd rag && npx tsc --noEmit`) à chaque étape. Exception assumée et **signalée
-   explicitement** : le purement mécanique/non testable unitairement (renommage, message,
-   config triviale, intégration réseau Gemini) — pas de test artificiel juste pour la forme.
+6. **TDD strict sur tout le code — moteur ET harnais.** Discipline détaillée et actionnable
+   dans la skill **`tdd-discipline`** (`.claude/skills/tdd-discipline/`, chargée dès qu'on écrit
+   du code) : baby-steps, fail-first, triangulation, refactor obligatoire. Elle s'applique à
+   **toute la logique du repo**, pas seulement au moteur :
+   - **Moteur RAG** (`rag/`) : tests `rag/src/lib/*.test.ts`, suite verte `cd rag && npm test`
+     + typecheck `cd rag && npx tsc --noEmit`.
+   - **Harnais / bootstrap** (`bootstrap.mjs`, `scripts/lib/*.mjs`) : tests
+     `scripts/lib/*.test.mjs`, suite verte `node --test scripts/lib/*.test.mjs`.
+
+   Chaque évolution se fait en **red → green → refactor** : écrire d'abord le test qui échoue,
+   le voir rouge pour la bonne raison, puis le minimum de code pour le verdir, puis refactor à
+   vert. Exception assumée et **signalée explicitement** : le purement mécanique/non testable
+   unitairement (renommage, message, config triviale, intégration réseau Gemini) — pas de test
+   artificiel juste pour la forme.
 
 ## Pistes d'amélioration (backlog informel)
 
