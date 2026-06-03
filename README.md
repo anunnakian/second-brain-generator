@@ -92,20 +92,21 @@ Claude cherche dans le vault et répond avec les backlinks vers les notes source
 | **`rag/`** | Moteur RAG (MCP server TypeScript) : chunking, embeddings Gemini, recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
 | **`vault/`** | Ton contenu Markdown (notes d'exemple fournies) | 🔧 à remplir |
 | **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🔧 template à adapter |
-| **`.claude/skills/`** | Skills livrées : `sync`, `improve`, `coach` (le **coach vénère** à la Radical Candor) + `tdd-discipline` (vendorée) — détail ci-dessous — et des idées d'autres skills | 🔧 à étoffer |
+| **`.claude/skills/`** | Skills livrées : `sync`, `improve`, `coach` (le **coach vénère** à la Radical Candor), `prepare-1-1`, `sync-sources` + `tdd-discipline` (vendorée) — détail ci-dessous — et des idées d'autres skills | 🔧 à étoffer |
 | **`.claude/settings.json`** | Hooks (auto-commit, statut au démarrage) + permissions | ✅ généré |
 | **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage (`session-status`), commit auto (`auto-commit`) | ✅ prêt |
 | **`bootstrap.mjs`** | Installateur interactif (macOS / Linux / Windows) | ✅ |
 
 ### Les skills incluses
 
-Le starter reste volontairement **frugal en skills** — il en livre cinq, génériques :
+Le starter reste volontairement **frugal en skills** — il en livre six, génériques :
 
 | Skill | Ce qu'elle fait |
 |---|---|
 | **`/sync`** | synchronise le repo git entre tes machines (commit, `pull --rebase`, gestion de conflits, push) |
 | **`/improve`** | fait évoluer ton harnais : lit les frictions, propose et applique les améliorations les plus utiles |
 | **`/coach`** | **coach « vénère », sparring partner branché sur ton vault**, dans l'esprit *Radical Candor* (Care Personally + Challenge Directly) : brutalement honnête ET bienveillant, il challenge tes décisions et tes raisonnements, nomme tes angles morts. *Coaching de soi uniquement.* |
+| **`/prepare-1-1`** | prépare un 1-1 avec n'importe qui (report, pair, manager) : croise la fiche de la personne, le dernier 1-1 et le delta de signaux récents, et produit un briefing de coaching (Top 3, signaux faibles, axes récurrents, checklist). *Version méta, à adapter.* |
 | **`sync-sources`** | *(référence interne, pas une commande)* — l'architecture **fan-out/fan-in** qui aspire le **delta** des sources externes en sous-agents parallèles **lecture seule**. C'est le moteur de la Phase 2 (cf. « Comment ça marche »). 🔧 à câbler sur tes connecteurs. |
 | **`/tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD (utile surtout si tu le modifies) |
 
@@ -115,7 +116,6 @@ Le starter t'en propose plusieurs (détaillées dans
 par exemple :
 
 - **`briefing-journee`** — briefing du matin : agenda du jour, points chauds, actions prioritaires ;
-- **`prepare-1-1`** — brief avant un entretien individuel : derniers échanges, engagements, signaux faibles ;
 - **`briefing`** — après une absence, la synthèse de ce qui s'est passé sur tes canaux suivis ;
 - **`prepare-meeting`** — contexte, points ouverts et historique des participants avant une réunion ;
 - **`rapport-etonnement`** — capturer ton regard neuf lors d'une prise de poste / d'une nouvelle mission ;

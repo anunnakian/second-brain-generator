@@ -1,9 +1,10 @@
 # Skills à construire toi-même — exemples d'inspiration
 
 Ce starter ne fournit que quelques skills génériques : `sync` (synchro git inter-machines),
-`improve` (amélioration du harnais), `coach` (sparring partner « vénère » sur soi — une
-**implémentation de référence** dont tu peux t'inspirer) et `sync-sources` (l'architecture
-fan-out/fan-in qui aspire le delta des sources, moteur de la Phase 2). Le reste est à toi de le
+`improve` (amélioration du harnais), `coach` (sparring partner « vénère » sur soi),
+`prepare-1-1` (préparer un 1-1 avec n'importe qui) et `sync-sources` (l'architecture
+fan-out/fan-in qui aspire le delta des sources, moteur de la Phase 2). `coach` et `prepare-1-1`
+sont des **implémentations de référence** dont tu peux t'inspirer. Le reste est à toi de le
 construire, **selon tes usages**.
 
 C'est là que ton second cerveau devient *le tien* : un skill = un angle d'attaque sur le
@@ -39,7 +40,7 @@ version: 1.0.0
 |---|---|---|
 | **briefing-journee** | Briefing du matin : agenda du jour, points chauds, actions prioritaires (s'appuie sur `sync-sources`) | Calendar, vault/backlog, vault/daily |
 | **prepare-meeting** | Avant une réunion : ramène l'historique, les points ouverts, le contexte des participants | Calendar, vault, transcripts |
-| **prepare-1-1** | Brief avant un entretien individuel : derniers échanges, engagements, signaux faibles | Calendar, Slack, vault/backlog |
+| **prepare-1-1** ✅ livré | Brief avant un entretien individuel : derniers échanges, engagements, signaux faibles | Calendar, Slack, vault/backlog |
 | **coach** ✅ livré | Sparring partner branché sur le vault : challenge les raisonnements, rappelle les engagements (coaching de soi) | vault entier |
 | **briefing** | Après une absence : synthèse de ce qui s'est passé sur les canaux suivis | Slack, mail |
 | **debrief** | En fin de journée : transforme les événements en notes structurées (daily, topics) | conversation, vault |
