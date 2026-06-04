@@ -181,38 +181,40 @@ git switch -c chore/translate-to-english   # depuis main, propre et synchro
 > Ordre = du moins risqué (prose pure, aucun test) au plus risqué (mécanisme de locales + tests à
 > rendre agnostiques). Un lot = un commit. **Suite verte obligatoire avant chaque commit.**
 
-- **Lot 0 — Mécanisme de locales (TDD, le cœur technique)** : concevoir et coder la sélection de
-  langue des artefacts générés. Étapes : (a) choisir la forme (`templates/<lang>/` recommandé pour
-  la prose longue : constitution + skills + démo) ; (b) câbler `--lang` → locale (défaut `en`,
-  fallback `en` si inconnu) dans `bootstrap.mjs` via un helper pur **testé** (ex. `resolveLocale`) ;
-  (c) tests **structurels** (la locale choisie pointe le bon dossier, fallback OK) — pas de prose
-  assertée. Tant que la locale `en` n'existe pas encore, `fr` reste la seule peuplée : ne pas
-  casser l'existant.
-- **Lot 1 — Docs publics statiques méta (A, EN unique)** : README, SETUP, CONNECTORS, `.env.example`.
-  Prose pure, zéro impact test. Gros morceau (README). *Commit : `docs: translate generator docs to English`.*
-- **Lot 2 — Amorce + constitution (A)** : `CLAUDE.md` (amorce → **EN unique**, garder marqueur).
-  `CLAUDE.md.template` → **locale `en`** créée à partir de la trad EN ; l'actuel FR déplacé en
-  locale `fr`. Préserver placeholders `{{…}}`. `claude-md.test.mjs` rendu agnostique.
-- **Lot 3 — Skills (B, localisés)** : produire la locale `en` des 7 SKILL.md + EXAMPLES.md (+
-  descriptions frontmatter) ; l'actuel FR → locale `fr`. Vérifier qu'aucun test ne fige la prose.
-- **Lot 4 — ADRs RAG (C, EN unique)** : `rag/docs/adr/*` + renommage slugs + liens croisés.
-- **Lot 5 — Code scripts + tests agnostiques (C+D, EN unique)** : `bootstrap.mjs`, `scripts/**`.
-  Pour CHAQUE fichier : traduire commentaires/strings EN, puis **rendre le test agnostique**
-  (red→green : casser l'assert FR figé → le réécrire structurel → vert). Sous-lots par dossier si
-  trop gros.
-- **Lot 6 — Moteur RAG + tests agnostiques (C+D, EN unique)** : `rag/src/**`. Idem, par groupe de
-  modules. Suite `cd rag && npm test` verte.
-- **Lot 7 — Vault de démo (E, localisé)** : produire la locale `en` du contenu généré par
-  `scripts/lib/example-notes.mjs` (source de vérité) ; l'actuel FR → locale `fr`. Renommer les
-  slugs **dans chaque locale** (`la-force`→`the-force`, etc.). `example-notes.test.mjs` agnostique
-  (asserte la structure : N notes, frontmatter présent, slugs attendus — pas la prose).
-- **Lot 8 — Interne mainteneur (E, EN unique)** : `maintainers/**`, `DEVELOPING.md`, **et ce plan**.
-  En dernier (méta).
-- **Lot 9 — Final** : relire, suite complète verte (harnais `node --test scripts/lib/*.test.mjs
-  scripts/*.test.mjs` + `cd rag && npm test` + `node --check bootstrap.mjs` + JSON templates
-  valides), **E2E par langue** (`--lang en` ET `--lang fr` → cerveau cohérent), `grep` final des
-  accents FR résiduels **hors locale `fr`**, commit de clôture. `STATUT` → ✅ LIVRÉ, PR, et
-  envisager un tag `V2` (premier repo EN publiable).
+- [ ] **Prérequis — branche dédiée** `chore/translate-to-english` créée depuis `main` (cf. §2bis).
+- [ ] **Lot 0 — Mécanisme de locales (TDD, le cœur technique)** : sélection de langue des artefacts
+      générés.
+  - [ ] (a) choisir la forme (`templates/<lang>/` recommandé pour la prose longue : constitution +
+        skills + démo) ;
+  - [ ] (b) câbler `--lang` → locale (défaut `en`, fallback `en` si inconnu) dans `bootstrap.mjs`
+        via un helper pur **testé** (ex. `resolveLocale`) ;
+  - [ ] (c) tests **structurels** (la locale choisie pointe le bon dossier, fallback OK) — pas de
+        prose assertée. Tant que `en` n'est pas peuplée, `fr` reste seule : ne pas casser l'existant.
+- [ ] **Lot 1 — Docs publics statiques méta (A, EN unique)** : README, SETUP, CONNECTORS,
+      `.env.example`. Prose pure, zéro impact test. Gros morceau (README).
+      *Commit : `docs: translate generator docs to English`.*
+- [ ] **Lot 2 — Amorce + constitution (A)** : `CLAUDE.md` (amorce → **EN unique**, garder marqueur) ;
+      `CLAUDE.md.template` → **locale `en`** (trad EN) + l'actuel FR déplacé en **locale `fr`** ;
+      placeholders `{{…}}` préservés ; `claude-md.test.mjs` rendu agnostique.
+- [ ] **Lot 3 — Skills (B, localisés)** : locale `en` des 7 SKILL.md + EXAMPLES.md (+ descriptions
+      frontmatter) ; l'actuel FR → locale `fr` ; aucun test ne fige la prose.
+- [ ] **Lot 4 — ADRs RAG (C, EN unique)** : `rag/docs/adr/*` + renommage slugs + liens croisés.
+- [ ] **Lot 5 — Code scripts + tests agnostiques (C+D, EN unique)** : `bootstrap.mjs`, `scripts/**`.
+      Par fichier : traduire commentaires/strings EN, puis **rendre le test agnostique** (red→green :
+      casser l'assert FR figé → réécrire structurel → vert). Sous-lots par dossier si trop gros.
+- [ ] **Lot 6 — Moteur RAG + tests agnostiques (C+D, EN unique)** : `rag/src/**`, par groupe de
+      modules. Suite `cd rag && npm test` verte.
+- [ ] **Lot 7 — Vault de démo (E, localisé)** : locale `en` du contenu généré par
+      `scripts/lib/example-notes.mjs` (source de vérité) ; l'actuel FR → locale `fr` ; renommer les
+      slugs **dans chaque locale** (`la-force`→`the-force`, etc.) ; `example-notes.test.mjs`
+      agnostique (asserte la structure, pas la prose).
+- [ ] **Lot 8 — Interne mainteneur (E, EN unique)** : `maintainers/**`, `DEVELOPING.md`, **et ce
+      plan**. En dernier (méta).
+- [ ] **Lot 9 — Final** : suite complète verte (harnais `node --test scripts/lib/*.test.mjs
+      scripts/*.test.mjs` + `cd rag && npm test` + `node --check bootstrap.mjs` + JSON templates
+      valides) ; **E2E par langue** (`--lang en` ET `--lang fr`) ; `grep` final des accents FR
+      résiduels **hors locale `fr`** ; commit de clôture ; `STATUT` → ✅ LIVRÉ ; PR ; envisager un
+      tag `V2` (premier repo EN publiable).
 
 ---
 
