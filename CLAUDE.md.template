@@ -177,6 +177,30 @@ Question
 
 **Règle** : ne pas lancer de sync sources si la question porte sur de l'historique — le vault suffit.
 
+### Outillage — outils natifs, JAMAIS de Bash pour sonder le vault ou traiter du texte
+
+Ce cerveau tourne souvent dans **Claude Desktop (onglet Code)**, où **chaque commande Bash
+redéclenche une demande d'autorisation** — et où les commandes **composées ou risquées**
+(`cd … && mkdir …`, `python3 -c "…"` multiligne, `#` dans un argument) sont **refusées d'office**
+(pas de bouton « Always allow ») : l'utilisateur ne *peut pas* les pré-autoriser. À l'inverse, les
+**outils natifs** `Read`/`Write`/`Edit`/`Glob`/`Grep` et les outils MCP `vault-rag` sont
+**pré-autorisés et silencieux**. Donc, **par défaut, n'utilise jamais Bash** pour inspecter le
+vault ou manipuler du contenu — utilise l'outil natif équivalent :
+
+| Besoin | ✅ Outil natif (silencieux) | ❌ Bash (prompt à chaque fois, parfois non-autorisable) |
+|---|---|---|
+| Lister / trouver des fichiers | `Glob` | `ls`, `find` |
+| Tester si un fichier/dossier existe | `Glob` ou `Read` | `test -f`, `[ -e … ]` |
+| Lire une note ou un résultat déporté (`…/tool-results/…`) | `Read` | `cat`, `head`, `python3 -c "open(...)"` |
+| Chercher dans le vault | `search_vault` (RAG) ou `Grep` | `grep` |
+| Créer / écrire un fichier | `Write` / `Edit` (créent les dossiers parents) | `mkdir -p`, `echo > …`, `>>` |
+| Découper / résumer un contenu | **par raisonnement** (tu es un LLM) | `awk`, `sed`, `jq`, `python3 -c` |
+
+Bash reste réservé au strict nécessaire **sans** équivalent natif (et au git **lecture seule** :
+`status`/`log`/`diff`). Pour tout le reste — découverte de l'état du vault avant un fan-out,
+relecture d'un transcript déporté, slicing d'un contenu — **outils natifs uniquement**. Ne
+compose jamais `cd … &&` avec une écriture.
+
 ### Backlogs (`vault/backlog/`)
 
 À chaque ingestion de données externes, croiser avec `vault/backlog/*.md` :
