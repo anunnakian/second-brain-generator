@@ -8,6 +8,10 @@
 //   STUB_MODE=success  (défaut) handshake complet
 //            =silent   ne répond jamais → provoque un timeout côté smoke-test
 //            =crash    se termine (code 1) dès la 1re requête → serveur qui meurt
+//   STUB_SEARCH=sourced (défaut) tools/call renvoie un texte qui cite une source
+//                                vault (« **Path:** `vault/…` ») → probe PASS
+//              =norag             renvoie « Aucun résultat trouvé dans le vault. »
+//                                (pas de slash) → probe FAIL (RAG vide / down)
 // ─────────────────────────────────────────────────────────────────────────────
 import { stdin, stdout, env, exit } from "node:process";
 
@@ -69,6 +73,18 @@ function handle(line) {
         result: { tools: TOOLS.map((name) => ({ name })) },
       });
       break;
+    case "tools/call": {
+      const text =
+        (env.STUB_SEARCH ?? "sourced") === "norag"
+          ? "Aucun résultat trouvé dans le vault."
+          : "Résultat 1\n**Path:** `vault/decisions/0001-exemple.md`\nExtrait pertinent…";
+      send({
+        jsonrpc: "2.0",
+        id: msg.id,
+        result: { content: [{ type: "text", text }] },
+      });
+      break;
+    }
     default:
       break;
   }

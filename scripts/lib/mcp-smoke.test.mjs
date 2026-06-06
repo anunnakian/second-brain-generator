@@ -54,6 +54,37 @@ test("timeout : serveur muet → ok=false, error timeout", async () => {
   assert.match(res.error ?? "", /timeout/i);
 });
 
+test("probe sourcé : search_vault cite une source du vault → ok=true, probeText matche /vault\\//", async () => {
+  const res = await smokeTestMcp({
+    command: process.execPath,
+    args: [STUB],
+    cwd: HERE,
+    expectTools: EXPECTED,
+    timeoutMs: 5000,
+    probe: { tool: "search_vault", args: { query: "démo" }, expectText: /vault\// },
+  });
+
+  assert.equal(res.ok, true);
+  assert.match(res.probeText ?? "", /vault\//); // la réponse cite bien une source du vault
+  assert.equal(res.error, undefined);
+});
+
+test("probe non sourcé : RAG vide/down → ok=false, error nomme l'absence de source", async () => {
+  const res = await smokeTestMcp({
+    command: process.execPath,
+    args: [STUB],
+    cwd: HERE,
+    expectTools: EXPECTED,
+    timeoutMs: 5000,
+    env: { STUB_SEARCH: "norag" }, // « Aucun résultat trouvé dans le vault. »
+    probe: { tool: "search_vault", args: { query: "démo" }, expectText: /vault\// },
+  });
+
+  assert.equal(res.ok, false);
+  assert.ok(res.tools.includes("search_vault")); // structurel OK, c'est le probe qui échoue
+  assert.match(res.error ?? "", /source/i); // l'erreur nomme l'absence de source
+});
+
 test("serveur qui meurt : détecté vite, ok=false, error ≠ timeout", async () => {
   const res = await smokeTestMcp({
     command: process.execPath,
