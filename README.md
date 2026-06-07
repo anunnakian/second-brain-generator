@@ -145,6 +145,34 @@ fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 ges
    ajouter un plus tard.
 3. **Rouvrir Claude Code** dans le **dossier cerveau créé** (ex. `~/second-brain`) — active le moteur
    de recherche. (Le launcher, lui, peut être réutilisé pour un autre cerveau ou supprimé.)
+   👉 **C'est l'étape la plus souvent ratée sur Claude Desktop — voir juste en dessous.**
+
+#### 🖱️ Sur Claude Desktop (onglet Code) : ouvrir ton cerveau au BON endroit
+
+C'est **le** piège n°1, et il n'a rien d'évident. Ton cerveau ne « marche » que si la conversation
+est **rootée dans son dossier**. Ouvrir une *New session* ne suffit pas : par défaut elle réutilise
+ton dernier dossier (souvent un `tmp`), et Claude **invente alors des réponses** au lieu d'interroger
+ton vault.
+
+Le réglage se fait avec **la rangée de petites puces en bas, juste au-dessus du champ de saisie** :
+
+![La rangée de puces Local · dossier · ➕ en bas de la nouvelle session](docs/img/desktop-folder-chips.png)
+
+1. Ouvre une **New session**.
+2. **Clique sur la PUCE DOSSIER** (celle qui affiche `tmp` ou un autre nom) — ⚠️ **PAS** le bouton
+   `➕` « Add another folder » : lui *ajoute* un dossier **sans remplacer** la racine, et le cerveau
+   ne se charge pas. C'est le piège classique.
+3. Un menu **« Recent »** s'ouvre, avec un **✓ sur le dossier courant**. **Clique sur le nom de ton
+   cerveau** (ex. `second-brain`). S'il n'est pas listé, prends **« Open folder… »** tout en bas.
+
+![Le menu Recent : cliquer le nom du cerveau pour que le ✓ s'y déplace](docs/img/desktop-recent-menu.png)
+
+4. Le **✓ saute sur ton cerveau**, et la puce du bas affiche son nom (plus de `tmp`). ✅
+5. **Vérifie d'un mot** : tape `pwd` comme tout premier message → ça doit renvoyer le chemin de ton
+   cerveau, **pas** un `…/tmp`.
+
+> ⌨️ **En terminal (CLI)**, c'est imparable : `cd ~/second-brain && claude` — la session est rootée
+> au bon endroit, sans ambiguïté.
 
 Une fois installé, essaie par exemple :
 

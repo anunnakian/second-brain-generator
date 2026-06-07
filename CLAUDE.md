@@ -114,10 +114,16 @@ node installer.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
    **Donne TOUJOURS les DEUX procédures, dans cet ordre (le mode clic D'ABORD — c'est la cible
    principale, des non-dev sur Claude Desktop) :**
    - **🖱️ Si tu utilises Claude Desktop (onglet Code) — le cas le plus courant** : étapes **cliquables**,
-     pas de terminal. « **Ouvre une NOUVELLE conversation** (bouton *New* / nouvelle session), puis
-     **clique sur “Select folder”** et choisis le dossier de ton cerveau (`<emplacement-parent>/<nom>`)
-     **AVANT** d'écrire ton premier message. » Insiste : **basculer le dossier d'une conversation déjà
-     ouverte ne suffit PAS**.
+     pas de terminal. « **Ouvre une NOUVELLE conversation** (bouton *New session*). Puis, en bas, juste
+     au-dessus du champ de saisie, tu vois une **rangée de petites puces** : `💻 Local`, une **puce
+     dossier** (souvent `tmp`), et un bouton `➕`. **Clique sur la PUCE DOSSIER** (pas sur le `➕`) : un
+     menu “Recent” s'ouvre, avec un **✓ sur le dossier courant**. **Clique sur le dossier de ton cerveau
+     (`<nom>`)** dans la liste — s'il n'y est pas, prends **“Open folder…”** tout en bas et navigue
+     jusqu'à `<emplacement-parent>/<nom>`. Le **✓ doit sauter sur le nom de ton cerveau**, et la puce du
+     bas afficher `<nom>` (plus aucun `tmp`). **ENSUITE seulement**, écris ton premier message. »
+     ⚠️ **Préviens explicitement du piège** : le bouton **`➕` “Add another folder” N'EST PAS la bonne
+     porte** — il *ajoute* un dossier **sans remplacer** la racine, donc le cerveau ne se charge pas. Et
+     **basculer le dossier d'une conversation déjà ouverte ne suffit PAS** : il faut une conversation neuve.
    - **⌨️ Si tu es à l'aise avec le terminal (CLI)** : `cd <emplacement-parent>/<nom> && claude`.
    Le détail technique ci-dessous est pour TOI ; ce que l'utilisateur doit retenir tient en ces deux
    procédures voyantes, clic en premier.
@@ -130,8 +136,10 @@ node installer.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
    committent jamais), liens cassés, demandes d'autorisation à répétition. **⚠️ Basculer le
    dossier d'une conversation existante ne suffit PAS** (ça ne déplace pas le répertoire de
    travail) — il faut une **nouvelle conversation** :
-   - **Claude Desktop (onglet Code)** : ouvre une **nouvelle conversation** → **« Select folder »
-     → le dossier du cerveau (`<emplacement-parent>/<nom>`) AVANT** d'écrire le premier message.
+   - **Claude Desktop (onglet Code)** : ouvre une **nouvelle conversation** → en bas, **clique la puce
+     dossier** (rangée `💻 Local · 📁<dossier> · ➕`, juste au-dessus du champ) → dans le menu “Recent”,
+     **choisis le cerveau** (ou “Open folder…” → `<emplacement-parent>/<nom>`) **AVANT** le premier
+     message. **Ne PAS** utiliser le `➕` “Add another folder” (il ajoute sans remplacer la racine).
    - **CLI** : `cd <emplacement-parent>/<nom>` puis lancer `claude` **depuis** ce dossier.
    - **Vérifie en un mot** : tape `pwd` en premier message — ça doit afficher le dossier du
      cerveau (PAS un dossier temporaire type `~/tmp`). Alors seulement `vault-rag`, l'auto-commit
