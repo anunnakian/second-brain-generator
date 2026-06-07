@@ -39,7 +39,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node \"{{PROJECT_ROOT}}/scripts/status-line.mjs\"",
+    "command": "{{NODE}} \"{{PROJECT_ROOT}}/scripts/status-line.mjs\"",
     "padding": 0
   },
   "hooks": {
@@ -49,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"{{PROJECT_ROOT}}/scripts/auto-commit.mjs\"",
+            "command": "{{NODE}} \"{{PROJECT_ROOT}}/scripts/auto-commit.mjs\"",
             "timeout": 30000
           }
         ]
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"{{PROJECT_ROOT}}/scripts/session-status.mjs\"",
+            "command": "{{NODE}} \"{{PROJECT_ROOT}}/scripts/session-status.mjs\"",
             "timeout": 20000
           }
         ]

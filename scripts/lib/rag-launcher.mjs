@@ -12,18 +12,35 @@
 // quelle par le bootstrap dans rag/launch.sh (POSIX) et rag/launch.cmd (Windows).
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Bloc PATH self-heal POSIX réutilisable (RAG comme hooks node). Prepend les
+// emplacements usuels de node AU PATH, mais uniquement s'ils existent (`[ -d ]`)
+// → portable, aucun chemin machine baké. Pas de newline final : composé par
+// l'appelant avec sa commande (`exec npx …` ou `exec node "$@"`).
+export function pathPrependSh() {
+  return `add() { [ -d "$1" ] && PATH="$1:$PATH"; }
+add /usr/local/bin
+add /opt/homebrew/bin
+add "$HOME/.asdf/shims"
+for d in "$HOME"/.nvm/versions/node/*/bin; do add "$d"; done
+export PATH`;
+}
+
+// Équivalent Windows du bloc self-heal PATH (cf. pathPrependSh). On ne prepende
+// que les dossiers réellement présents (`if exist`). Pas de newline final.
+export function pathPrependCmd() {
+  return `if exist "%ProgramFiles%\\nodejs" set "PATH=%ProgramFiles%\\nodejs;%PATH%"
+if exist "%ProgramFiles(x86)%\\nodejs" set "PATH=%ProgramFiles(x86)%\\nodejs;%PATH%"
+if exist "%APPDATA%\\npm" set "PATH=%APPDATA%\\npm;%PATH%"
+if exist "%NVM_SYMLINK%" set "PATH=%NVM_SYMLINK%;%PATH%"`;
+}
+
 export function buildShLauncher() {
   return `#!/bin/sh
 # Lanceur self-heal du serveur RAG (macOS/Linux). Généré par le bootstrap.
 # Rajoute les emplacements usuels de node au PATH avant de démarrer le serveur,
 # pour que npx soit trouvé même si l'app a un PATH minimal. Portable : on ne
 # prepende que les dossiers existants (aucun chemin baké).
-add() { [ -d "$1" ] && PATH="$1:$PATH"; }
-add /usr/local/bin
-add /opt/homebrew/bin
-add "$HOME/.asdf/shims"
-for d in "$HOME"/.nvm/versions/node/*/bin; do add "$d"; done
-export PATH
+${pathPrependSh()}
 exec npx tsx rag/src/index.ts
 `;
 }
@@ -34,12 +51,55 @@ REM Lanceur self-heal du serveur RAG (Windows). Généré par le bootstrap.
 REM Rajoute les emplacements usuels de node au PATH avant de démarrer le serveur,
 REM pour que npx soit trouvé même si l'app a un PATH minimal. On ne prepende que
 REM les dossiers existants (aucun chemin baké).
-if exist "%ProgramFiles%\\nodejs" set "PATH=%ProgramFiles%\\nodejs;%PATH%"
-if exist "%ProgramFiles(x86)%\\nodejs" set "PATH=%ProgramFiles(x86)%\\nodejs;%PATH%"
-if exist "%APPDATA%\\npm" set "PATH=%APPDATA%\\npm;%PATH%"
-if exist "%NVM_SYMLINK%" set "PATH=%NVM_SYMLINK%;%PATH%"
+${pathPrependCmd()}
 npx tsx rag/src/index.ts
 `;
+}
+
+// Lanceur `node` générique pour les HOOKS (statusLine, auto-commit, session-start).
+// Même cause racine que le RAG : l'app desktop lance les hooks avec un PATH minimal
+// (mesuré : /usr/local/bin, sans shims nvm/asdf ni /opt/homebrew/bin) → un `node`
+// installé via nvm/Homebrew est introuvable et le hook échoue EN SILENCE (le plus
+// grave : l'auto-commit ne tourne jamais). On rejoue le self-heal éprouvé du RAG,
+// puis on relaie node + tous les arguments du hook (`exec node "$@"`).
+export function buildNodeRunnerSh() {
+  return `#!/bin/sh
+# Lanceur self-heal de node pour les hooks (macOS/Linux). Généré par le bootstrap.
+# Rajoute les emplacements usuels de node au PATH avant d'invoquer node, pour que
+# les hooks tournent même si l'app desktop a un PATH minimal (node via nvm/Homebrew
+# sinon introuvable → hooks muets, dont l'auto-commit). On ne prepende que les
+# dossiers existants (aucun chemin baké). Relaie node + tous les args du hook.
+${pathPrependSh()}
+exec node "$@"
+`;
+}
+
+export function buildNodeRunnerCmd() {
+  return `@echo off
+REM Lanceur self-heal de node pour les hooks (Windows). Généré par le bootstrap.
+REM Rajoute les emplacements usuels de node au PATH avant d'invoquer node, pour que
+REM les hooks tournent même si l'app desktop a un PATH minimal. On ne prepende que
+REM les dossiers existants (aucun chemin baké). Relaie node + tous les args du hook.
+${pathPrependCmd()}
+node %*
+`;
+}
+
+// Construit la valeur de remplacement {{NODE}} des commandes de hook dans
+// .claude/settings.json (statusLine, PostToolUse, SessionStart). Le résultat est
+// inséré tel quel dans une string JSON → les guillemets sont déjà échappés (\").
+// Pointe en chemin ABSOLU vers le lanceur self-heal run-node.* adapté à l'OS (le
+// cwd du hook n'est pas garanti côté app desktop). On bake le chemin résolu (pas
+// de {{PROJECT_ROOT}} imbriqué) → aucune dépendance à l'ordre des substitutions.
+// projectRootPosix = chemin du cerveau normalisé en slashes « / ».
+export function nodeHookCommand(platform, projectRootPosix) {
+  if (platform === "win32") {
+    // En JSON, chaque séparateur de chemin Windows doit être un backslash échappé
+    // (\\). split("/").join("\\\\") produit littéralement « \\ » dans le texte JSON.
+    const win = projectRootPosix.split("/").join("\\\\");
+    return `cmd /c \\"${win}\\\\scripts\\\\run-node.cmd\\"`;
+  }
+  return `/bin/sh \\"${projectRootPosix}/scripts/run-node.sh\\"`;
 }
 
 // Réécrit la commande du serveur « vault-rag » dans un objet .mcp.json pour qu'il

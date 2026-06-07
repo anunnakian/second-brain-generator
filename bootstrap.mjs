@@ -30,7 +30,14 @@ import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
 import { isBootstrapStub } from "./scripts/lib/claude-md.mjs";
 import { parseAnswers, resolveTargetDir } from "./scripts/lib/bootstrap-args.mjs";
 import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
-import { buildShLauncher, buildCmdLauncher, applyRagLauncher } from "./scripts/lib/rag-launcher.mjs";
+import {
+  buildShLauncher,
+  buildCmdLauncher,
+  applyRagLauncher,
+  buildNodeRunnerSh,
+  buildNodeRunnerCmd,
+  nodeHookCommand,
+} from "./scripts/lib/rag-launcher.mjs";
 import { DEMO_QUESTION as DEMO, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
 
 // ROOT = le LAUNCHER (ce dépôt cloné). Source en LECTURE SEULE, réutilisable :
@@ -205,6 +212,13 @@ if (envHasKey) {
 // ── 4. Génération des fichiers ──────────────────────────────────────────────
 step("4/9 · Génération des fichiers personnalisés");
 const replacements = {
+  // {{NODE}} = préfixe des commandes de hook (cf. .claude/settings.json.template).
+  // Pointe vers le lanceur self-heal run-node.* (généré plus bas) au lieu de `node`
+  // en direct : l'app desktop lance les hooks avec un PATH minimal où un node
+  // installé via nvm/Homebrew est introuvable → hooks muets (dont l'auto-commit).
+  // Le chemin du cerveau y est déjà baké, donc ne contient PAS {{PROJECT_ROOT}}
+  // (aucune dépendance à l'ordre des substitutions ci-dessous).
+  "{{NODE}}": nodeHookCommand(process.platform, toPosix(TARGET)),
   "{{PROJECT_ROOT}}": toPosix(TARGET),
   "{{PROJECT_NAME}}": projectName,
   "{{OWNER_NAME}}": ownerName,
@@ -246,6 +260,35 @@ writeFileSync(join(TARGET, "rag", "launch.cmd"), buildCmdLauncher());
   const mcp = applyRagLauncher(JSON.parse(readFileSync(mcpPath, "utf8")), process.platform);
   writeFileSync(mcpPath, JSON.stringify(mcp, null, 2) + "\n");
   ok("lanceurs RAG self-heal générés (launch.sh + launch.cmd), .mcp.json adapté à l'OS");
+}
+
+// Lanceurs self-heal de node POUR LES HOOKS (même cause racine que le RAG : PATH
+// minimal de l'app desktop → node via nvm/Homebrew introuvable → hooks muets, dont
+// l'auto-commit). settings.json (généré ci-dessus) appelle ces lanceurs via {{NODE}}
+// au lieu de `node` en direct. Même source de vérité que le RAG : scripts/lib/rag-launcher.mjs.
+const runNodeSh = join(TARGET, "scripts", "run-node.sh");
+mkdirSync(dirname(runNodeSh), { recursive: true });
+writeFileSync(runNodeSh, buildNodeRunnerSh());
+writeFileSync(join(TARGET, "scripts", "run-node.cmd"), buildNodeRunnerCmd());
+ok("lanceurs self-heal node pour les hooks générés (run-node.sh + run-node.cmd)");
+
+// Smoke-test du lanceur (principe « le script juge lui-même ») : si run-node.sh ne
+// retrouve pas node, les hooks resteront muets → échec d'install BRUYANT, pas un
+// warning. Sur Windows on teste run-node.cmd. Argument anodin : -e "process.exit(0)".
+{
+  const runner =
+    process.platform === "win32"
+      ? { command: "cmd", args: ["/c", join(TARGET, "scripts", "run-node.cmd")] }
+      : { command: "/bin/sh", args: [runNodeSh] };
+  const smoke = run(runner.command, [...runner.args, "-e", "process.exit(0)"], { cwd: TARGET });
+  if (smoke.ok) ok("smoke-test run-node OK — node est résolu par le lanceur de hooks");
+  else {
+    err(
+      "run-node n'a pas pu lancer node (PATH self-heal insuffisant) → les hooks seraient " +
+        "muets (auto-commit cassé). Vérifie l'installation de node. Détail :\n" + smoke.out,
+    );
+    process.exit(1);
+  }
 }
 
 // .env

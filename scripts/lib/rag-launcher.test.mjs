@@ -1,7 +1,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildShLauncher, buildCmdLauncher, applyRagLauncher } from "./rag-launcher.mjs";
+import {
+  buildShLauncher,
+  buildCmdLauncher,
+  applyRagLauncher,
+  buildNodeRunnerSh,
+  buildNodeRunnerCmd,
+  nodeHookCommand,
+} from "./rag-launcher.mjs";
+
+// Reproduit la substitution texte de bootstrap.mjs (gen) : .split().join() par clé.
+function substitute(tpl, reps) {
+  let out = tpl;
+  for (const [k, v] of Object.entries(reps)) out = out.split(k).join(v);
+  return out;
+}
 
 test("buildShLauncher : shebang sh + lance le serveur RAG via npx tsx", () => {
   const sh = buildShLauncher();
@@ -21,6 +35,46 @@ test("buildCmdLauncher : @echo off + self-heal Windows + lance le serveur RAG", 
   assert.match(cmd, /@echo off/);
   assert.match(cmd, /%ProgramFiles%\\nodejs/); // installeur officiel Windows
   assert.match(cmd, /npx tsx rag\/src\/index\.ts/);
+});
+
+test("buildNodeRunnerSh : self-heal du PATH puis exec node sur les arguments du hook", () => {
+  const sh = buildNodeRunnerSh();
+  assert.match(sh, /^#!\/bin\/sh/);
+  assert.match(sh, /\/opt\/homebrew\/bin/); // même self-heal que le RAG (Homebrew Apple Silicon)
+  assert.match(sh, /\.nvm\/versions\/node\/\*\/bin/); // nvm (le cas du Mac d'Achille)
+  assert.match(sh, /exec node "\$@"/); // relaie node + tous les args du hook
+});
+
+test("buildNodeRunnerCmd : @echo off + self-heal Windows puis node sur les arguments", () => {
+  const cmd = buildNodeRunnerCmd();
+  assert.match(cmd, /@echo off/);
+  assert.match(cmd, /%ProgramFiles%\\nodejs/); // même self-heal Windows que le RAG
+  assert.match(cmd, /node %\*/); // relaie node + tous les args du hook
+});
+
+test("nodeHookCommand posix : substitué dans le template JSON → commande parseable via run-node.sh", () => {
+  // Template miroir de .claude/settings.json.template (statusLine) : {{NODE}} suivi
+  // du chemin du script .mjs, le tout dans une string JSON (guillemets échappés).
+  const tpl = '{ "command": "{{NODE}} \\"{{PROJECT_ROOT}}/scripts/status-line.mjs\\"" }';
+  const out = substitute(tpl, {
+    "{{NODE}}": nodeHookCommand("darwin", "/Users/x/brain"),
+    "{{PROJECT_ROOT}}": "/Users/x/brain",
+  });
+  const parsed = JSON.parse(out); // doit rester du JSON valide
+  assert.equal(
+    parsed.command,
+    '/bin/sh "/Users/x/brain/scripts/run-node.sh" "/Users/x/brain/scripts/status-line.mjs"',
+  );
+});
+
+test("nodeHookCommand win32 : substitué → JSON valide, chemins backslash vers run-node.cmd", () => {
+  const tpl = '{ "command": "{{NODE}} \\"{{PROJECT_ROOT}}/scripts/auto-commit.mjs\\"" }';
+  const out = substitute(tpl, {
+    "{{NODE}}": nodeHookCommand("win32", "C:/Users/x/brain"),
+    "{{PROJECT_ROOT}}": "C:/Users/x/brain",
+  });
+  const parsed = JSON.parse(out);
+  assert.match(parsed.command, /^cmd \/c "C:\\Users\\x\\brain\\scripts\\run-node\.cmd"/);
 });
 
 test("applyRagLauncher : réécrit la commande vault-rag selon l'OS, préserve cwd/env", () => {
