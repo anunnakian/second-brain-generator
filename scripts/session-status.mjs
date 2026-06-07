@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// session-status.mjs — calcule 2 lignes de statut de démarrage (repo + RAG) et
+// session-status.mjs — calcule 2-3 lignes de statut de démarrage (repo + RAG) et
 // les émet via le champ JSON `systemMessage` du hook SessionStart, ce qui les
-// AFFICHE DIRECTEMENT sur le terminal, sans dépendre de Claude pour les recopier.
+// AFFICHE DIRECTEMENT sur le terminal CLI, sans dépendre de Claude pour les recopier.
 // Démarrage déterministe : tout le calcul ET l'affichage sont ici.
+// NB : `systemMessage` n'est PAS rendu par l'onglet Code de Claude Desktop — c'est
+// `statusLine` (cf. scripts/status-line.mjs) qui couvre l'affichage déterministe
+// côté Desktop et le statut persistant. Le hook garde en plus son effet de bord :
+// le `git pull --rebase` de synchro au démarrage (que statusLine ne fait JAMAIS).
 //
 // Appelé par le hook SessionStart (cf. .claude/settings.json).
 // Multi-OS : pur Node, aucune dépendance bash/jq/sqlite3-CLI.
