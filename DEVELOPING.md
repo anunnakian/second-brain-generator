@@ -45,6 +45,26 @@ dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à C
 (`parseAnswers`, `resolveTargetDir`) et `scripts/lib/tracked-files.mjs` (`parseLsFilesZ`,
 `filterCopyable`) en sont les briques pures testées.
 
+### Note de design — hooks via `run-node.*` (PATH minimal de l'app desktop)
+
+L'onglet Code de Claude Desktop lance les **hooks** (et les serveurs MCP) dans un shell
+**non-interactif à PATH minimal** — mesuré sur un Mac nu : `PATH=/usr/local/bin`, sans les shims
+`nvm`/`asdf` ni `/opt/homebrew/bin`. Si `node` a été installé via **nvm** ou Homebrew, il est alors
+**introuvable** : un hook qui appelle `node …` en direct **échoue EN SILENCE**. Le plus grave —
+l'**auto-commit** ne tourne jamais → les notes s'écrivent sur disque mais ne sont jamais versionnées
+(la promesse centrale, cassée sans bruit). C'est l'anti-pattern « échec silencieux » que le projet
+combat.
+
+**Fix.** Les 3 commandes de hook de `.claude/settings.json.template` passent par `{{NODE}}` (résolu
+par le bootstrap selon l'OS) au lieu de `node` en direct → un lanceur **self-heal** `scripts/run-node.*`
+qui rejoue le même prepend PATH éprouvé que le serveur RAG (`scripts/lib/rag-launcher.mjs`,
+`buildNodeRunnerSh/Cmd`), puis `exec node "$@"`. Portable, **aucun chemin machine baké** (on ne
+prepende que les dossiers existants, glob nvm inclus). Le bootstrap **smoke-teste** `run-node` à
+l'install (`-e "process.exit(0)"`) : un échec = **install bruyante** (sortie non-zéro), pas un warning.
+En complément, `scripts/session-status.mjs` **crie au démarrage** (via `scripts/lib/repo-status.mjs`)
+si des notes du vault sont restées **non committées** — transformant un futur échec d'auto-commit en
+alerte visible plutôt qu'en silence.
+
 ## Règles de dev
 
 1. **Commits manuels.** Pas de hook auto-commit dans ce repo (il n'existe que dans

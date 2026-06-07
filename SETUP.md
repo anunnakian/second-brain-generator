@@ -12,6 +12,12 @@
 > **Multi-OS** : macOS, Linux et Windows (cmd ou PowerShell). L'installateur et les hooks
 > sont en Node — pas besoin de bash, `jq` ni `sqlite3`. Node est le seul prérequis runtime.
 
+> ⚙️ **Node via `nvm`/Homebrew ? C'est géré.** L'app Claude Desktop lance les hooks avec un PATH
+> minimal où un `node` installé par `nvm` ou Homebrew serait introuvable (les hooks tomberaient
+> alors **en silence** — l'auto-commit ne sauvegarderait plus tes notes). Le bootstrap génère un
+> petit lanceur `scripts/run-node.*` qui retrouve `node` tout seul avant chaque hook, et **vérifie
+> à l'install** qu'il y arrive (sinon l'install échoue bruyamment). Tu n'as rien à configurer.
+
 > 🔒 **Confidentialité** : sur le **palier gratuit**, Gemini peut utiliser tes contenus pour
 > améliorer ses produits (relecture humaine possible). Pour un vault **confidentiel**, active la
 > **facturation** (palier payant). Côté Claude, pense aussi à désactiver le partage pour
