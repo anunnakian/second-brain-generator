@@ -108,11 +108,19 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
    discret.** C'est l'étape la plus souvent ratée et sans elle **le cerveau ne marche pas**. Tu dois
    l'afficher comme un **bloc d'alerte impossible à manquer** : un titre en **MAJUSCULES encadré de
    ⚠️** (p. ex. `## ⚠️ DERNIÈRE ÉTAPE — INDISPENSABLE — OUVRE UNE NOUVELLE CONVERSATION ⚠️`), suivi
-   d'une consigne **courte, en gras, à l'impératif**, qui dit explicitement à la personne :
-   « **FERME cette conversation et ouvre-en une NOUVELLE dans le dossier de ton cerveau
-   (`<emplacement-parent>/<nom>`)** » — pas un paragraphe noyé dans le reste. Mets ce bloc **en TÊTE
-   de ton message final** (avant le tableau récap, pas après). Le détail technique ci-dessous est
-   pour TOI ; ce que l'utilisateur doit retenir tient en une phrase forte et voyante.
+   d'une consigne **courte, en gras, à l'impératif** : « **FERME cette conversation et ouvre-en une
+   NOUVELLE dans le dossier de ton cerveau (`<emplacement-parent>/<nom>`)** ». Mets ce bloc **en TÊTE
+   de ton message final** (avant le tableau récap, pas après).
+   **Donne TOUJOURS les DEUX procédures, dans cet ordre (le mode clic D'ABORD — c'est la cible
+   principale, des non-dev sur Claude Desktop) :**
+   - **🖱️ Si tu utilises Claude Desktop (onglet Code) — le cas le plus courant** : étapes **cliquables**,
+     pas de terminal. « **Ouvre une NOUVELLE conversation** (bouton *New* / nouvelle session), puis
+     **clique sur “Select folder”** et choisis le dossier de ton cerveau (`<emplacement-parent>/<nom>`)
+     **AVANT** d'écrire ton premier message. » Insiste : **basculer le dossier d'une conversation déjà
+     ouverte ne suffit PAS**.
+   - **⌨️ Si tu es à l'aise avec le terminal (CLI)** : `cd <emplacement-parent>/<nom> && claude`.
+   Le détail technique ci-dessous est pour TOI ; ce que l'utilisateur doit retenir tient en ces deux
+   procédures voyantes, clic en premier.
    L'installation tourne dans une session dont le **répertoire de travail n'est PAS le cerveau**
    (souvent un dossier temporaire). Or Claude — CLI **comme** onglet Code de Claude Desktop —
    **fige son répertoire de travail au démarrage de la conversation** et charge `CLAUDE.md`,
