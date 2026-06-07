@@ -104,6 +104,15 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
      ```
      GitHub = cas simple ; autres plateformes = best-effort + guidage.
 3. **Ouvrir une CONVERSATION NEUVE rootée dans le cerveau** (étape critique, souvent ratée).
+   ⚠️ **PRÉSENTATION OBLIGATOIRE — ne rends JAMAIS ce geste en petit ou en sous-titre gris
+   discret.** C'est l'étape la plus souvent ratée et sans elle **le cerveau ne marche pas**. Tu dois
+   l'afficher comme un **bloc d'alerte impossible à manquer** : un titre en **MAJUSCULES encadré de
+   ⚠️** (p. ex. `## ⚠️ DERNIÈRE ÉTAPE — INDISPENSABLE — OUVRE UNE NOUVELLE CONVERSATION ⚠️`), suivi
+   d'une consigne **courte, en gras, à l'impératif**, qui dit explicitement à la personne :
+   « **FERME cette conversation et ouvre-en une NOUVELLE dans le dossier de ton cerveau
+   (`<emplacement-parent>/<nom>`)** » — pas un paragraphe noyé dans le reste. Mets ce bloc **en TÊTE
+   de ton message final** (avant le tableau récap, pas après). Le détail technique ci-dessous est
+   pour TOI ; ce que l'utilisateur doit retenir tient en une phrase forte et voyante.
    L'installation tourne dans une session dont le **répertoire de travail n'est PAS le cerveau**
    (souvent un dossier temporaire). Or Claude — CLI **comme** onglet Code de Claude Desktop —
    **fige son répertoire de travail au démarrage de la conversation** et charge `CLAUDE.md`,
