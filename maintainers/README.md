@@ -39,6 +39,12 @@
     couvre OpenAI·Azure·passerelle entreprise·Mistral·Ollama / **local**), ~2 impls à coder ; échelle
     de confidentialité par fournisseur ; au swap la base reste mais les vecteurs non (réindex).
     Concrétise 0006, ouvre la « discussion 2ᵉ embedder » du plan SPI. **Défaut à l'install = ouvert.**
+  - [`0008-lightrag-et-graph-rag-differes.md`](decisions/0008-lightrag-et-graph-rag-differes.md) —
+    **LightRAG / graph-RAG différé** (intéressant mais pas maintenant) : c'est un **autre paradigme**
+    (LLM **par chunk** à l'indexation → coût + fuite de contenu, casse la cible non-dev/privacy), pas
+    un adaptateur d'embedder → **orthogonal** au chantier en cours. Réservé à l'**Étape 7**
+    (grosse machine, opt-in, conditionnel), **à départager par eval-set FR** ; **E2GraphRAG préféré**
+    sur machine modeste. Décision de séquencement, pas un rejet.
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
   Les plans **livrés** sont déplacés dans **`plans/archived/`** ; seuls les plans encore **ouverts**
   restent à la racine de `plans/`.

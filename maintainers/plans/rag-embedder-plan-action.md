@@ -223,7 +223,10 @@
 
 - **Pré-requis :** Étapes 4 (+6) livrées et plafond persistant.
 - **Charger :** étude §3 (Qwen3 gros / Nemotron-8B), §4 (**E2GraphRAG** — la voie graphe *sans LLM par
-  chunk*, à préférer à LightRAG sur machine modeste).
+  chunk*, à préférer à LightRAG sur machine modeste) ; ADR
+  [`../decisions/0008-lightrag-et-graph-rag-differes.md`](../decisions/0008-lightrag-et-graph-rag-differes.md)
+  (le *pourquoi* du report de LightRAG / graph-RAG : LLM par chunk → coût + fuite ; à mesurer sur
+  eval-set FR ; E2GraphRAG préféré).
 - **Faire :** brancher un embedder « qualité max » (opt-in) et/ou évaluer E2GraphRAG ; **mesurer** vs le
   défaut bureautique. Réserver au profil grosse machine (pas le défaut — critères 1-4 de l'étude).
 - **Done :** profil grosse machine documenté + mesuré, **opt-in**, sans dégrader le défaut.
