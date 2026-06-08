@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { embedQuery, embedTexts, type QuotaGuard } from "./embedder.js";
+import {
+  embedQuery,
+  embedTexts,
+  GeminiEmbedder,
+  type QuotaGuard,
+} from "./embedder.js";
 
 // Espionne quel chemin de quota est consommé, sans toucher au réseau.
 class SpyGuard implements QuotaGuard {
@@ -12,6 +17,19 @@ class SpyGuard implements QuotaGuard {
     this.calls.push("priority");
   }
 }
+
+test("GeminiEmbedder expose son identité (provider/modèle/dimension) pour l'estampille", () => {
+  const embedder = new GeminiEmbedder({
+    usage: new SpyGuard(),
+    embedOne: async () => [],
+  });
+
+  assert.deepEqual(embedder.identity, {
+    providerId: "gemini",
+    model: "gemini-embedding-001",
+    dimension: 3072,
+  });
+});
 
 test("embedQuery consomme en prioritaire (jamais bloqué par l'indexation)", async () => {
   const guard = new SpyGuard();

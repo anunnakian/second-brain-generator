@@ -39,9 +39,9 @@
   - [ ] Décider le défaut — **cible privilégiée : l'adaptateur PUREMENT LOCAL** (argument produit : on n'envoie aucune donnée à un provider), **si** la mesure le permet
   - [ ] Acter (addendum ADR 0007 ou nouvel ADR) avec le *pourquoi*
 - [ ] **Étape 1 — Port `Embedder` + index sûr** 🧪 TDD *(dépend de : —)* _(… · …)_
-  - [ ] Estampille `index_meta` — round-trip (écrit à l'indexation, relu)
-  - [ ] Garde d'identité — identité divergente/absente → signal « index périmé », pas de résultats faux
-  - [ ] Extraire le port `Embedder` ; `GeminiEmbedder` implémente l'existant (comportement inchangé)
+  - [x] Estampille `index_meta` — round-trip (écrit à l'indexation, relu) _(2026-06-08 · 2ac9698)_
+  - [x] Garde d'identité — identité divergente/absente → signal « index périmé », pas de résultats faux _(2026-06-08 · 7e9fdec)_
+  - [x] Extraire le port `Embedder` ; `GeminiEmbedder` implémente l'existant (comportement inchangé) _(2026-06-08 · à venir)_
   - [ ] Injecter le port chez les 2 consommateurs (`index-manager` stampe ; `search-vault`/`index.ts` consulte le garde)
   - [ ] Point de sélection unique `createEmbedder()` (`config.ts`) — sans `switch` multi-provider
   - [ ] *(option)* `FakeEmbedder` déterministe + test

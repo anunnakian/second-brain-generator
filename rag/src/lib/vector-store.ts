@@ -2,20 +2,11 @@ import Database from "better-sqlite3";
 import { mkdirSync } from "fs";
 import { dirname } from "path";
 import { DB_PATH } from "./config.js";
+import type { EmbedderIdentity } from "./embedder.js";
+
+export type { EmbedderIdentity };
 
 let db: Database.Database | null = null;
-
-/**
- * Identité de l'embedder qui a rempli l'index — estampillée à l'indexation et
- * relue à la recherche. La **dimension** est la clé d'invalidation : deux modèles
- * de dimensions différentes produisent des vecteurs incomparables (cf. plan
- * embedder-spi §1). On stocke aussi provider+model pour un message actionnable.
- */
-export interface EmbedderIdentity {
-  providerId: string;
-  model: string;
-  dimension: number;
-}
 
 /** Crée le schéma (idempotent) sur une DB donnée — testable en in-memory. */
 export function applySchema(database: Database.Database): void {
