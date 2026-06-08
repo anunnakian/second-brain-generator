@@ -19,8 +19,9 @@
 - **Au début de chaque session**, dis à Claude : *« On attaque l'Étape N du plan
   `maintainers/plans/rag-embedder-plan-action.md` »*. Claude lit **ce fichier** + les fichiers cités
   par l'étape, et **rien d'autre n'est nécessaire**.
-- **À la fin de chaque étape**, Claude **met à jour le tableau d'avancement ci-dessous** (statut +
-  date + commit) — c'est la **mémoire qui survit aux `/clear`**.
+- **Pendant** une étape, Claude **coche les sous-cases au fil de l'eau** (tu peux suivre en direct dans
+  ce fichier). **À la fin**, il coche la case de l'étape + note _(date · commit)_ — c'est la **mémoire
+  qui survit aux `/clear`**.
 - **Discipline de dev** (étapes qui touchent au code) : **TDD obligatoire** — skill `tdd-discipline`,
   et `outside-in-diamond-tdd` pour le périmètre back-end/Hive. Commits **manuels**, conventionnels,
   co-author Claude. Baby-steps, fail-first, refactor non optionnel.
@@ -28,37 +29,78 @@
   place (Étape 1). Ne PAS lancer les leviers qualité (Étapes 6-7) **avant** que la mesure (Étape 4)
   prouve un besoin.
 
-## Tableau d'avancement (à tenir à jour entre les `/clear`)
+## Suivi — cases à cocher (monitorable en direct dans ce fichier)
 
-| Étape | Titre | Type | Dépend de | Statut | Fait le / commit |
-|---|---|---|---|---|---|
-| **D1** | Trancher le défaut à l'install | 🧭 décision (Thomas) | — | ⬜ à décider | |
-| **1** | Port `Embedder` + index sûr (estampille + confirm-gate) | 🧪 code TDD | — | ⬜ à faire | |
-| **2** | Eval-set local (juge = Claude) | 🧪 code | — | ⬜ à faire | |
-| **3** | Adaptateur compatible-OpenAI (URL+clé) | 🧪 code TDD | 1 | ⬜ à faire | |
-| **4** | Brancher local (EmbeddingGemma/bge-m3) + **MESURER** | 📊 mesure | 1,2,3 | ⬜ à faire | |
-| **5** | Onboarding / install (choix d'embedder + pédagogie) | 🧪 code | D1, 3 | ⬜ à faire | |
-| **6** | Reranker local *(conditionnel)* | 🧪 code | 4 | ⬜ si plafond | |
-| **7** | Profil grosse machine *(conditionnel)* | 🧪 code | 4 | ⬜ si plafond | |
+> Coche au fil de l'eau. Les **sous-cases** permettent de suivre la progression *pendant* qu'une étape
+> tourne (surtout les baby-steps TDD). Quand une étape est finie : cocher sa case + noter _(date · commit)_.
 
-Légende statut : ⬜ à faire · 🚧 en cours · ✅ fait · ⏭️ sauté (justifier).
+- [ ] **D1 — Trancher le défaut à l'install** 🧭 *(décision Thomas, **APRÈS l'Étape 4** ; dépend de : 4)*
+  - [ ] Tests croisés des 3 adaptateurs **ensemble** (Thomas + Claude), sur la base de la mesure (Étape 4)
+  - [ ] Décider le défaut — **cible privilégiée : l'adaptateur PUREMENT LOCAL** (argument produit : on n'envoie aucune donnée à un provider), **si** la mesure le permet
+  - [ ] Acter (addendum ADR 0007 ou nouvel ADR) avec le *pourquoi*
+- [ ] **Étape 1 — Port `Embedder` + index sûr** 🧪 TDD *(dépend de : —)* _(… · …)_
+  - [ ] Estampille `index_meta` — round-trip (écrit à l'indexation, relu)
+  - [ ] Garde d'identité — identité divergente/absente → signal « index périmé », pas de résultats faux
+  - [ ] Extraire le port `Embedder` ; `GeminiEmbedder` implémente l'existant (comportement inchangé)
+  - [ ] Injecter le port chez les 2 consommateurs (`index-manager` stampe ; `search-vault`/`index.ts` consulte le garde)
+  - [ ] Point de sélection unique `createEmbedder()` (`config.ts`) — sans `switch` multi-provider
+  - [ ] *(option)* `FakeEmbedder` déterministe + test
+  - [ ] `npm test` (dossier `rag/`) vert ; archiver `embedder-spi.md` → `plans/archived/`
+- [ ] **Étape 2 — Eval-set local (juge = Claude)** 🧪 *(dépend de : —)* _(… · …)_
+  - [ ] Choisir un vault représentatif (vrai cerveau ou échantillon riche en entités/relations)
+  - [ ] Écrire 15-20 questions → réponse/passages attendus
+  - [ ] Script « recherche + jugement Claude » → score chiffré reproductible
+  - [ ] Baseline Gemini mesurée et consignée
+- [ ] **Étape 3 — Adaptateur compatible-OpenAI (URL+clé)** 🧪 TDD *(dépend de : 1)* _(… · …)_
+  - [ ] `OpenAiCompatibleEmbedder` : `{model,input}` → `data[].embedding` ; `embedDocuments`/`embedQuery`
+  - [ ] `identity` (provider/model/dimension) renseignée
+  - [ ] Branché dans `createEmbedder()` via `.env` (provider + base URL + clé)
+  - [ ] Testé sur un endpoint compatible-OpenAI **et** sur Ollama local (`localhost:11434/v1`) ; `npm test` vert
+- [ ] **Étape 4 — Brancher local + MESURER vs Gemini** 📊 *(dépend de : 1,2,3)* _(… · …)_
+  - [ ] Brancher EmbeddingGemma (via Ollama + adaptateur n°3)
+  - [ ] Brancher bge-m3
+  - [ ] Ré-indexer le vault représentatif pour chacun
+  - [ ] Lancer l'eval-set sur chacun, vs Gemini (baseline)
+  - [ ] Tableau de résultats chiffrés (qualité FR + footprint/latence)
+  - [ ] **Décision du défaut bureautique** consignée + réponse chiffrée à Dimitry
+- [ ] **Étape 5 — Onboarding / install (choix + pédagogie)** 🧪 *(dépend de : D1, 3)* _(… · …)_
+  - [ ] Implémenter le flux décidé en D1 (A/B/C)
+  - [ ] Ne plus *forcer* la clé Gemini si un local sans clé est retenu
+  - [ ] Réutiliser les tableaux pédagogiques (confidentialité / embedder≠LLM / réutilisable-au-swap)
+  - [ ] `verify-rag` passe avec l'embedder retenu
+- [ ] **Étape 6 — Reranker local** 🧪 *(conditionnel ; dépend de : 4 + plafond constaté)* _(… · …)_
+  - [ ] Ajouter le reranking local derrière une abstraction propre
+  - [ ] Mesurer le gain sur l'eval-set → embarquer seulement si gain chiffré
+- [ ] **Étape 7 — Profil grosse machine** 🧪 *(conditionnel ; dépend de : 4 + plafond persistant)* _(… · …)_
+  - [ ] Brancher embedder « qualité max » (Qwen3 gros / Nemotron-8B) et/ou évaluer E2GraphRAG
+  - [ ] Mesurer vs défaut bureautique ; documenter en opt-in (pas le défaut)
 
 ---
 
 ## Décision D1 — Trancher le défaut d'embedder à l'installation 🧭
 
-> **Type :** décision **produit/UX de Thomas** (pas de code). **Peut se faire à tout moment, mais
-> AVANT l'Étape 5.** Ne bloque pas les Étapes 1-4.
+> **Type :** décision **produit/UX de Thomas** (pas de code). **Se prend APRÈS l'Étape 4**, à l'issue de
+> **tests faits ensemble** (Thomas + Claude) sur les 3 adaptateurs. Ne bloque que l'Étape 5.
+>
+> **🎯 Préférence affichée par Thomas (2026-06-08) :** le défaut **idéal est l'adaptateur PUREMENT
+> LOCAL** (EmbeddingGemma / bge-m3) — **argument produit fort** : *« on n'envoie pas tes données chez
+> un provider »* (niveau 1 de l'échelle de confidentialité). On le retient **si la mesure (Étape 4)
+> montre une qualité FR acceptable** et **si** la friction d'install (Ollama + modèle à puller) reste
+> tenable pour un non-dev. Sinon, repli sur une option API. **C'est précisément ce que les tests
+> tranchent — pas l'intuition.**
 
-- **Charger :** ADR 0007 §« Questions ouvertes » (point 1) ; `CLAUDE.md` du repo (philosophie d'install
-  « toujours générique, le moins de questions possible »).
-- **La question :** quel embedder par défaut à l'install ? Trois pistes :
-  - **A** — défaut unique simple (la clé Gemini d'aujourd'hui) + swap via `.env` après coup.
+- **Charger :** résultats de l'Étape 4 (mesure + footprint/friction) ; ADR 0007 §« Questions ouvertes »
+  (point 1) + § échelle de confidentialité ; `CLAUDE.md` du repo (philosophie d'install « toujours
+  générique, le moins de questions possible »).
+- **La question :** quel embedder par défaut, et quelle UX d'install autour ? Pistes (à départager *par
+  les tests*) :
+  - **Tout-local par défaut** *(cible privilégiée)* — zéro clé/cloud, privacy max ; coût = Ollama +
+    modèle à installer (peser la friction non-dev).
+  - **A** — défaut unique simple + swap via `.env` après coup.
   - **B** — A + une **mini-question** seulement pour le cas entreprise (« OpenAI/Azure imposé ? »).
   - **C** — choix explicite à 3 dès l'install (plus clair, plus de friction).
-  - *(piste bonus à débattre : tout-local par défaut — zéro clé/cloud, mais exige Ollama installé.)*
-- **Done :** la décision est **actée** (un court addendum à l'ADR 0007, ou un nouvel ADR si ça le
-  mérite), avec son *pourquoi*. Le tableau d'avancement est mis à jour.
+- **Done :** la décision est **actée** (court addendum à l'ADR 0007, ou nouvel ADR si ça le mérite),
+  avec son *pourquoi* **adossé aux chiffres de l'Étape 4**. Les cases de D1 sont cochées.
 
 ---
 
@@ -78,8 +120,8 @@ Légende statut : ⬜ à faire · 🚧 en cours · ✅ fait · ⏭️ sauté (ju
   (provider/modèle/dimension) ; un swap d'identité déclenche le **signal « index périmé »** +
   confirm-gate (pas de résultats faux) ; le contrat MCP n'a **pas** bougé. Commits conventionnels par
   baby-step.
-- **Au sortir :** mettre à jour le tableau ; déplacer `embedder-spi.md` vers `plans/archived/` quand
-  c'est livré (cf. convention `maintainers/README.md`).
+- **Au sortir :** cocher les cases de l'Étape 1 ; déplacer `embedder-spi.md` vers `plans/archived/`
+  quand c'est livré (cf. convention `maintainers/README.md`).
 
 ---
 
@@ -136,7 +178,7 @@ Légende statut : ⬜ à faire · 🚧 en cours · ✅ fait · ⏭️ sauté (ju
   Gemini** (baseline). Comparer qualité FR **et** footprint/latence réels (Mac/PC).
 - **Done :** un **tableau de résultats chiffrés** (Gemini vs EmbeddingGemma vs bge-m3) sur le vrai
   corpus FR → **décision du défaut bureautique** consignée (addendum étude/ADR). Réponse chiffrée à
-  Dimitry rédigée. Tableau d'avancement à jour.
+  Dimitry rédigée. Cases de l'Étape 4 cochées.
 - **Sortie conditionnelle :** si un embedder local **égale/approche** Gemini → on tient le défaut
   gratuit+privé. Si **plafond** de qualité constaté → Étapes 6/7 deviennent pertinentes.
 

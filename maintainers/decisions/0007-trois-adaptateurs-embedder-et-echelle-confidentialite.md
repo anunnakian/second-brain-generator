@@ -152,10 +152,14 @@ jargon. C'est le registre qui a marché ; on le standardise pour le RAG.
      (~0,3–1,2 Go) → une **nouvelle dépendance native** à gérer (échos des leçons `run-node` /
      PATH desktop nu). « Coller une clé » peut rester *mécaniquement* plus simple — mais traîne le
      palier payant + le caveat cloud.
-   - **Pistes :** (A) défaut unique simple + swap via `.env` après coup ; (B) mini-question seulement
-     pour le cas entreprise ; (C) choix explicite à 3 à l'install (plus de friction). **Penchant
-     non engageant : A + B.** ⚠️ À confronter à la règle « install toujours générique, le moins de
-     questions possible » du `CLAUDE.md`. **Non tranché.**
+   - **Pistes :** tout-local par défaut *(cible privilégiée)* ; (A) défaut unique simple + swap via
+     `.env` ; (B) mini-question pour le cas entreprise ; (C) choix explicite à 3 à l'install.
+   - **Préférence affichée par Thomas (2026-06-08) :** **défaut = adaptateur PUREMENT LOCAL** si possible
+     (argument produit : « on n'envoie pas tes données chez un provider »). **Méthode de décision actée :**
+     on tranche **APRÈS** avoir livré les 3 adaptateurs et fait des **tests ensemble** (cf. plan d'action
+     [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md), Décision D1, qui
+     dépend de l'Étape 4 / mesure) — **pas sur l'intuition.** ⚠️ À confronter à la friction d'install du
+     local (Ollama + modèle) et à la règle « install générique » du `CLAUDE.md`. **Non tranché à ce jour.**
 2. **Local : via l'adaptateur n°2 (localhost) ou un adaptateur Ollama natif ?** Détail
    d'implémentation ; penchant = **réutiliser le n°2** (moins de code), à valider à l'usage.
 
