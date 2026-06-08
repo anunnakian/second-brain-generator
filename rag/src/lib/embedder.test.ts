@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  createEmbedder,
   embedQuery,
   embedTexts,
   GeminiEmbedder,
@@ -29,6 +30,10 @@ test("GeminiEmbedder expose son identité (provider/modèle/dimension) pour l'es
     model: "gemini-embedding-001",
     dimension: 3072,
   });
+});
+
+test("createEmbedder() : point de sélection unique → un Embedder Gemini par défaut", () => {
+  assert.equal(createEmbedder().identity.providerId, "gemini");
 });
 
 test("embedQuery consomme en prioritaire (jamais bloqué par l'indexation)", async () => {
