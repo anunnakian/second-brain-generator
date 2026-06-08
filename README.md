@@ -83,8 +83,8 @@ fait lire à Claude, non ? »** Fait à la légère, ça **a l'air** de marcher�
 silence** — le pire des échecs, parce qu'on ne s'en rend même pas compte (rien n'est sauvé, la
 recherche **invente** au lieu de chercher dans tes notes, la session n'est pas branchée au bon
 endroit…). Ici, des **garde-fous packagés et testés** bouchent ces trous : une fois installé, **tu
-n'as plus rien à faire** — sauvegarde, indexation et fraîcheur tournent toutes seules. C'est de
-l'**affordance** : la complexité est **cachée, pas refilée**.
+n'as plus rien à faire** — sauvegarde, indexation et fraîcheur tournent toutes seules, sans que tu
+aies à penser à les faire. C'est de l'**affordance** : la complexité est **cachée, pas refilée**.
 
 > 📄 Le détail (et le paysage complet, le cerveau, son fonctionnement, l'installation, le **RAG à la
 > carte**) : fiche [**En quoi c'est différent**](EN-QUOI-C-EST-DIFFERENT.md).
