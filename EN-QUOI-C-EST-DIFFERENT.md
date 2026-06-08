@@ -1,32 +1,72 @@
 # En quoi c'est différent des autres « seconds cerveaux » / « LLM wikis » ?
 
-> **En une phrase.** La plupart des outils du marché te vendent **un** produit fermé pour tout le
-> monde ; ici tu as un **générateur** qui te fabrique **ton** cerveau — fichiers Markdown que **tu
-> possèdes**, recherche sémantique qui **cite ses sources**, **transversale** à tous tes outils, et
-> dont tu peux même **choisir le moteur de recherche à la carte** selon tes contraintes.
+> **En une phrase.** Tu peux te bricoler un « second cerveau » avec un `CLAUDE.md` et quelques
+> notes — comme les recettes qui circulent sur les réseaux. Ici, tu as **la même idée, mais rendue
+> robuste et automatique** : fichiers Markdown que **tu possèdes**, recherche sémantique qui **cite
+> ses sources**, **transversale** à tous tes outils, **moteur à la carte** — et surtout des
+> garde-fous qui font que **ça marche vraiment** au lieu de *sembler* marcher.
 
-Cette fiche complète la section « En quoi c'est différent de ChatGPT, Claude, Notion AI… » du
-[README](README.md) : elle prend du recul sur **tout le paysage** des « seconds cerveaux » et
-détaille ce qui rend cette démarche singulière — sur le **cerveau** lui-même, son **fonctionnement**,
-le fait qu'il y ait **presque rien à faire tout en restant robuste**, son **installation/packaging**,
-et le **RAG à la carte**.
+Le vrai comparatif que tu cherches n'est probablement pas « ce projet *vs* Notion AI ». C'est
+**« ce projet *vs* la recette `CLAUDE.md` + quelques notes que j'ai vue passer sur les réseaux »** —
+alors c'est par là qu'on commence. Suivent ce qui rend la démarche singulière (le **cerveau**, son
+**fonctionnement**, son **installation/packaging**, le **RAG à la carte**), ses **limites assumées**,
+et — tout en bas, pour mémoire — un coup d'œil au **paysage des apps du marché**.
 
 ---
 
-## 1. Ce que les gens appellent un « second cerveau » / « LLM wiki »
+## 1. Pourquoi ce n'est pas « juste un `CLAUDE.md` + quelques notes »
 
-Le terme recouvre, en vrac, des familles d'outils très différentes :
+C'est le réflexe naturel de quiconque connaît un peu l'outil : « un second cerveau, c'est bien juste
+un dossier Markdown + un fichier de règles qu'on fait lire à Claude, non ? » Fait **à la légère**,
+ça **a l'air** de marcher… puis ça **lâche en silence** — le pire des échecs, parce qu'on ne s'en
+rend même pas compte.
 
-| Famille | Exemples typiques | Le modèle |
+La robustesse, ici, ne tombe pas du ciel : elle vient de **mécanismes de renforcement** packagés,
+invisibles et **testés**, qui bouchent un par un les trous où la version bricolée se casse :
+
+| Fait « à la légère » (un `.md` + un `CLAUDE.md`) | Le symptôme silencieux | Le mécanisme de renforcement ici |
 |---|---|---|
-| **Apps de notes IA (SaaS)** | Notion AI, Mem, Reflect, Tana… | Tes notes vivent **chez l'éditeur** ; l'IA répond depuis **ce seul outil**. |
-| **« Chat with your notes » local** | Obsidian + plugins (Smart Connections…), Logseq, AnythingLLM, Khoj… | Tu poses des questions à un dossier de notes ; périmètre = **ce dossier**, souvent un branchement à configurer soi-même. |
-| **GPT/Projects « à connaissance »** | Custom GPT, Claude Projects, NotebookLM… | Tu **téléverses** des docs dans un espace ; pratique, mais **cloisonné** et hébergé chez le fournisseur. |
-| **Recherche IA d'un outil** | Recherche Slack, Glean, Google Workspace AI… | Excellent **dans le périmètre d'un outil** (ou d'une suite), mais pas **ta** mémoire transverse à toi. |
+| Pas de persistance automatique | Tes réponses/notes ne sont **jamais sauvées** ; tout se perd | **Hook auto-commit** (+ push *opt-in*) |
+| Pas d'indexation | La recherche **invente** au lieu de chercher dans tes notes | **Réindexation incrémentale** automatique du RAG |
+| Conversation pas « rootée » dans le cerveau | Hooks muets, réponses hors-vault — *et ça semble marcher* | Onboarding qui **force l'ouverture au bon endroit** + vérif `pwd` |
+| `node` installé via nvm, invisible des hooks GUI | Auto-commit **silencieusement KO** | Wrapper **`run-node`** qui re-résout la toolchain à chaque exécution |
+| Install sur une machine nue | État **« Frankenstein »** semi-fonctionnel, indiagnosticable | **Vérification « fail-loud »** à l'install — prouve ou échoue franchement |
 
-Tous partagent trois limites récurrentes : ils sont **mono-outil** (ou mono-suite), tes données
-sont **chez un tiers en format fermé**, et ils **n'accumulent pas** une mémoire qui te suit et te
-cite ses sources de façon vérifiable.
+> 🛡️ **Le fil rouge : échouer bruyamment plutôt que faire semblant.** À l'install, une vérification
+> déterministe (`verify-rag`) **prouve** que la démo répond *depuis ton vault* (le canari
+> « Mollecuisse », introuvable ailleurs). Tant que ce n'est pas vert, on ne te dit pas que c'est
+> prêt. C'est l'exact inverse du « ça a l'air de marcher ».
+
+### Le résultat : presque rien à faire (l'affordance)
+
+Une fois le setup passé (une seule fois, ~15 min, guidé), **tu n'as plus rien à faire** : tu poses
+des questions, tu lis des réponses. Tout le reste tourne tout seul.
+
+- **Sauvegarde** : chaque modif est **commitée automatiquement** (et **poussée** si tu as branché
+  un dépôt distant). Tu n'as jamais à savoir que git existe.
+- **Indexation** : l'index sémantique se **reconstruit seul**, incrémentalement, dès que le vault
+  change.
+- **Fraîcheur** : à chaque question, le delta des sources externes est aspiré en arrière-plan.
+- **Tu n'as à comprendre ni comment c'est fait, ni comment c'est rangé** — ni git, ni MCP, ni
+  embeddings, ni hooks.
+
+C'est de l'**affordance** au sens propre : la conception rend le bon comportement **automatique** et
+**cache la complexité**, au lieu de te la refiler. Tous ces garde-fous sont **packagés** — tu n'as
+ni à les connaître, ni à les assembler ; le générateur les pose pour toi, et l'usage reste « pose ta
+question, c'est tout ».
+
+> 🧬 **« Rangé pour toi » fait partie de l'ADN.** Le *« ni comment c'est rangé »* n'est pas un détail
+> qu'on cache : c'est un **parti-pris**. Tu n'as ni à concevoir une arborescence, ni à te demander
+> « où va cette note ? ». Le cerveau part de **conventions saines** (notes datées, fiches *people* /
+> *topics* / *décisions*, frontmatter, liens `[[wikilink]]`) puis **te propose et fait évoluer la
+> structure la mieux adaptée aux besoins que *tu* formules** : tu dis ce que tu veux suivre (tes
+> équipes, tes décisions produit, un domaine client…), il en déduit et maintient le rangement. C'est
+> l'esprit *use case driven* — la structure **émerge de tes usages**, elle ne t'est ni imposée
+> d'avance, ni laissée sur les bras.
+
+> 📌 *Épisode/décision de fond :* l'anecdote fondatrice (la machine nue de Richard, l'état
+> « Frankenstein ») et le renversement « confiance à Claude + échec bruyant » sont dans l'ADR
+> [`0005`](maintainers/decisions/0005-support-onglet-code-desktop.md).
 
 ---
 
@@ -99,62 +139,7 @@ Question
 
 ---
 
-## 5. Presque rien à faire — et pourtant ça tient (l'affordance)
-
-C'est un point fort qu'on sous-estime **parce qu'il est invisible**. Une fois le setup passé (une
-seule fois, ~15 min, guidé), **tu n'as plus rien à faire** : tu poses des questions, tu lis des
-réponses. Tout le reste tourne tout seul.
-
-- **Sauvegarde** : chaque modif est **commitée automatiquement** (et **poussée** si tu as branché
-  un dépôt distant). Tu n'as jamais à savoir que git existe.
-- **Indexation** : l'index sémantique se **reconstruit seul**, incrémentalement, dès que le vault
-  change.
-- **Fraîcheur** : à chaque question, le delta des sources externes est aspiré en arrière-plan.
-- **Tu n'as à comprendre ni comment c'est fait, ni comment c'est rangé** — ni git, ni MCP, ni
-  embeddings, ni hooks.
-
-C'est de l'**affordance** au sens propre : la conception rend le bon comportement **automatique** et
-**cache la complexité**, au lieu de te la refiler.
-
-> 🧬 **« Rangé pour toi » fait partie de l'ADN.** Le *« ni comment c'est rangé »* n'est pas un détail
-> qu'on cache : c'est un **parti-pris**. Tu n'as ni à concevoir une arborescence, ni à te demander
-> « où va cette note ? ». Le cerveau part de **conventions saines** (notes datées, fiches *people* /
-> *topics* / *décisions*, frontmatter, liens `[[wikilink]]`) puis **te propose et fait évoluer la
-> structure la mieux adaptée aux besoins que *tu* formules** : tu dis ce que tu veux suivre (tes
-> équipes, tes décisions produit, un domaine client…), il en déduit et maintient le rangement. C'est
-> l'esprit *use case driven* — la structure **émerge de tes usages**, elle ne t'est ni imposée
-> d'avance, ni laissée sur les bras.
-
-### Pourquoi « un `CLAUDE.md` + quelques notes » ne suffirait pas
-
-On pourrait croire qu'un second cerveau, c'est juste « un dossier Markdown + un fichier de règles
-qu'on lit ». Fait **à la légère**, ça **a l'air** de marcher… puis ça **lâche en silence** — le pire
-des échecs, parce qu'on ne s'en rend pas compte. La robustesse ici vient de **mécanismes de
-renforcement** packagés, invisibles, et **testés** :
-
-| Fait « à la légère » (un `.md` + un `CLAUDE.md`) | Le symptôme silencieux | Le mécanisme de renforcement ici |
-|---|---|---|
-| Pas de persistance automatique | Tes réponses/notes ne sont **jamais sauvées** ; tout se perd | **Hook auto-commit** (+ push *opt-in*) |
-| Pas d'indexation | La recherche **invente** au lieu de chercher dans tes notes | **Réindexation incrémentale** automatique du RAG |
-| Conversation pas « rootée » dans le cerveau | Hooks muets, réponses hors-vault — *et ça semble marcher* | Onboarding qui **force l'ouverture au bon endroit** + vérif `pwd` |
-| `node` installé via nvm, invisible des hooks GUI | Auto-commit **silencieusement KO** | Wrapper **`run-node`** qui re-résout la toolchain à chaque exécution |
-| Install sur une machine nue | État **« Frankenstein »** semi-fonctionnel, indiagnosticable | **Vérification « fail-loud »** à l'install — prouve ou échoue franchement |
-
-> 🛡️ **Le fil rouge : échouer bruyamment plutôt que faire semblant.** À l'install, une vérification
-> déterministe (`verify-rag`) **prouve** que la démo répond *depuis ton vault* (le canari
-> « Mollecuisse », introuvable ailleurs). Tant que ce n'est pas vert, on ne te dit pas que c'est
-> prêt. C'est l'exact inverse du « ça a l'air de marcher ».
-
-Et **tout ça est packagé** : tu n'as ni à connaître ces garde-fous, ni à les assembler. Le
-générateur les pose pour toi ; l'usage, lui, reste « pose ta question, c'est tout ».
-
-> 📌 *Épisode/décision de fond :* l'anecdote fondatrice (la machine nue de Richard, l'état
-> « Frankenstein ») et le renversement « confiance à Claude + échec bruyant » sont dans l'ADR
-> [`0005`](maintainers/decisions/0005-support-onglet-code-desktop.md).
-
----
-
-## 6. L'installation & le packaging : auto-suffisant, sans dépendance amont
+## 5. L'installation & le packaging : auto-suffisant, sans dépendance amont
 
 | | Approche habituelle | Ici |
 |---|---|---|
@@ -174,7 +159,7 @@ poussé tant que tu ne l'as pas demandé).
 
 ---
 
-## 7. Le RAG « à la carte » : tu choisis ton moteur selon **tes** contraintes
+## 6. Le RAG « à la carte » : tu choisis ton moteur selon **tes** contraintes
 
 C'est sans doute le différenciateur le plus structurant — et le moins répandu ailleurs. La plupart
 des outils t'**imposent** un moteur de recherche (souvent une API cloud unique). Ici, le moteur RAG
@@ -201,7 +186,7 @@ budget, puissance machine, OS, friction d'install) — **sans casser** ni tes no
 
 ---
 
-## 8. Ce que ce **n'est pas** (les limites assumées)
+## 7. Ce que ce **n'est pas** (les limites assumées)
 
 L'honnêteté fait partie de la démarche :
 
@@ -220,7 +205,7 @@ L'honnêteté fait partie de la démarche :
 
 ---
 
-## 9. Alors, c'est pour qui — et quand préférer autre chose ?
+## 8. Alors, c'est pour qui — et quand préférer autre chose ?
 
 **Cette démarche brille si** tu veux **posséder** ta mémoire (format ouvert, ton repo), la vouloir
 **transverse** à tous tes outils, **sourcée** et **persistante**, et la **façonner** à tes usages
@@ -229,6 +214,27 @@ L'honnêteté fait partie de la démarche :
 **Un SaaS classique sera sans doute plus simple si** tu veux du zéro-install collaboratif clés en
 main, que la propriété/le format ouvert te sont indifférents, et que le périmètre d'un seul outil
 te suffit.
+
+---
+
+## 9. Pour mémoire — et par rapport aux apps du marché ?
+
+*(Le comparatif « produit *vs* produit » n'est pas le cœur du sujet — c'est surtout la recette
+bricolée du §1 que les gens hésitent à remplacer. On le garde ici, pour situer.)*
+
+« Second cerveau » / « LLM wiki » recouvre, en vrac, des familles d'outils très différentes :
+
+| Famille | Exemples typiques | Le modèle |
+|---|---|---|
+| **Apps de notes IA (SaaS)** | Notion AI, Mem, Reflect, Tana… | Tes notes vivent **chez l'éditeur** ; l'IA répond depuis **ce seul outil**. |
+| **« Chat with your notes » local** | Obsidian + plugins (Smart Connections…), Logseq, AnythingLLM, Khoj… | Tu poses des questions à un dossier de notes ; périmètre = **ce dossier**, souvent un branchement à configurer soi-même. |
+| **GPT/Projects « à connaissance »** | Custom GPT, Claude Projects, NotebookLM… | Tu **téléverses** des docs dans un espace ; pratique, mais **cloisonné** et hébergé chez le fournisseur. |
+| **Recherche IA d'un outil** | Recherche Slack, Glean, Google Workspace AI… | Excellent **dans le périmètre d'un outil** (ou d'une suite), mais pas **ta** mémoire transverse à toi. |
+
+Trois limites récurrentes les rapprochent : ils sont **mono-outil** (ou mono-suite), tes données
+sont **chez un tiers en format fermé**, et ils **n'accumulent pas** une mémoire qui te suit et te
+cite ses sources de façon vérifiable — précisément les trois points que cette démarche prend à
+contre-pied.
 
 ---
 
