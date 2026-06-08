@@ -46,11 +46,11 @@
   - [x] Point de sélection unique `createEmbedder()` (dans `embedder.ts`, pas `config.ts` : cycle d'import) — sans `switch` multi-provider _(2026-06-08 · a49f861)_
   - [x] *(option)* `FakeEmbedder` déterministe + test _(2026-06-08 · bf2ead8)_
   - [x] `npm test` (dossier `rag/`) vert (91/91) ; `embedder-spi.md` archivé → `plans/archived/`
-- [ ] **Étape 2 — Eval-set local (juge = Claude)** 🧪 *(dépend de : —)* _(… · …)_
-  - [ ] Choisir un vault représentatif (vrai cerveau ou échantillon riche en entités/relations)
-  - [ ] Écrire 15-20 questions → réponse/passages attendus
-  - [ ] Script « recherche + jugement Claude » → score chiffré reproductible
-  - [ ] Baseline Gemini mesurée et consignée
+- [ ] **Étape 2 — Eval-set local (juge = Claude)** 🧪 *(dépend de : —)* — **instrument LIVRÉ ; baseline chiffrée à produire (clé Gemini requise)** _(2026-06-09 · e64f2bb, 0448c03)_
+  - [x] Vault représentatif choisi : **vault d'exemple Flemmr** (inventé → public-safe, versionné, **rejouable par tous**). Corpus plus riche = reporté à l'Étape 4 (décidé avec Thomas) _(2026-06-09)_
+  - [x] Questions écrites : **10** (corpus Flemmr petit → ~10 plutôt que 15-20 ; mix faciles + grep-résistantes ; 1ʳᵉ = canari `demo.mjs`) _(2026-06-09 · e64f2bb)_
+  - [x] Script « recherche + jugement Claude » → score reproductible : `scripts/run-eval.mjs` + cœur pur testé ; juge `claude -p` **validé end-to-end** (PASS sur passage pertinent, FAIL sur hors-sujet) ; **dev-only** (exclu du cerveau) ; documenté [`../eval-set.md`](../eval-set.md) _(2026-06-09 · e64f2bb, 0448c03)_
+  - [ ] **Baseline Gemini mesurée et consignée** ⏳ — instrument prêt, mais pas de clé dans le launcher → **Thomas lance `node scripts/run-eval.mjs` avec sa clé** puis consigne le chiffre ici
 - [ ] **Étape 3 — Adaptateur compatible-OpenAI (URL+clé)** 🧪 TDD *(dépend de : 1)* _(… · …)_
   - [ ] `OpenAiCompatibleEmbedder` : `{model,input}` → `data[].embedding` ; `embedDocuments`/`embedQuery`
   - [ ] `identity` (provider/model/dimension) renseignée

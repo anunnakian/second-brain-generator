@@ -4,9 +4,9 @@
 > Ce dossier voyage entre les machines du **mainteneur** (sync git entre laptops) et reste
 > visible dans le launcher cloné. Mais il est **exclu de la copie bootstrap** : il n'atterrit
 > **jamais** dans un cerveau généré. L'exclusion est codée dans
-> [`scripts/lib/tracked-files.mjs`](../scripts/lib/tracked-files.mjs) (`DEV_ONLY_DIRS`), testée
-> dans `tracked-files.test.mjs`. Il n'est pas non plus auto-chargé par Claude (seuls `CLAUDE.md`
-> et les skills le sont).
+> [`scripts/lib/tracked-files.mjs`](../scripts/lib/tracked-files.mjs) (`DEV_ONLY_PREFIXES` — qui
+> exclut aussi l'**outillage d'eval-set**, cf. ci-dessous), testée dans `tracked-files.test.mjs`.
+> Il n'est pas non plus auto-chargé par Claude (seuls `CLAUDE.md` et les skills le sont).
 >
 > **Donc :** tout ce qui ne doit servir qu'au développement du générateur — et surtout pas
 > polluer le cerveau d'un utilisateur — va ici. Rien de secret pour autant (pas de clés : voir
@@ -45,6 +45,10 @@
     un adaptateur d'embedder → **orthogonal** au chantier en cours. Réservé à l'**Étape 7**
     (grosse machine, opt-in, conditionnel), **à départager par eval-set FR** ; **E2GraphRAG préféré**
     sur machine modeste. Décision de séquencement, pas un rejet.
+- **[`eval-set.md`](eval-set.md)** — 🧪 **outil dev** : l'eval-set RAG (Étape 2 du plan embedder).
+  Mesure la qualité de récupération de l'embedder courant en un **score reproductible** (juge =
+  Claude via `claude -p`), sur le vault Flemmr → **baseline Gemini** à rejouer sur les embedders
+  locaux (Étape 4). `node scripts/run-eval.mjs`. **Dev-only** (exclu du cerveau généré).
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
   Les plans **livrés** sont déplacés dans **`plans/archived/`** ; seuls les plans encore **ouverts**
   restent à la racine de `plans/`.
