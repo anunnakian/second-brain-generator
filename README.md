@@ -2,6 +2,8 @@
 
 **Retrouve n'importe quelle décision ou info de ton travail en quelques secondes — en posant la question en langage naturel, avec les sources à l'appui.**
 
+🔒 **Et il reste vraiment à toi.** Par défaut, tes notes sont indexées **sur ta propre machine — rien ne sort**. Sur petite config, délègue l'indexation à l'API de ton choix (**Gemini** pour quelques centimes, ou **l'endpoint de ton entreprise**) en changeant juste une **URL + clé**. 🛟 Et c'est **conçu production-ready** — sauvegarde, fraîcheur, récupération après pépin : **son** boulot, pas le tien. *Toi, tu n'as qu'à parler.*
+
 > 🧑 *« On en est où sur le projet facturation — qui porte quoi, et qu'est-ce qui a été décidé ? »*
 >
 > 🧠 *« Au point d'équipe du 15 janvier : la base de données a été tranchée (PostgreSQL plutôt que
@@ -73,6 +75,7 @@ quel que soit son niveau technique :
 | **ChatGPT / Claude « nu »** | Ne connaît que ce que tu recolles à chaque conversation. Oublie tout ensuite. | Une **mémoire persistante**, qui grossit à chaque question. |
 | **Notion AI, recherche Slack…** | Cloisonné à **un seul outil**. | **Transversal** : Slack + Drive + mails + transcripts + tes notes, au même endroit. |
 | **N'importe quel SaaS** | Tes données chez un tiers, format fermé. | **Chez toi**, en Markdown, dans **ton** repo git privé. |
+| **Outils IA « cloud-only »** | Un **moteur de recherche imposé** : pour t'indexer, tes notes partent chez un tiers — sans alternative. | **RAG à la carte** : **100 % local par défaut** (rien ne sort de ta machine), ou délégué à l'API de ton choix — Gemini, OpenAI, **l'endpoint de ta boîte** — via une simple **URL + clé**. |
 
 Et surtout : ce n'est pas **un** produit unique pour tout le monde. C'est une **méthode** pour te
 fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur et pas un produit fini ?* »).
@@ -87,6 +90,22 @@ endroit…). Ici, des **garde-fous packagés et testés** bouchent ces trous : u
 n'as plus rien à faire** — sauvegarde, indexation et fraîcheur tournent toutes seules, sans que tu
 aies à penser à les faire. C'est de l'**affordance** : la complexité est **cachée, pas refilée**.
 
+**Concrètement, tout le travail d'ingénierie tourne pour toi — en silence.** Indexation
+incrémentale, sauvegarde versionnée à **chaque** modification, écritures **atomiques**, fraîcheur de
+l'index gérée pour toi, démarrage **non-bloquant** du moteur de recherche, sync multi-machines, et
+des vérifications **déterministes** qui *prouvent* que la réponse vient bien de **tes notes** (et pas
+d'Internet). On l'a **conçu, testé et packagé** pour être **robuste et reproductible** — pas un
+script qui « marche sur ma machine ». L'objectif qu'on s'est fixé : **la seule chose qui te reste à
+faire, c'est parler à ton cerveau en langage naturel.** L'infra, le stockage, la concurrence, les
+garde-fous : c'est **son** boulot — il a été conçu pour ça — **pas le tien**.
+
+> 🛟 **Pourquoi un tel soin ?** Parce que faire du logiciel **production-ready** — qui **se rétablit
+> tout seul** quand quelque chose lâche — est une conviction que **Thomas, son créateur, porte depuis
+> toute sa carrière**, nourrie par le **Recovery-Oriented Computing** (ROC — A. Fox & D. Patterson) :
+> on **part du principe que tout finit par casser**, et on conçoit pour que la **récupération** soit
+> rapide, automatique et **sans perte de données**. Un second cerveau, ça doit tenir **des années**
+> — pas juste le temps d'une démo.
+
 > 📄 Le détail (et le paysage complet, le cerveau, son fonctionnement, l'installation, le **RAG à la
 > carte**) : fiche [**En quoi c'est différent**](EN-QUOI-C-EST-DIFFERENT.md).
 
@@ -97,6 +116,12 @@ aies à penser à les faire. C'est de l'**affordance** : la complexité est **ca
 - **Rien ne se perd.** Chaque modif est **commitée automatiquement en local**. Et si tu branches un
   **dépôt distant** (optionnel, ~2 min — push *opt-in*), tout est aussi sauvegardé **hors de ta
   machine** : laptop perdu ou volé, tu reprends ailleurs où tu en étais.
+- **Privé par défaut — et c'est toi qui choisis le moteur.** Sur une machine qui le permet, tes
+  notes sont indexées **100 % en local** : **aucune donnée d'embedding ne sort de ton ordinateur**.
+  Petit poste, ou envie de ne rien faire tourner chez toi ? **Sous-traite l'indexation** — à
+  **Gemini** (coût dérisoire, quelques centimes par an), à OpenAI, ou à **n'importe quel embedder
+  compatible OpenAI, y compris l'endpoint de ton entreprise**, en renseignant juste **une URL et une
+  clé**. *(Comment ça marche : [« le RAG à la carte »](#-le-rag-à-la-carte--tu-choisis-qui-vectorise-tes-notes).)*
 - **Zéro effort de ta part.** Tu n'as jamais à lancer une synchro, à déclencher quoi que ce soit
   dans le bon ordre, ni même à savoir que git existe : **tu n'as à savoir ni comment c'est fait
   dedans, ni comment c'est rangé.** Tu poses ta question, c'est tout.
@@ -406,8 +431,10 @@ minutes, **aucune note n'est perdue**) :
 
 - 🟢 **Tout sur ta machine** *(« Gemma inside », recommandé)* — un petit modèle local vectorise tes
   notes ; **rien ne quitte ton ordinateur**, gratuit et hors-ligne. *(≥ 12 Go de RAM, hors Mac Intel.)*
-- 🟡 **Avec une clé d'API** *(Gemini, OpenAI ou l'endpoint de ton entreprise)* — léger pour la
-  machine, mais **tes notes transitent par le fournisseur** ; idéal sur petite config ou Mac Intel.
+- 🟡 **Avec une clé d'API** — rien à faire tourner chez toi. Branche **Gemini** (coût **dérisoire**,
+  quelques centimes), OpenAI, ou **n'importe quel endpoint compatible OpenAI — y compris celui de ton
+  entreprise** — en renseignant juste **une URL + une clé**. ⚠️ Tes notes transitent alors par le
+  fournisseur ; idéal sur petite config ou Mac Intel.
 - 🟢 **Ollama, en local** *(avancé)* — rien ne sort non plus, au prix d'**une app séparée à installer**.
 
 > 🧠 L'embedder n'est **pas** « ChatGPT chez toi » : c'est juste le bibliothécaire qui range tes
