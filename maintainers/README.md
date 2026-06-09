@@ -102,6 +102,14 @@
     un gate unique (`geminiKeyRequired`) qui débusque un bug en périphérie (le hook de statut) ; un
     nouveau défaut livré par **détection** (pas par flip global). 6 méta-leçons. *(Étape 5 du plan embedder.)*
 
+- **`benchmarks/`** — 📊 **mesures reproductibles** (volumes, débits, RAM, latences) : les chiffres
+  bruts d'un run, avec protocole rejouable. À distinguer des rétros (le récit/les leçons).
+  - [`stress-test-in-process-vault-reel-2026-06-09.md`](benchmarks/stress-test-in-process-vault-reel-2026-06-09.md) —
+    1ᵉʳ stress-test de l'embedder **tout-local in-process** sur un **vrai vault dense** (271 notes /
+    2 764 chunks) : **~5 min 48 s**, **pic RAM ~2,9 Go** (plafonnement de lot tenu, vs 8,5 Go sans),
+    **0 erreur**, qualité retrieval **3/3** (fait isolé / nuance / multi-hop). Protocole rejouable +
+    pièges de mesure. *(Valide le défaut tout-local hors démo.)*
+
 ## Historique
 
 Ce dossier remplace l'ancienne « mémoire » Claude (qui vivait hors du repo, dans
