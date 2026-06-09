@@ -192,6 +192,10 @@ server.tool(
       quotaMax: MAX_EMBED_REQUESTS_PER_DAY,
       reserve: QUERY_RESERVE,
       lock: lock.activeHolder(),
+      // Le quota n'est propre qu'à Gemini : on passe l'identité de l'embedder
+      // actif (createEmbedder est mémoïsé) pour ne pas afficher un faux quota
+      // Gemini en mode local (in-process / endpoint compatible-OpenAI).
+      providerId: createEmbedder().identity.providerId,
       progress,
       now: new Date().toISOString(),
     });
