@@ -34,9 +34,9 @@
 > Coche au fil de l'eau. Les **sous-cases** permettent de suivre la progression *pendant* qu'une étape
 > tourne (surtout les baby-steps TDD). Quand une étape est finie : cocher sa case + noter _(date · commit)_.
 
-- [ ] **D1 — Trancher le défaut à l'install** 🧭 *(décision Thomas, **APRÈS l'Étape 4** ; dépend de : 4)*
-  - [ ] Tests croisés des 3 adaptateurs **ensemble** (Thomas + Claude), sur la base de la mesure (Étape 4)
-  - [ ] Décider le défaut — **cible privilégiée : l'adaptateur PUREMENT LOCAL** (argument produit : on n'envoie aucune donnée à un provider), **si** la mesure le permet
+- [ ] **D1 — Trancher le défaut à l'install** 🧭 *(décision Thomas, **APRÈS les Étapes 4 ET 4-bis** ; dépend de : 4, 4-bis)*
+  - [ ] Tests croisés des adaptateurs **ensemble** (Thomas + Claude), sur la base des mesures (Étapes 4 + 4-bis)
+  - [ ] Décider le défaut — **cible privilégiée : le LOCAL IN-PROCESS « Gemma inside »** (Étape 4-bis : zéro install séparée, on n'envoie aucune donnée à un provider), **si** sa viabilité est prouvée (install Mac+Windows, latence, qualité) ; sinon repli local-via-Ollama (power-user) ou endpoint API
   - [ ] Acter (addendum ADR 0007 ou nouvel ADR) avec le *pourquoi*
 - [x] **Étape 1 — Port `Embedder` + index sûr** 🧪 TDD *(dépend de : —)* _(2026-06-08 · 2ac9698→bf2ead8)_
   - [x] Estampille `index_meta` — round-trip (écrit à l'indexation, relu) _(2026-06-08 · 2ac9698)_
@@ -64,6 +64,13 @@
   - [x] Lancer l'eval-set sur chacun, vs Gemini (baseline re-mesurée même session = **80 % (8/10)**, reproduit hier) _(2026-06-09)_
   - [x] Tableau de résultats chiffrés (qualité FR + footprint/latence) → consigné [`../eval-set.md`](../eval-set.md#étape-4--résultats-mesurés-local-vs-gemini-2026-06-09) _(2026-06-09)_
   - [~] **Décision du défaut bureautique** : mesure + **reco consignée** (local viable, EmbeddingGemma léger candidat naturel) ; réponse chiffrée à Dimitry rédigée. **Décision finale = D1 (Thomas)** — corpus petit ⇒ départage fin EmbeddingGemma vs bge-m3 à refaire sur corpus riche avant d'acter
+- [ ] **Étape 4-bis — RAG MCP autonome « Gemma inside » (embedder in-process, SANS serveur)** 🧪 TDD *(dépend de : 1, 4)* _(… · …)_
+  - [ ] `InProcessEmbedder implements Embedder` via Transformers.js v4 (`@huggingface/transformers`) — pipeline `feature-extraction`, **EmbeddingGemma-300m-ONNX** (q8 par défaut), `embedDocuments`/`embedQuery`, pooling+normalize ; pipeline injectable (tester la logique **sans** télécharger les poids)
+  - [ ] `identity` = `providerId="transformers-js"` / modèle / dimension (768) ; branché dans `selectEmbedder()` via `EMBEDDING_PROVIDER=in-process` (ni URL ni clé) ; téléchargement+cache des poids au 1ᵉʳ usage, **échec bruyant** si DL impossible (jamais de vecteur vide)
+  - [ ] **V1 — install cross-OS (exigence DURE Mac ET Windows)** : `npm i` tire les binaires **pré-buildés** `onnxruntime-node` **sans build tools**, prouvé sur **Mac nu ET Windows nu** (env appauvri onglet Code)
+  - [ ] **V2 — latence CPU** mesurée (indexation vault + recherche) sans GPU Metal → acceptable pour non-dev (encodage ponctuel ; q8/q4)
+  - [ ] **V3 — qualité re-mesurée** : eval-set rejoué avec l'adaptateur in-process (modèle **quantifié**) → score vs **90 %** Ollama et **80 %** Gemini ; confirmer la **parité** (ne pas supposer quantifié = identique)
+  - [ ] Tableau de viabilité consigné (install Mac+Win OK ? · latence · score) + **verdict « viable comme défaut / pas viable »** → alimente D1. `npm test` vert ; contrat MCP **inchangé**
 - [ ] **Étape 5 — Onboarding / install (choix + pédagogie)** 🧪 *(dépend de : D1, 3)* _(… · …)_
   - [ ] Implémenter le flux décidé en D1 (A/B/C)
   - [ ] Ne plus *forcer* la clé Gemini si un local sans clé est retenu
@@ -80,28 +87,31 @@
 
 ## Décision D1 — Trancher le défaut d'embedder à l'installation 🧭
 
-> **Type :** décision **produit/UX de Thomas** (pas de code). **Se prend APRÈS l'Étape 4**, à l'issue de
-> **tests faits ensemble** (Thomas + Claude) sur les 3 adaptateurs. Ne bloque que l'Étape 5.
+> **Type :** décision **produit/UX de Thomas** (pas de code). **Se prend APRÈS les Étapes 4 ET 4-bis**, à
+> l'issue de **tests faits ensemble** (Thomas + Claude) sur les adaptateurs. Ne bloque que l'Étape 5.
 >
-> **🎯 Préférence affichée par Thomas (2026-06-08) :** le défaut **idéal est l'adaptateur PUREMENT
-> LOCAL** (EmbeddingGemma / bge-m3) — **argument produit fort** : *« on n'envoie pas tes données chez
-> un provider »* (niveau 1 de l'échelle de confidentialité). On le retient **si la mesure (Étape 4)
-> montre une qualité FR acceptable** et **si** la friction d'install (Ollama + modèle à puller) reste
-> tenable pour un non-dev. Sinon, repli sur une option API. **C'est précisément ce que les tests
-> tranchent — pas l'intuition.**
+> **🎯 Préférence affichée par Thomas (2026-06-08, affinée 2026-06-09) :** le défaut **idéal est le
+> PUREMENT LOCAL**, et **encore mieux le LOCAL IN-PROCESS « Gemma inside »** (Étape 4-bis : embedder
+> embarqué dans le MCP, **zéro serveur/app à installer**) — **argument produit fort** : *« on n'envoie
+> pas tes données chez un provider, ET tu n'installes rien de plus »* (niveau 1 de l'échelle de
+> confidentialité, sans la friction Ollama). On le retient **si l'Étape 4-bis prouve sa viabilité**
+> (install Mac **et** Windows sans build tools, latence CPU tenable, qualité quantifiée à parité des
+> 90 % mesurés Étape 4). Sinon, repli sur le local-via-Ollama (power-user) ou une option API. **C'est
+> précisément ce que les tests tranchent — pas l'intuition.**
 
-- **Charger :** résultats de l'Étape 4 (mesure + footprint/friction) ; ADR 0007 §« Questions ouvertes »
-  (point 1) + § échelle de confidentialité ; `CLAUDE.md` du repo (philosophie d'install « toujours
-  générique, le moins de questions possible »).
+- **Charger :** résultats des Étapes 4 (mesure Ollama) **et 4-bis** (viabilité in-process : install
+  Mac+Win, latence, qualité) ; ADR 0007 §« Questions ouvertes » (point 1) + § échelle de confidentialité ;
+  `CLAUDE.md` du repo (philosophie d'install « toujours générique, le moins de questions possible »).
 - **La question :** quel embedder par défaut, et quelle UX d'install autour ? Pistes (à départager *par
   les tests*) :
-  - **Tout-local par défaut** *(cible privilégiée)* — zéro clé/cloud, privacy max ; coût = Ollama +
-    modèle à installer (peser la friction non-dev).
+  - **Tout-local IN-PROCESS par défaut** *(cible privilégiée)* — zéro clé/cloud **et zéro install
+    séparée** (Gemma embarqué dans le MCP), privacy max ; **conditionné à l'Étape 4-bis**.
+  - **Local via Ollama** — privacy max aussi, mais **app séparée à installer** → plutôt power-user.
   - **A** — défaut unique simple + swap via `.env` après coup.
   - **B** — A + une **mini-question** seulement pour le cas entreprise (« OpenAI/Azure imposé ? »).
   - **C** — choix explicite à 3 dès l'install (plus clair, plus de friction).
 - **Done :** la décision est **actée** (court addendum à l'ADR 0007, ou nouvel ADR si ça le mérite),
-  avec son *pourquoi* **adossé aux chiffres de l'Étape 4**. Les cases de D1 sont cochées.
+  avec son *pourquoi* **adossé aux chiffres des Étapes 4 + 4-bis**. Les cases de D1 sont cochées.
 
 ---
 
@@ -185,6 +195,47 @@
 
 ---
 
+## Étape 4-bis — RAG MCP autonome « Gemma inside » : l'embedder in-process, SANS serveur 🧪
+
+> **Le pas qui peut débloquer le défaut idéal.** L'Étape 4 a prouvé que le local **égale Gemini** en
+> qualité — mais via **Ollama** (app séparée à installer), friction rédhibitoire pour un non-dev. Cette
+> étape teste la **viabilité d'un embedder embarqué dans le MCP lui-même** (Transformers.js + Gemma en
+> ONNX) : *« colle rien, ça marche »*. Si elle passe, c'est **le** candidat n°1 du défaut en D1.
+> Veille consignée : étude [`etude-rag-local-criteres-et-veille.md`](etude-rag-local-criteres-et-veille.md) **§3 ter**.
+
+- **Pré-requis :** **Étape 1 livrée** (le port `Embedder`) + **Étape 4 livrée** (la baseline 90 %/80 %
+  à égaler) ; eval-set (Étape 2).
+- **Charger :** étude **§3 ter** (la veille in-process + les 3 validations + sources) ; `rag/src/lib/embedder.ts`
+  (port + `selectEmbedder`) ; `rag/src/lib/openai-compatible-embedder.ts` (le modèle d'un adaptateur :
+  `identity`, `embed()`, échec bruyant, dep injectée) ; le script d'eval (Étape 2).
+- **Faire (TDD, baby-steps) :** implémenter `InProcessEmbedder implements Embedder` via **Transformers.js
+  v4** (`@huggingface/transformers`, pipeline `feature-extraction`, **EmbeddingGemma-300m-ONNX** en q8) —
+  `embedDocuments`/`embedQuery`, pooling moyen + normalisation ; **pipeline injectable** pour tester la
+  logique d'enveloppe **sans** télécharger les poids (même esprit que le `fetch` injecté de l'Étape 3).
+  `identity = { providerId: "transformers-js", model, dimension: 768 }`. Le brancher dans `selectEmbedder()`
+  via `EMBEDDING_PROVIDER=in-process` (**ni URL ni clé**). Poids téléchargés+cachés au 1ᵉʳ usage,
+  **échec bruyant** si DL impossible (jamais de vecteur vide dans l'index). **Ne touche ni au port ni au
+  contrat MCP.**
+- **Valider empiriquement (les 3, hors tests unitaires) :**
+  - **V1 — cross-OS (exigence DURE : Mac ET Windows à parité)** : sur un **Mac nu ET un Windows nu**,
+    `npm i` tire les binaires `onnxruntime-node` **pré-buildés** sans build tools / sans Python (env
+    appauvri de l'onglet Code). *La pierre de touche du défaut — si ça casse sur l'un des deux OS, ce
+    n'est pas le défaut.*
+  - **V2 — latence CPU** : indexation du vault + recherche, sans GPU Metal → mesurer, juger tenable pour
+    un non-dev (l'encodage est ponctuel ; q8/q4 aident).
+  - **V3 — qualité re-mesurée** : rejouer l'eval-set avec l'adaptateur in-process (modèle **quantifié**)
+    → score **vs 90 % (Ollama)** et **80 % (Gemini)**. **Confirmer la parité** ; ne pas supposer que
+    quantifié = identique.
+- **Done :** l'adaptateur existe (`npm test` vert), branché via `.env` ; un **tableau de viabilité**
+  consigné (install Mac+Win OK ? · latence · score in-process vs Ollama vs Gemini) + un **verdict
+  « viable comme défaut / pas viable »** → alimente **D1**. Contrat MCP **inchangé**. Commits
+  conventionnels par baby-step.
+- **Sortie conditionnelle :** **viable** → candidat n°1 du défaut tout-local en D1 (Ollama relégué au
+  power-user, endpoint API à l'entreprise). **Pas viable** (install KO sur un OS, latence rédhibitoire,
+  ou qualité quantifiée en chute) → repli documenté sur local-via-Ollama et/ou endpoint API.
+
+---
+
 ## Étape 5 — Onboarding / install : le choix d'embedder, rendu limpide 🧪
 
 > Aujourd'hui l'install **force** une clé Gemini (`installer.mjs`, `scripts/verify-rag.mjs`,
@@ -241,5 +292,8 @@
   **provider+modèle+dimension** (pas la seule dimension — c'est un piège).
 - **On garde Gemini natif** (taskType) — on ne le remplace pas par du compatible-OpenAI (ADR 0007 §2).
 - **On mesure avant de choisir** (eval-set), et avant tout levier qualité.
+- **Cross-platform DUR : la solution retenue marche sous Windows AUSSI BIEN que sous Mac** (exigence
+  Thomas, 2026-06-09). Tout candidat au défaut (in-process, Ollama…) doit le prouver sur **les deux** OS
+  nus — pas seulement sur le Mac de dev.
 - **Le launcher reste générique** ; pas de sur-ingénierie contre un risque non prouvé (façon de bosser
   de Thomas).
