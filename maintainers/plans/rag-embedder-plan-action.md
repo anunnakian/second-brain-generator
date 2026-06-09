@@ -50,7 +50,7 @@
   - [x] Vault représentatif choisi : **vault d'exemple Flemmr** (inventé → public-safe, versionné, **rejouable par tous**). Corpus plus riche = reporté à l'Étape 4 (décidé avec Thomas) _(2026-06-09)_
   - [x] Questions écrites : **10** (corpus Flemmr petit → ~10 plutôt que 15-20 ; mix faciles + grep-résistantes ; 1ʳᵉ = canari `demo.mjs`) _(2026-06-09 · e64f2bb)_
   - [x] Script « recherche + jugement Claude » → score reproductible : `scripts/run-eval.mjs` + cœur pur testé ; juge `claude -p` **validé end-to-end** (PASS sur passage pertinent, FAIL sur hors-sujet) ; **dev-only** (exclu du cerveau) ; documenté [`../eval-set.md`](../eval-set.md) _(2026-06-09 · e64f2bb, 0448c03)_
-  - [ ] **Baseline Gemini mesurée et consignée** ⏳ — instrument prêt, mais pas de clé dans le launcher → **Thomas lance `node scripts/run-eval.mjs` avec sa clé** puis consigne le chiffre ici
+  - [ ] **Baseline Gemini mesurée et consignée** ⏳🐞 — clé posée dans `.env`, **indexation OK (7 notes)**, mais le juge plante : `« claude -p a échoué (code 1) »`, **stderr vide**. ⚠️ un smoke isolé (2 jugements, même appel) marchait → suspecter **quota/usage Claude** (limite de tokens tapée la veille) ou logguer la **stdout** du juge. **À débugger avant le chiffre.** (détail : mémoire `etape2-eval-baseline-blocker`)
 - [ ] **Étape 3 — Adaptateur compatible-OpenAI (URL+clé)** 🧪 TDD *(dépend de : 1)* _(… · …)_
   - [ ] `OpenAiCompatibleEmbedder` : `{model,input}` → `data[].embedding` ; `embedDocuments`/`embedQuery`
   - [ ] `identity` (provider/model/dimension) renseignée
