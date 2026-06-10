@@ -190,6 +190,28 @@ also proves search **by meaning**, not a grep.
 
 Exposed MCP tools: `search_vault`, `get_document`, `list_documents`, `vault_stats`, `reindex`.
 
+## 🪨 Reading & editing your notes in Obsidian (optional, recommended)
+
+Your vault is a plain set of `.md` files, so it works without any extra app. But installing
+**[Obsidian](https://obsidian.md)** (free) gives you a full **read/write** interface over those very
+same files — the links, the knowledge **graph**, and an editor.
+
+**Set it up once — before asking Claude to "open a note":**
+
+1. Install Obsidian and **launch it manually the first time**. On a brand-new install, Obsidian opens
+   on a **welcome / vault-picker screen** — this is normal.
+   > ⚠️ **First-run gotcha.** Don't expect Claude's *"open my note"* to work *yet*: until a vault is
+   > registered, the `obsidian://` link has **nowhere to land** — Obsidian just sits on that setup
+   > screen (or shows an error). The one-time manual step below is what fixes it.
+2. On that welcome screen, click **"Open folder as vault"** and pick your brain's folder. *(One-time —
+   the vault stays registered for good; you never see the setup screen again.)*
+3. From then on, your brain **opens notes in Obsidian by default**: ask Claude *"open my note about X"*
+   and it launches the right note in Obsidian (via the `obsidian://` URI). Edits you make in Obsidian
+   and answers from Claude stay perfectly in sync — **same files, two front doors.**
+
+Obsidian is **preferred, never required**: if it isn't installed, Claude just shows the note inline as
+usual.
+
 ## 5. Customizing your harness
 
 | File | What to do |

@@ -108,7 +108,7 @@ node installer.mjs --non-interactive --name "<name>" --dest "<parent-location>" 
   installing the RAG engine, MCP smoke-test) and **judges success itself**: a **non-zero exit =
   failure** → relay the error as-is, **do not pretend** it worked.
 
-## Step 4 — Relay the result + 4 final instructions
+## Step 4 — Relay the result + 5 final instructions
 
 > The script prints the path of the created brain (`<parent-location>/<name>`). Use it below.
 
@@ -217,6 +217,16 @@ node installer.mjs --non-interactive --name "<name>" --dest "<parent-location>" 
    you ask your questions, it answers and goes fetch what's new on its own."* Note that this is
    **normal and healthy** (writes, for their part, will always stay confirmed) and that **it only
    concerns external sources** — the vault itself is already silent.
+5. **Offer the Obsidian viewer (optional, recommended).** Their notes are plain Markdown that already
+   works as-is, but installing **[Obsidian](https://obsidian.md)** (free) gives a full **read/write**
+   interface — links, graph, editor — over **the same files** Claude uses. ⚠️ **Warn them about the
+   very first launch**: on a brand-new Obsidian, the first run lands on a **welcome / vault-picker
+   screen** — this is normal, and **they must do a one-time manual step**: open Obsidian themselves,
+   click **"Open folder as vault"**, and pick the brain's folder (`<parent-location>/<name>`, with the
+   real name substituted). **Until that registration is done, asking Claude to "open a note" has
+   nowhere to land** (the `obsidian://` link errors or stalls on that setup screen). Once the vault is
+   registered, it just works — and Obsidian stays **optional**: without it, Claude shows notes inline.
+   (Full details in SETUP.md.)
 
 ## Guardrails (never to be breached)
 

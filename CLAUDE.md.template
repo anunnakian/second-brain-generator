@@ -128,6 +128,19 @@ Reference other notes with `[[relative/path/without-extension]]`:
 
 A daily note, once written, is **never edited retroactively** — you add a new daily the next day. Corrections go through topic notes or decisions. The `people/` and `topics/` files are, on the contrary, **living**: you append dated sections to them.
 
+### Opening / viewing a note → Obsidian (preferred viewer)
+
+Obsidian is the brain's **default viewer and editor**. When I ask to **open, view, browse or edit** a note (as opposed to just getting an answer in chat), open it in Obsidian rather than pasting the raw file — it gives me the links, the graph and an editor over these very same `.md` files:
+
+- Launch it via the Obsidian URI with the note's **absolute path** (Obsidian auto-routes to the vault that contains it):
+  - macOS: `open "obsidian://open?path=<url-encoded-abs-path>"`
+  - Windows: `start "" "obsidian://open?path=<url-encoded-abs-path>"`
+  - Linux: `xdg-open "obsidian://open?path=<url-encoded-abs-path>"`
+- **If Obsidian isn't installed** (e.g. on macOS `open -Ra Obsidian` fails): **don't block** — display / `Read` the note as usual, and mention *once* that installing Obsidian ([obsidian.md](https://obsidian.md), then *File → Open folder as vault* on this brain) turns it into a full read/write interface over these same files. Obsidian is **preferred, never required** — the brain works fully without it.
+- **First-run gotcha — Obsidian installed but no vault registered yet.** On a brand-new Obsidian, the first launch lands on a **welcome / vault-picker screen**, and the `obsidian://` link has nowhere to land (it errors or just stalls on that screen). **Don't retry the URI in a loop.** Instead, tell me once: *"Open Obsidian yourself, click **Open folder as vault**, and pick this brain's folder (`{{PROJECT_ROOT}}`) — a one-time step. After that, 'open my note' works for good."* Then fall back to displaying the note inline for now.
+
+When I only want an **answer** (a fact, a synthesis), just answer with the source — no need to open Obsidian.
+
 ## 3. Tone
 
 - **Factual, concise, direct.** No empty jargon.
