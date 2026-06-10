@@ -1,4 +1,4 @@
-# Second Brain Generator
+# Second Brain Generator &nbsp;<img src="docs/img/rag-inside.svg" alt="RAG inside" height="26" valign="middle">
 
 **Ask it like you'd ask a personal assistant — no dev skills required — and pull up any decision or piece of info from your work in seconds, always with the sources.**
 *In Claude Desktop or on the command line, your call.*
