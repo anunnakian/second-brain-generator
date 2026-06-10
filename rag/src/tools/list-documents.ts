@@ -2,17 +2,17 @@ import { listDocuments } from "../lib/vector-store.js";
 
 export const listDocumentsTool = {
   name: "list_documents",
-  description: "Liste tous les documents indexés du vault, avec leur type et date de mise à jour.",
+  description: "Lists all indexed vault documents, with their type and last-updated date.",
   inputSchema: {
     type: "object" as const,
     properties: {
       type: {
         type: "string",
-        description: "Filtrer par type de document",
+        description: "Filter by document type",
       },
       tags: {
         type: "string",
-        description: "Filtrer par tag (match partiel)",
+        description: "Filter by tag (partial match)",
       },
     },
   },
@@ -20,7 +20,7 @@ export const listDocumentsTool = {
     const docs = listDocuments(args.type, args.tags);
 
     if (docs.length === 0) {
-      return { content: [{ type: "text", text: "Aucun document indexé." }] };
+      return { content: [{ type: "text", text: "No indexed documents." }] };
     }
 
     const grouped = new Map<string, typeof docs>();
@@ -30,7 +30,7 @@ export const listDocumentsTool = {
       grouped.set(doc.type, list);
     }
 
-    let text = `**${docs.length} documents indexés**\n\n`;
+    let text = `**${docs.length} indexed documents**\n\n`;
     for (const [type, typeDocs] of grouped) {
       text += `## ${type} (${typeDocs.length})\n`;
       for (const d of typeDocs) {

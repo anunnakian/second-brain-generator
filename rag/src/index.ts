@@ -36,25 +36,25 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-// Liveness temps réel du fil-de-l'eau : refs partagées entre le watcher (qui les
-// renseigne au démarrage) et `vault_stats` (qui lit l'état mémoire du scheduler).
+// Real-time liveness of the live-update watcher: refs shared between the watcher
+// (which sets them at startup) and `vault_stats` (which reads the scheduler's in-memory state).
 let liveScheduler: ReindexScheduler | null = null;
 let watcherActive = false;
 
 server.tool(
   "search_vault",
-  "Recherche sémantique dans le vault. Pose ta question en langage naturel, le moteur trouve les passages les plus pertinents par similarité de sens.",
+  "Semantic search in the vault. Ask your question in natural language; the engine finds the most relevant passages by meaning similarity.",
   {
-    query: z.string().describe("Question en langage naturel"),
-    type: z.string().optional().describe("Filtrer par type de note (ex: daily, person, topic, decision, meeting, backlog...)"),
-    tags: z.string().optional().describe("Filtrer par tag (match partiel)"),
-    limit: z.number().optional().describe(`Nombre max de résultats (défaut : ${SEARCH_DEFAULT_LIMIT})`),
+    query: z.string().describe("Question in natural language"),
+    type: z.string().optional().describe("Filter by note type (e.g. daily, person, topic, decision, meeting, backlog...)"),
+    tags: z.string().optional().describe("Filter by tag (partial match)"),
+    limit: z.number().optional().describe(`Max number of results (default: ${SEARCH_DEFAULT_LIMIT})`),
   },
   async ({ query, type, tags, limit }) => {
-    // Garde d'identité : si l'index a été rempli par un autre embedder que celui
-    // configuré aujourd'hui, on NE renvoie PAS de résultats faux (vecteurs de
-    // dimensions incompatibles). On retourne la prose du confirm-gate, que Claude
-    // relaie ; le ré-index n'a lieu qu'après le « oui » (outil reindex).
+    // Identity guard: if the index was populated by a different embedder than the
+    // one configured today, we do NOT return bogus results (vectors of incompatible
+    // dimensions). We return the confirm-gate prose, which Claude relays; the
+    // re-index only happens after the "yes" (reindex tool).
     const embedder = createEmbedder();
     const verdict = checkIndexFreshness(currentIndexIdentity(), embedder.identity);
     if (!verdict.fresh) {
@@ -78,7 +78,7 @@ server.tool(
     const results = searchSimilar(queryEmbedding, limit ?? SEARCH_DEFAULT_LIMIT, type, tags);
 
     if (results.length === 0) {
-      return { content: [{ type: "text", text: "Aucun résultat trouvé dans le vault." }] };
+      return { content: [{ type: "text", text: "No results found in the vault." }] };
     }
 
     const text = results
@@ -96,35 +96,35 @@ server.tool(
 
 server.tool(
   "get_document",
-  "Lit le contenu complet d'un document du vault par son chemin relatif.",
+  "Reads the full content of a vault document by its relative path.",
   {
-    path: z.string().describe("Chemin relatif depuis vault/ (ex: people/jane-doe.md)"),
+    path: z.string().describe("Path relative to vault/ (e.g. people/jane-doe.md)"),
   },
   async ({ path: docPath }) => {
     try {
       const fullPath = resolve(VAULT_DIR, docPath);
       if (!fullPath.startsWith(VAULT_DIR)) {
-        return { content: [{ type: "text", text: "Erreur : chemin en dehors du vault." }], isError: true };
+        return { content: [{ type: "text", text: "Error: path outside the vault." }], isError: true };
       }
       const content = await readFile(fullPath, "utf-8");
       return { content: [{ type: "text", text: content }] };
     } catch {
-      return { content: [{ type: "text", text: `Fichier introuvable : vault/${docPath}` }], isError: true };
+      return { content: [{ type: "text", text: `File not found: vault/${docPath}` }], isError: true };
     }
   }
 );
 
 server.tool(
   "list_documents",
-  "Liste tous les documents indexés du vault, avec leur type et date de mise à jour.",
+  "Lists all indexed vault documents, with their type and last-updated date.",
   {
-    type: z.string().optional().describe("Filtrer par type de document"),
-    tags: z.string().optional().describe("Filtrer par tag (match partiel)"),
+    type: z.string().optional().describe("Filter by document type"),
+    tags: z.string().optional().describe("Filter by tag (partial match)"),
   },
   async ({ type, tags }) => {
     const docs = listDocuments(type, tags);
     if (docs.length === 0) {
-      return { content: [{ type: "text", text: "Aucun document indexé." }] };
+      return { content: [{ type: "text", text: "No indexed documents." }] };
     }
 
     const grouped = new Map<string, typeof docs>();
@@ -134,7 +134,7 @@ server.tool(
       grouped.set(doc.type, list);
     }
 
-    let text = `**${docs.length} documents indexés**\n\n`;
+    let text = `**${docs.length} indexed documents**\n\n`;
     for (const [docType, typeDocs] of grouped) {
       text += `## ${docType} (${typeDocs.length})\n`;
       for (const d of typeDocs) {
@@ -148,21 +148,21 @@ server.tool(
 
 server.tool(
   "reindex",
-  "Reconstruit l'index du vault. Incrémental par défaut (ne ré-indexe que les fichiers modifiés). Utiliser force=true pour tout reconstruire.",
+  "Rebuilds the vault index. Incremental by default (only re-indexes modified files). Use force=true to rebuild everything.",
   {
-    force: z.boolean().optional().describe("Forcer la ré-indexation complète (défaut : false)"),
+    force: z.boolean().optional().describe("Force a full re-index (default: false)"),
   },
   async ({ force }) => {
     const result = await reindexFn(force ?? false);
     const lines = [
-      `**Indexation terminée**`,
-      `- Fichiers scannés : ${result.scanned}`,
-      `- Indexés : ${result.indexed}`,
-      `- Inchangés (skip) : ${result.skipped}`,
-      `- Supprimés de l'index : ${result.removed}`,
+      `**Indexing complete**`,
+      `- Files scanned: ${result.scanned}`,
+      `- Indexed: ${result.indexed}`,
+      `- Unchanged (skipped): ${result.skipped}`,
+      `- Removed from index: ${result.removed}`,
     ];
     if (result.errors.length > 0) {
-      lines.push(`- Erreurs : ${result.errors.length}`);
+      lines.push(`- Errors: ${result.errors.length}`);
       for (const err of result.errors.slice(0, 5)) {
         lines.push(`  - ${err}`);
       }
@@ -173,7 +173,7 @@ server.tool(
 
 server.tool(
   "vault_stats",
-  "Affiche les statistiques de l'index : nombre de documents, chunks, répartition par type.",
+  "Shows index statistics: number of documents, chunks, and breakdown by type.",
   {},
   async () => {
     const stats = getStats();
@@ -192,9 +192,9 @@ server.tool(
       quotaMax: MAX_EMBED_REQUESTS_PER_DAY,
       reserve: QUERY_RESERVE,
       lock: lock.activeHolder(),
-      // Le quota n'est propre qu'à Gemini : on passe l'identité de l'embedder
-      // actif (createEmbedder est mémoïsé) pour ne pas afficher un faux quota
-      // Gemini en mode local (in-process / endpoint compatible-OpenAI).
+      // The quota is specific to Gemini only: we pass the active embedder's
+      // identity (createEmbedder is memoized) so we don't display a bogus Gemini
+      // quota in local mode (in-process / OpenAI-compatible endpoint).
       providerId: createEmbedder().identity.providerId,
       progress,
       now: new Date().toISOString(),
@@ -207,19 +207,19 @@ server.tool(
 
     const typeLines = stats.types.map((t) => `  - ${t.type}: ${t.n}`).join("\n");
     const text =
-      `**État du RAG**\n${status}\n${watcherLine}\n\n` +
-      `**Index vault**\n` +
-      `- Documents : ${stats.docCount}\n` +
-      `- Chunks : ${stats.chunkCount}\n` +
-      `- Par type :\n${typeLines}`;
+      `**RAG status**\n${status}\n${watcherLine}\n\n` +
+      `**Vault index**\n` +
+      `- Documents: ${stats.docCount}\n` +
+      `- Chunks: ${stats.chunkCount}\n` +
+      `- By type:\n${typeLines}`;
     return { content: [{ type: "text", text }] };
   }
 );
 
 /**
- * Écrit `rag/.cache/last-run.md` lisible (résumé formaté du dernier run), à partir
- * de l'état persisté par le reporter. Best-effort : une erreur d'écriture ne doit
- * jamais faire tomber le run d'indexation.
+ * Writes a readable `rag/.cache/last-run.md` (formatted summary of the last run),
+ * from the state persisted by the reporter. Best-effort: a write error must never
+ * bring down the indexing run.
  */
 function writeLastRunMarkdown(): void {
   try {
@@ -228,35 +228,35 @@ function writeLastRunMarkdown(): void {
     const md = formatLastRunMarkdown(progress, new Date().toISOString());
     writeFileSync(resolve(CACHE_DIR, "last-run.md"), md, "utf-8");
   } catch (err) {
-    console.error("[vault-rag] Écriture last-run.md échouée (non bloquant) :", err);
+    console.error("[vault-rag] Failed to write last-run.md (non-blocking):", err);
   }
 }
 
 async function main() {
   const argv = process.argv;
-  // --force (ou --reindex, conservé en alias) : rebuild complet, ignore le cache.
+  // --force (or --reindex, kept as an alias): full rebuild, ignores the cache.
   const force = argv.includes("--force") || argv.includes("--reindex");
-  // Mode CLI : on (ré)indexe puis on SORT, sans démarrer le serveur MCP.
+  // CLI mode: we (re)index then EXIT, without starting the MCP server.
   const cliMode =
     argv.includes("--once") || argv.includes("--force") || argv.includes("--reindex");
 
   if (cliMode) {
     console.error(
-      `[vault-rag] Indexation CLI (${force ? "force complète" : "incrémentale"})...`
+      `[vault-rag] CLI indexing (${force ? "full force" : "incremental"})...`
     );
     const result = await reindex(force);
     writeLastRunMarkdown();
     console.error(
-      `[vault-rag] Index : ${result.indexed} indexés, ${result.skipped} inchangés, ${result.removed} supprimés` +
-        (result.errors.length > 0 ? `, ${result.errors.length} erreurs` : "")
+      `[vault-rag] Index: ${result.indexed} indexed, ${result.skipped} unchanged, ${result.removed} removed` +
+        (result.errors.length > 0 ? `, ${result.errors.length} errors` : "")
     );
     console.log(JSON.stringify(result, null, 2));
     process.exit(0);
   }
 
-  // Mode serveur MCP : on ouvre le transport D'ABORD (handshake instantané, plus de
-  // timeout "failed"), puis on lance l'auto-reindex incrémental en tâche de fond —
-  // non bloquant, et une erreur d'embedding ne tue plus le serveur.
+  // MCP server mode: we open the transport FIRST (instant handshake, no more
+  // "failed" timeout), then we kick off the incremental auto-reindex in the
+  // background — non-blocking, and an embedding error no longer kills the server.
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("[vault-rag] MCP server running on stdio");
@@ -265,40 +265,40 @@ async function main() {
     .then((result) => {
       writeLastRunMarkdown();
       console.error(
-        `[vault-rag] Auto-reindex terminé : ${result.indexed} indexés, ${result.skipped} inchangés` +
-          (result.errors.length > 0 ? `, ${result.errors.length} erreurs` : "")
+        `[vault-rag] Auto-reindex done: ${result.indexed} indexed, ${result.skipped} unchanged` +
+          (result.errors.length > 0 ? `, ${result.errors.length} errors` : "")
       );
-      // Surfaçage de l'incomplétude : si l'index n'est pas complet après le run
-      // (mur quota, erreurs), le dire explicitement — reprise auto à la prochaine
-      // session, rien à faire à la main.
+      // Surface incompleteness: if the index is not complete after the run
+      // (quota wall, errors), say so explicitly — auto-resumes on the next
+      // session, nothing to do by hand.
       const warning = incompleteIndexWarning({
         docCount: getStats().docCount,
         scannedCount: result.scanned,
       });
       if (warning) console.error(`[vault-rag] ${warning}`);
 
-      // Fraîcheur « au fil de l'eau » : une fois le reindex de démarrage terminé
-      // (évite tout chevauchement same-pid avec lui), on surveille le vault. Le
-      // scheduler debounce les rafales et sérialise les runs in-process ; chaque
-      // run réécrit last-run.md → observable comme les autres (F.5).
+      // "Live" freshness: once the startup reindex is done (avoiding any same-pid
+      // overlap with it), we watch the vault. The scheduler debounces bursts and
+      // serializes in-process runs; each run rewrites last-run.md → observable like
+      // the others (F.5).
       startFileWatcher();
     })
     .catch((err) =>
-      console.error("[vault-rag] Auto-reindex échoué (non bloquant) :", err)
+      console.error("[vault-rag] Auto-reindex failed (non-blocking):", err)
     );
 }
 
 /**
- * Démarre le watcher fil-de-l'eau : chaque écriture dans le vault programme un
- * reindex incrémental débouncé (regroupement des rafales + coalescing des
- * écritures survenant pendant un run, cf. ReindexScheduler).
+ * Starts the live-update watcher: every write to the vault schedules a debounced
+ * incremental reindex (grouping bursts + coalescing writes that occur during a
+ * run, cf. ReindexScheduler).
  */
 /**
- * Trace lisible du fil-de-l'eau : une ligne horodatée par évènement, à la fois
- * sur la console MCP (→ logs `mcp-logs-vault-rag`) ET en append dans
- * `rag/.cache/watcher.log` (nom stable, `tail -f`-able pour voir le cycle en
- * direct : écriture détectée → rattrapage déclenché → terminé). Best-effort.
- * `.cache` est hors du vault surveillé → pas de boucle.
+ * Readable live-update trace: one timestamped line per event, both on the MCP
+ * console (→ `mcp-logs-vault-rag` logs) AND appended to `rag/.cache/watcher.log`
+ * (stable name, `tail -f`-able to watch the cycle live: write detected →
+ * catch-up triggered → done). Best-effort. `.cache` is outside the watched vault
+ * → no loop.
  */
 function traceWatcher(msg: string): void {
   const line = `${new Date().toISOString()} ${msg}`;
@@ -306,7 +306,7 @@ function traceWatcher(msg: string): void {
   try {
     appendFileSync(resolve(CACHE_DIR, "watcher.log"), line + "\n", "utf-8");
   } catch {
-    /* best-effort : ne jamais faire tomber le run pour une ligne de log */
+    /* best-effort: never bring down the run over a log line */
   }
 }
 
@@ -314,28 +314,28 @@ function startFileWatcher(): void {
   try {
     const scheduler = new ReindexScheduler({
       run: async () => {
-        traceWatcher("⚙️  rattrapage déclenché (debounce écoulé) — indexation en cours…");
+        traceWatcher("⚙️  catch-up triggered (debounce elapsed) — indexing in progress…");
         const result = await reindex(false);
         writeLastRunMarkdown();
         traceWatcher(
-          `✅ rattrapage terminé : ${result.indexed} indexés, ${result.skipped} inchangés` +
-            (result.skippedLocked ? " (sauté : reindex déjà en cours)" : "") +
-            (result.errors.length > 0 ? `, ${result.errors.length} erreurs` : "")
+          `✅ catch-up done: ${result.indexed} indexed, ${result.skipped} unchanged` +
+            (result.skippedLocked ? " (skipped: reindex already in progress)" : "") +
+            (result.errors.length > 0 ? `, ${result.errors.length} errors` : "")
         );
       },
     });
     startVaultWatcher({
       onChange: (path) => {
-        traceWatcher(`📝 écriture détectée : ${relative(VAULT_DIR, path)}`);
+        traceWatcher(`📝 write detected: ${relative(VAULT_DIR, path)}`);
         scheduler.notify();
       },
     });
-    // Liveness : le watcher est en place → on publie ses refs pour vault_stats.
+    // Liveness: the watcher is in place → we publish its refs for vault_stats.
     liveScheduler = scheduler;
     watcherActive = true;
-    console.error("[vault-rag] Watcher fil-de-l'eau actif sur le vault");
+    console.error("[vault-rag] Live-update watcher active on the vault");
   } catch (err) {
-    console.error("[vault-rag] Watcher fil-de-l'eau non démarré (non bloquant) :", err);
+    console.error("[vault-rag] Live-update watcher not started (non-blocking):", err);
   }
 }
 

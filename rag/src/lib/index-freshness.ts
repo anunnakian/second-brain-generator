@@ -1,9 +1,9 @@
 import type { EmbedderIdentity } from "./vector-store.js";
 
 /**
- * Verdict de fraîcheur de l'index face à l'embedder courant. Quand il est périmé,
- * il porte **les deux identités** (estampillée vs courante) pour un message
- * actionnable côté conversation (cf. confirm-gate, plan embedder-spi §4).
+ * Freshness verdict for the index against the current embedder. When stale,
+ * it carries **both identities** (stamped vs current) for an actionable message
+ * on the conversation side (cf. confirm-gate, embedder-spi plan §4).
  */
 export type FreshnessVerdict =
   | { fresh: true }
@@ -14,17 +14,17 @@ export type FreshnessVerdict =
     };
 
 /**
- * Compare l'identité estampillée dans l'index à celle de l'embedder courant.
- * Mismatch → périmé. Plutôt qu'une recherche qui ment en silence, on remonte un
- * signal explicite (esprit fail-loud du projet).
+ * Compares the identity stamped in the index to that of the current embedder.
+ * Mismatch → stale. Rather than a search that lies silently, we surface an
+ * explicit signal (the project's fail-loud spirit).
  */
 /**
- * Faut-il (ré)estampiller l'index après ce run ? On ne pose une **nouvelle**
- * identité que quand l'index la reflète vraiment : soit un `force` (tout est
- * ré-encodé avec l'embedder courant), soit un index encore vierge d'estampille
- * (install neuve / index d'avant ce plan). En incrémental sur un index déjà
- * estampillé, on n'y touche pas : si l'embedder a changé hors du gate, le garde
- * le détecte toujours (on ne maquille jamais l'index en « frais »).
+ * Should we (re)stamp the index after this run? We only set a **new**
+ * identity when the index truly reflects it: either a `force` (everything is
+ * re-encoded with the current embedder), or an index still free of any stamp
+ * (fresh install / index from before this plan). Incrementally on an already-
+ * stamped index, we don't touch it: if the embedder changed outside the gate, the
+ * guard still detects it (we never dress up the index as "fresh").
  */
 export function shouldStamp(
   force: boolean,
@@ -34,22 +34,22 @@ export function shouldStamp(
 }
 
 /**
- * Prose du confirm-gate (langage naturel), relayée par Claude quand l'index est
- * périmé. Nomme les modèles DYNAMIQUEMENT via l'identité — rien n'est codé en dur
- * « Gemini ». Par défaut on ne réindexe RIEN : on demande, on attend le « oui »
- * (cf. plan embedder-spi §4). Le contrat MCP ne bouge pas : ce n'est que du texte.
+ * Confirm-gate prose (natural language), relayed by Claude when the index is
+ * stale. Names the models DYNAMICALLY via the identity — nothing is hardcoded
+ * as "Gemini". By default we reindex NOTHING: we ask, we wait for the "yes"
+ * (cf. embedder-spi plan §4). The MCP contract doesn't change: this is just text.
  */
 export function staleIndexMessage(
   stamped: EmbedderIdentity | null,
   current: EmbedderIdentity
 ): string {
-  const avant = stamped ? `avant : ${stamped.model}, ` : "";
+  const before = stamped ? `before: ${stamped.model}, ` : "";
   return (
-    `Mes capacités de recherche rapide et sémantique reposent sur un indexeur/embedder ; ` +
-    `or sa configuration a changé (${avant}maintenant : ${current.model}). ` +
-    `Pour continuer à fonctionner, il me faut ré-indexer tes documents — eux ne bougent pas, ` +
-    `c'est juste qu'ils doivent être ré-encodés avec le nouveau modèle. ` +
-    `Ça peut prendre un peu de temps. Tu veux que je le fasse maintenant ?`
+    `My fast, semantic search capabilities rely on an indexer/embedder; ` +
+    `but its configuration has changed (${before}now: ${current.model}). ` +
+    `To keep working, I need to re-index your documents — they don't change, ` +
+    `it's just that they have to be re-encoded with the new model. ` +
+    `This may take a little while. Do you want me to do it now?`
   );
 }
 

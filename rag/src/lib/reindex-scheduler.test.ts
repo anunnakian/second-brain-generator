@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { ReindexScheduler } from "./reindex-scheduler.js";
 
 /**
- * Timer factice : capture l'unique callback en attente (le debounce ne garde
- * qu'un timer à la fois — chaque notify annule le précédent). `fire()` le
- * déclenche manuellement, sans horloge réelle.
+ * Fake timer: captures the single pending callback (the debounce only keeps
+ * one timer at a time — each notify cancels the previous one). `fire()`
+ * triggers it manually, without a real clock.
  */
 type Handle = ReturnType<typeof setTimeout>;
 
@@ -21,7 +21,7 @@ function fakeTimer() {
     clear(handle: Handle) {
       timers.delete(handle as unknown as number);
     },
-    /** Déclenche tous les timers encore actifs (révèle un clear manquant). */
+    /** Fires all timers still active (reveals a missing clear). */
     fire() {
       const callbacks = [...timers.values()];
       timers.clear();
@@ -34,8 +34,8 @@ function fakeTimer() {
 }
 
 /**
- * Run pilotable : chaque appel renvoie une promesse qu'on résout à la main, pour
- * simuler un reindex « en cours » et déclencher un notify pendant ce temps.
+ * Controllable run: each call returns a promise we resolve by hand, to
+ * simulate a reindex "in progress" and trigger a notify while it runs.
  */
 function controllableRun() {
   const resolvers: Array<() => void> = [];
@@ -45,7 +45,7 @@ function controllableRun() {
       calls++;
       return new Promise<void>((resolve) => resolvers.push(resolve));
     },
-    /** Termine le run le plus ancien et laisse les continuations post-await tourner. */
+    /** Completes the oldest run and lets the post-await continuations run. */
     async completeOne() {
       resolvers.shift()?.();
       for (let i = 0; i < 5; i++) await Promise.resolve();
@@ -54,7 +54,7 @@ function controllableRun() {
   };
 }
 
-test("F.1 — notify ne lance pas le reindex tout de suite, il le programme (timer en attente)", () => {
+test("F.1 — notify does not run the reindex right away, it schedules it (pending timer)", () => {
   let runs = 0;
   const timer = fakeTimer();
   const scheduler = new ReindexScheduler({
@@ -72,7 +72,7 @@ test("F.1 — notify ne lance pas le reindex tout de suite, il le programme (tim
   assert.ok(timer.hasPending());
 });
 
-test("F.1 — quand le timer se déclenche, le reindex est lancé une fois", () => {
+test("F.1 — when the timer fires, the reindex runs once", () => {
   let runs = 0;
   const timer = fakeTimer();
   const scheduler = new ReindexScheduler({
@@ -90,7 +90,7 @@ test("F.1 — quand le timer se déclenche, le reindex est lancé une fois", () 
   assert.equal(runs, 1);
 });
 
-test("F.1 — une rafale de notify est regroupée en un seul reindex (debounce)", () => {
+test("F.1 — a burst of notify is coalesced into a single reindex (debounce)", () => {
   let runs = 0;
   const timer = fakeTimer();
   const scheduler = new ReindexScheduler({
@@ -110,7 +110,7 @@ test("F.1 — une rafale de notify est regroupée en un seul reindex (debounce)"
   assert.equal(runs, 1);
 });
 
-test("F.2 — un notify pendant un run → exactement un rerun à la fin (jamais en parallèle)", async () => {
+test("F.2 — a notify during a run → exactly one rerun at the end (never in parallel)", async () => {
   const ctrl = controllableRun();
   const timer = fakeTimer();
   const scheduler = new ReindexScheduler({
@@ -121,21 +121,21 @@ test("F.2 — un notify pendant un run → exactement un rerun à la fin (jamais
   });
 
   scheduler.notify();
-  timer.fire(); // run #1 démarre et reste en cours
+  timer.fire(); // run #1 starts and stays in progress
   assert.equal(ctrl.calls(), 1);
 
   scheduler.notify();
-  timer.fire(); // écriture pendant le run → pas de run parallèle
+  timer.fire(); // write during the run → no parallel run
   assert.equal(ctrl.calls(), 1);
 
-  await ctrl.completeOne(); // run #1 fini → le rerun en attente part
+  await ctrl.completeOne(); // run #1 done → the pending rerun starts
   assert.equal(ctrl.calls(), 2);
 
-  await ctrl.completeOne(); // run #2 fini → plus rien en attente
+  await ctrl.completeOne(); // run #2 done → nothing left pending
   assert.equal(ctrl.calls(), 2);
 });
 
-test("F.2 — N écritures pendant un run sont fusionnées en un seul rerun", async () => {
+test("F.2 — N writes during a run are merged into a single rerun", async () => {
   const ctrl = controllableRun();
   const timer = fakeTimer();
   const scheduler = new ReindexScheduler({
@@ -146,21 +146,21 @@ test("F.2 — N écritures pendant un run sont fusionnées en un seul rerun", as
   });
 
   scheduler.notify();
-  timer.fire(); // run #1 en cours
+  timer.fire(); // run #1 in progress
   for (let i = 0; i < 4; i++) {
     scheduler.notify();
-    timer.fire(); // 4 écritures pendant le run
+    timer.fire(); // 4 writes during the run
   }
   assert.equal(ctrl.calls(), 1);
 
-  await ctrl.completeOne(); // → un seul rerun, pas quatre
+  await ctrl.completeOne(); // → a single rerun, not four
   assert.equal(ctrl.calls(), 2);
 
-  await ctrl.completeOne(); // plus rien en attente
+  await ctrl.completeOne(); // nothing left pending
   assert.equal(ctrl.calls(), 2);
 });
 
-test("F.2 — sans écriture pendant le run, aucun rerun (idle → 0)", async () => {
+test("F.2 — without a write during the run, no rerun (idle → 0)", async () => {
   const ctrl = controllableRun();
   const timer = fakeTimer();
   const scheduler = new ReindexScheduler({
@@ -177,7 +177,7 @@ test("F.2 — sans écriture pendant le run, aucun rerun (idle → 0)", async ()
   assert.equal(ctrl.calls(), 1);
 });
 
-test("F.live — un scheduler neuf est au repos (rien programmé, rien en cours)", () => {
+test("F.live — a fresh scheduler is idle (nothing scheduled, nothing running)", () => {
   const timer = fakeTimer();
   const scheduler = new ReindexScheduler({
     run: async () => {},
@@ -193,7 +193,7 @@ test("F.live — un scheduler neuf est au repos (rien programmé, rien en cours)
   });
 });
 
-test("F.live — après notify, un reindex est programmé (scheduled), pas encore en cours", () => {
+test("F.live — after notify, a reindex is scheduled, not yet running", () => {
   const timer = fakeTimer();
   const scheduler = new ReindexScheduler({
     run: async () => {},
@@ -211,7 +211,7 @@ test("F.live — après notify, un reindex est programmé (scheduled), pas encor
   });
 });
 
-test("F.live — pendant un run : running, et écriture pendant le run → pending", async () => {
+test("F.live — during a run: running, and a write during the run → pending", async () => {
   const ctrl = controllableRun();
   const timer = fakeTimer();
   const scheduler = new ReindexScheduler({
@@ -222,7 +222,7 @@ test("F.live — pendant un run : running, et écriture pendant le run → pendi
   });
 
   scheduler.notify();
-  timer.fire(); // run en cours
+  timer.fire(); // run in progress
   assert.deepEqual(scheduler.state(), {
     scheduled: false,
     running: true,
@@ -230,14 +230,14 @@ test("F.live — pendant un run : running, et écriture pendant le run → pendi
   });
 
   scheduler.notify();
-  timer.fire(); // écriture pendant le run → rerun en attente
+  timer.fire(); // write during the run → rerun pending
   assert.deepEqual(scheduler.state(), {
     scheduled: false,
     running: true,
     pending: true,
   });
 
-  await ctrl.completeOne(); // run + rerun consommés → retour au repos
+  await ctrl.completeOne(); // run + rerun consumed → back to idle
   await ctrl.completeOne();
   assert.deepEqual(scheduler.state(), {
     scheduled: false,

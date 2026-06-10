@@ -2,27 +2,27 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { QUERY_RESERVE, resolveKey } from "./config.js";
 
-test("QUERY_RESERVE par défaut = 50 (crédits réservés à la recherche)", () => {
+test("QUERY_RESERVE default = 50 (credits reserved for search)", () => {
   assert.equal(QUERY_RESERVE, 50);
 });
 
-// La clé est lue une fois au démarrage du process MCP. Si l'utilisateur la colle
-// dans .env APRÈS avoir lancé Claude Code, le process tournait avec une clé vide.
-// resolveKey relit alors le .env à la volée → plus besoin de reconnecter le serveur.
-test("resolveKey — garde la clé déjà chargée, sans relire le .env", () => {
+// The key is read once at MCP process startup. If the user pastes it into .env
+// AFTER having launched Claude Code, the process was running with an empty key.
+// resolveKey then re-reads the .env on the fly → no need to reconnect the server.
+test("resolveKey — keeps the already-loaded key, without re-reading the .env", () => {
   let reloaded = false;
-  const key = resolveKey("AIza-deja-la", () => {
+  const key = resolveKey("AIza-already-here", () => {
     reloaded = true;
-    return "depuis-le-fichier";
+    return "from-the-file";
   });
-  assert.equal(key, "AIza-deja-la");
-  assert.equal(reloaded, false, "ne doit pas relire le .env si la clé est déjà là");
+  assert.equal(key, "AIza-already-here");
+  assert.equal(reloaded, false, "must not re-read the .env if the key is already there");
 });
 
-test("resolveKey — clé absente au démarrage → relit le .env (clé collée après coup)", () => {
-  assert.equal(resolveKey("", () => "AIza-collee-apres"), "AIza-collee-apres");
+test("resolveKey — key missing at startup → re-reads the .env (key pasted after the fact)", () => {
+  assert.equal(resolveKey("", () => "AIza-pasted-after"), "AIza-pasted-after");
 });
 
-test("resolveKey — toujours rien dans le .env → chaîne vide (pas de crash)", () => {
+test("resolveKey — still nothing in the .env → empty string (no crash)", () => {
   assert.equal(resolveKey("", () => undefined), "");
 });

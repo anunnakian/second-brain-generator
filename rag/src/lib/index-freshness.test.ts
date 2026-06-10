@@ -13,7 +13,7 @@ const gemini: EmbedderIdentity = {
   dimension: 3072,
 };
 
-test("identité courante ≠ identité estampillée → verdict périmé portant les deux", () => {
+test("current identity ≠ stamped identity → stale verdict carrying both", () => {
   const stamped: EmbedderIdentity = {
     providerId: "ollama",
     model: "nomic-embed-text",
@@ -25,31 +25,31 @@ test("identité courante ≠ identité estampillée → verdict périmé portant
   assert.deepEqual(verdict, { fresh: false, stamped, current: gemini });
 });
 
-test("identité courante = identité estampillée → verdict frais", () => {
+test("current identity = stamped identity → fresh verdict", () => {
   const verdict = checkIndexFreshness({ ...gemini }, gemini);
 
   assert.deepEqual(verdict, { fresh: true });
 });
 
-test("index sans estampille (d'avant ce plan) → périmé, stamped = null", () => {
+test("index with no stamp (from before this plan) → stale, stamped = null", () => {
   const verdict = checkIndexFreshness(null, gemini);
 
   assert.deepEqual(verdict, { fresh: false, stamped: null, current: gemini });
 });
 
-test("reindex force → on (ré)estampille (tout est ré-encodé avec l'embedder courant)", () => {
+test("reindex force → we (re)stamp (everything is re-encoded with the current embedder)", () => {
   assert.equal(shouldStamp(true, gemini), true);
 });
 
-test("incrémental sur index déjà estampillé → on n'estampille PAS (on ne maquille pas)", () => {
+test("incremental on an already-stamped index → we do NOT stamp (no dressing up)", () => {
   assert.equal(shouldStamp(false, gemini), false);
 });
 
-test("incrémental sur index vierge d'estampille → on estampille (install neuve / migration)", () => {
+test("incremental on an index free of any stamp → we stamp (fresh install / migration)", () => {
   assert.equal(shouldStamp(false, null), true);
 });
 
-test("message de péremption : nomme les deux modèles dynamiquement + propose le ré-index", () => {
+test("stale message: names both models dynamically + offers the re-index", () => {
   const stamped: EmbedderIdentity = {
     providerId: "gemini",
     model: "gemini-embedding-001",
@@ -63,12 +63,12 @@ test("message de péremption : nomme les deux modèles dynamiquement + propose l
 
   const msg = staleIndexMessage(stamped, current);
 
-  assert.ok(msg.includes("gemini-embedding-001"), "nomme le modèle stampé");
-  assert.ok(msg.includes("nomic-embed-text"), "nomme le modèle courant");
-  assert.match(msg, /ré-?index/i);
+  assert.ok(msg.includes("gemini-embedding-001"), "names the stamped model");
+  assert.ok(msg.includes("nomic-embed-text"), "names the current model");
+  assert.match(msg, /re-?index/i);
 });
 
-test("message de péremption sans estampille préalable : pas de « undefined », propose le ré-index", () => {
+test("stale message with no prior stamp: no \"undefined\", offers the re-index", () => {
   const current: EmbedderIdentity = {
     providerId: "gemini",
     model: "gemini-embedding-001",
@@ -77,7 +77,7 @@ test("message de péremption sans estampille préalable : pas de « undefined »
 
   const msg = staleIndexMessage(null, current);
 
-  assert.ok(!msg.includes("undefined"), "aucun undefined dans la prose");
-  assert.ok(msg.includes("gemini-embedding-001"), "nomme le modèle courant");
-  assert.match(msg, /ré-?index/i);
+  assert.ok(!msg.includes("undefined"), "no undefined in the prose");
+  assert.ok(msg.includes("gemini-embedding-001"), "names the current model");
+  assert.match(msg, /re-?index/i);
 });

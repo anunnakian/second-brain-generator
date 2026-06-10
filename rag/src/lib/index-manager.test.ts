@@ -7,7 +7,7 @@ import type { PreparedDoc, IndexPorts } from "./indexer.js";
 import type { RunProgress } from "./progress-report.js";
 import type { Embedder } from "./embedder.js";
 
-// Doc préparé minimal avec n chunks.
+// Minimal prepared doc with n chunks.
 function doc(path: string, nChunks: number): PreparedDoc {
   return {
     relativePath: path,
@@ -25,7 +25,7 @@ function doc(path: string, nChunks: number): PreparedDoc {
 
 const fakeEmbed: IndexPorts["embed"] = async (texts) => texts.map(() => [0.1, 0.2]);
 
-// Storage de progress en mémoire.
+// In-memory progress storage.
 function memProgressStorage() {
   let state: RunProgress | null = null;
   const storage: ProgressStorage = {
@@ -37,7 +37,7 @@ function memProgressStorage() {
   return storage;
 }
 
-// Storage en mémoire pré-rempli — simule un lock déjà tenu, sans toucher au FS.
+// Pre-filled in-memory storage — simulates a lock already held, without touching the FS.
 class MemStorage implements LockStorage {
   state: LockState | null;
   constructor(initial: LockState | null = null) {
@@ -54,15 +54,15 @@ class MemStorage implements LockStorage {
   }
 }
 
-test("reindex verrouillé par un autre process vivant : no-op, zéro embedding", async () => {
+test("reindex locked by another live process: no-op, zero embedding", async () => {
   const storage = new MemStorage({
     pid: 999,
-    acquiredAt: "2026-05-31T17:59:00Z", // frais → non périmé
+    acquiredAt: "2026-05-31T17:59:00Z", // fresh → not stale
   });
   const lock = new ReindexLock({
     storage,
     pid: 1234,
-    isAlive: () => true, // 999 est vivant
+    isAlive: () => true, // 999 is alive
     now: () => new Date("2026-05-31T18:00:00Z"),
   });
 
@@ -79,11 +79,11 @@ test("reindex verrouillé par un autre process vivant : no-op, zéro embedding",
   const result = await reindex(false, { lock, embedder: embedderSpy });
 
   assert.equal(result.skippedLocked, true);
-  assert.equal(embedCalls, 0); // l'embedding n'a jamais été déclenché
-  assert.equal(storage.load()?.pid, 999); // l'autre process garde le lock
+  assert.equal(embedCalls, 0); // embedding was never triggered
+  assert.equal(storage.load()?.pid, 999); // the other process keeps the lock
 });
 
-test("runIndexingPhase : start → tick par doc → finish done", async () => {
+test("runIndexingPhase: start → tick per doc → finish done", async () => {
   const storage = memProgressStorage();
   const reporter = new ReindexReporter({
     storage,
@@ -108,19 +108,19 @@ test("runIndexingPhase : start → tick par doc → finish done", async () => {
   assert.equal(final?.wallReason, null);
 });
 
-test("runIndexingPhase : mur quota → finish incomplete + hitCap", async () => {
+test("runIndexingPhase: quota wall → finish incomplete + hitCap", async () => {
   const storage = memProgressStorage();
   const reporter = new ReindexReporter({
     storage,
     now: () => new Date("2026-05-31T18:00:00Z"),
   });
 
-  // L'embedding lève une DailyCapExceededError au 2ᵉ doc.
+  // Embedding throws a DailyCapExceededError on the 2nd doc.
   let calls = 0;
   const embedCap: IndexPorts["embed"] = async (texts) => {
     calls++;
     if (calls === 2) {
-      const err = new Error("Plafond journalier...");
+      const err = new Error("Daily cap...");
       err.name = "DailyCapExceededError";
       throw err;
     }
@@ -137,26 +137,26 @@ test("runIndexingPhase : mur quota → finish incomplete + hitCap", async () => 
   const final = storage.load();
   assert.equal(final?.status, "incomplete");
   assert.equal(final?.hitCap, true);
-  assert.equal(final?.doneChunks, 2); // seul a.md (2 chunks) est passé
+  assert.equal(final?.doneChunks, 2); // only a.md (2 chunks) went through
   assert.equal(final?.errors.length, 1);
   assert.equal(final?.wallReason, "local-cap");
 });
 
-test("runIndexingPhase : mur Google (429) → finish incomplete + hitCap (pas un run réussi)", async () => {
+test("runIndexingPhase: Google wall (429) → finish incomplete + hitCap (not a successful run)", async () => {
   const storage = memProgressStorage();
   const reporter = new ReindexReporter({
     storage,
     now: () => new Date("2026-05-31T18:00:00Z"),
   });
 
-  // Le mur réel Google est tapé en premier (limite Google sous la nôtre) : 429
-  // RESOURCE_EXHAUSTED levé par l'embedder après ses retries. Ce n'est PAS une
-  // DailyCapExceededError locale — mais ça reste un run incomplet à reprendre.
+  // The real Google wall is hit first (Google's limit below ours): 429
+  // RESOURCE_EXHAUSTED thrown by the embedder after its retries. This is NOT a
+  // local DailyCapExceededError — but it's still an incomplete run to be resumed.
   let calls = 0;
   const embed429: IndexPorts["embed"] = async (texts) => {
     calls++;
     if (calls === 2) {
-      throw new Error("got status: 429 RESOURCE_EXHAUSTED — quota Google");
+      throw new Error("got status: 429 RESOURCE_EXHAUSTED — Google quota");
     }
     return texts.map(() => [0.1, 0.2]);
   };

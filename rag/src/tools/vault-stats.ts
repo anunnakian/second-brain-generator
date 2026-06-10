@@ -2,7 +2,7 @@ import { getStats } from "../lib/vector-store.js";
 
 export const vaultStatsTool = {
   name: "vault_stats",
-  description: "Affiche les statistiques de l'index : nombre de documents, chunks, répartition par type.",
+  description: "Shows index statistics: number of documents, chunks, and breakdown by type.",
   inputSchema: {
     type: "object" as const,
     properties: {},
@@ -14,10 +14,10 @@ export const vaultStatsTool = {
       .join("\n");
 
     const text =
-      `**Index vault**\n` +
-      `- Documents : ${stats.docCount}\n` +
-      `- Chunks : ${stats.chunkCount}\n` +
-      `- Par type :\n${typeLines}`;
+      `**Vault index**\n` +
+      `- Documents: ${stats.docCount}\n` +
+      `- Chunks: ${stats.chunkCount}\n` +
+      `- By type:\n${typeLines}`;
 
     return { content: [{ type: "text", text }] };
   },

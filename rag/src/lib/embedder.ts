@@ -10,24 +10,24 @@ import { OpenAiCompatibleEmbedder } from "./openai-compatible-embedder.js";
 import { InProcessEmbedder, promptsForModel } from "./in-process-embedder.js";
 
 /**
- * Le port SPI de l'embedding (contrat interne, agnostique fournisseur). Chaque
- * adaptateur (Gemini aujourd'hui ; demain OpenAI-compatible / local) l'implémente
- * et traduit l'intention (`embedDocuments` vs `embedQuery`) dans le dialecte natif
- * de son backend — ou l'ignore. Voir plan embedder-spi §2.
+ * The embedding SPI port (internal, provider-agnostic contract). Each adapter
+ * (Gemini today; OpenAI-compatible / local tomorrow) implements it and translates
+ * the intent (`embedDocuments` vs `embedQuery`) into its backend's native dialect —
+ * or ignores it. See the embedder-spi plan §2.
  */
 export interface Embedder {
-  /** Qui je suis — estampillé dans l'index, clé d'invalidation au swap. */
+  /** Who I am — stamped into the index, the invalidation key on swap. */
   readonly identity: EmbedderIdentity;
-  /** Chemin indexation : « j'encode des documents à ranger ». */
+  /** Indexing path: "I'm encoding documents to file away". */
   embedDocuments(texts: string[]): Promise<number[][]>;
-  /** Chemin recherche (prioritaire) : « j'encode une question posée ». */
+  /** Search path (priority): "I'm encoding a question being asked". */
   embedQuery(text: string): Promise<number[]>;
 }
 
 /**
- * Identité de l'embedder qui a rempli l'index (provider/modèle/dimension). La
- * dimension est la clé d'invalidation : deux modèles de dimensions différentes
- * produisent des vecteurs incomparables (cf. plan embedder-spi §1).
+ * Identity of the embedder that filled the index (provider/model/dimension). The
+ * dimension is the invalidation key: two models of different dimensions produce
+ * incomparable vectors (cf. embedder-spi plan §1).
  */
 export interface EmbedderIdentity {
   providerId: string;
@@ -35,15 +35,15 @@ export interface EmbedderIdentity {
   dimension: number;
 }
 
-// Dimension de sortie de gemini-embedding-001 (défaut du modèle). Fait partie de
-// l'identité Gemini : c'est elle qui dit à l'index « ces vecteurs font 3072 ».
+// Output dimension of gemini-embedding-001 (the model's default). Part of the
+// Gemini identity: it's what tells the index "these vectors are 3072 wide".
 const GEMINI_DIMENSION = 3072;
 
 let client: GoogleGenAI | null = null;
 
-// Garde-fou A : plafond journalier partagé entre processus (serveur MCP + CLI)
-// via un compteur persisté. L'indexation s'arrête à MAX − QUERY_RESERVE ; la
-// réserve garde la recherche (consumePriority) vivante jusqu'au plafond plein.
+// Guardrail A: daily cap shared across processes (MCP server + CLI) via a
+// persisted counter. Indexing stops at MAX − QUERY_RESERVE; the reserve keeps
+// search (consumePriority) alive up to the full cap.
 const usage = new UsageTracker({
   maxPerDay: MAX_EMBED_REQUESTS_PER_DAY,
   reserveForPriority: QUERY_RESERVE,
@@ -51,8 +51,8 @@ const usage = new UsageTracker({
 
 function getClient(): GoogleGenAI {
   if (!client) {
-    // Relit .env à la volée : si la clé a été collée après le 1er lancement de
-    // Claude Code, la prochaine requête la prend en compte sans reconnecter le MCP.
+    // Re-reads .env on the fly: if the key was pasted after Claude Code's first
+    // launch, the next request picks it up without reconnecting the MCP.
     const key = readGeminiKey();
     if (!key) {
       throw new Error("GOOGLE_GEMINI_API_KEY is not set in .env");
@@ -95,15 +95,15 @@ async function embedWithRetry(
   return [];
 }
 
-/** Sous-ensemble du UsageTracker dont l'embedder a besoin (injectable en test). */
+/** Subset of UsageTracker the embedder needs (injectable in tests). */
 export interface QuotaGuard {
-  /** Consommation indexation (s'arrête à `maxPerDay − réserve`). */
+  /** Indexing consumption (stops at `maxPerDay − reserve`). */
   consume(n?: number): void;
-  /** Consommation prioritaire (requête) : va jusqu'au plafond plein. */
+  /** Priority consumption (query): goes up to the full cap. */
   consumePriority(n?: number): void;
 }
 
-/** Dépendances injectables de l'embedder (réseau + quota), stubables en test. */
+/** Injectable embedder dependencies (network + quota), stubbable in tests. */
 export interface EmbedDeps {
   usage: QuotaGuard;
   embedOne: (text: string) => Promise<number[]>;
@@ -114,9 +114,9 @@ function defaultDeps(): EmbedDeps {
 }
 
 /**
- * L'adaptateur Gemini du port `Embedder` — la seule impl concrète réelle. Tout
- * le contenu Gemini (client GoogleGenAI, retry 429, quota, EMBEDDING_MODEL) vit
- * ici, derrière le port. Les `deps` restent injectables pour les tests.
+ * The Gemini adapter for the `Embedder` port — the only real concrete impl. All
+ * the Gemini specifics (GoogleGenAI client, 429 retry, quota, EMBEDDING_MODEL)
+ * live here, behind the port. The `deps` stay injectable for tests.
  */
 export class GeminiEmbedder implements Embedder {
   readonly identity: EmbedderIdentity = {
@@ -133,9 +133,9 @@ export class GeminiEmbedder implements Embedder {
     const DELAY_MS = Math.ceil(60_000 / CALLS_PER_MINUTE);
 
     for (let i = 0; i < texts.length; i++) {
-      // Garde-fou A : chemin d'indexation → réserve 1 crédit *indexation* avant
-      // chaque requête réelle. Lève DailyCapExceededError au plafond indexation
-      // → le lot s'arrête proprement, et la réserve garde la recherche vivante.
+      // Guardrail A: indexing path → reserve 1 *indexing* credit before each
+      // real request. Throws DailyCapExceededError at the indexing cap → the
+      // batch stops cleanly, and the reserve keeps search alive.
       this.deps.usage.consume(1);
       const embedding = await this.deps.embedOne(texts[i]);
       allEmbeddings.push(embedding);
@@ -153,14 +153,14 @@ export class GeminiEmbedder implements Embedder {
   }
 
   async embedQuery(query: string): Promise<number[]> {
-    // Requête de recherche → consommation *prioritaire* : « parler » n'est jamais
-    // bloqué par l'indexation (la réserve lui est dédiée).
+    // Search query → *priority* consumption: "talking" is never blocked by
+    // indexing (the reserve is dedicated to it).
     this.deps.usage.consumePriority(1);
     return this.deps.embedOne(query);
   }
 }
 
-/** Variables d'environnement lues pour choisir/configurer l'embedder. */
+/** Environment variables read to choose/configure the embedder. */
 export interface EmbedderEnv {
   EMBEDDING_PROVIDER?: string;
   EMBEDDING_BASE_URL?: string;
@@ -170,13 +170,13 @@ export interface EmbedderEnv {
 }
 
 /**
- * Sélection PURE de l'embedder à partir d'une config (testable sans toucher à
- * `process.env`). Défaut : Gemini natif. `EMBEDDING_PROVIDER=openai-compatible`
- * bascule sur l'adaptateur à URL/clé configurables (OpenAI, Azure, passerelle,
- * Mistral, ou Ollama local sur `http://localhost:11434/v1`).
+ * PURE embedder selection from a config (testable without touching
+ * `process.env`). Default: native Gemini. `EMBEDDING_PROVIDER=openai-compatible`
+ * switches to the configurable-URL/key adapter (OpenAI, Azure, gateway, Mistral,
+ * or local Ollama on `http://localhost:11434/v1`).
  */
-// Défauts de l'adaptateur in-process « Gemma inside » : EmbeddingGemma-300m en ONNX,
-// 768 dimensions (cf. plan Étape 4-bis), quantif q8 portée par le chargeur par défaut.
+// Defaults for the in-process "Gemma inside" adapter: EmbeddingGemma-300m in ONNX,
+// 768 dimensions (cf. Step 4-bis plan), q8 quantization carried by the default loader.
 const IN_PROCESS_DEFAULT_MODEL = "onnx-community/embeddinggemma-300m-ONNX";
 const IN_PROCESS_DEFAULT_DIMENSION = 768;
 
@@ -186,8 +186,8 @@ export function selectEmbedder(env: EmbedderEnv): Embedder {
     return new InProcessEmbedder({
       model,
       dimension: Number(env.EMBEDDING_DIMENSION ?? IN_PROCESS_DEFAULT_DIMENSION),
-      // EmbeddingGemma exige ses prompts de tâche (Ollama les pose en interne) ; ici
-      // c'est à nous de les poser, sinon le modèle est mal utilisé (cf. model card).
+      // EmbeddingGemma requires its task prompts (Ollama sets them internally); here
+      // it's up to us to set them, otherwise the model is misused (cf. model card).
       prompts: promptsForModel(model),
     });
   }
@@ -202,27 +202,26 @@ export function selectEmbedder(env: EmbedderEnv): Embedder {
   return new GeminiEmbedder();
 }
 
-// Embedder mémoïsé au niveau process : choisi une fois, partagé par TOUS les
-// appelants (search_vault à chaque requête ET l'auto-reindex du serveur MCP). Sans
-// ce partage, l'in-process recrée une session ONNX par recherche → ~440 ms de
-// rechargement à CHAQUE requête, et deux sessions concurrentes (recherche +
-// indexation) sur-réservent les cœurs → recherche jusqu'à ×50 plus lente (mesuré,
-// cf. rag/scripts/measure-contention.mts). Une seule session chaude : recherche
-// ~40 ms au repos, ~0,7 s pendant une indexation de fond. Le provider est figé à
-// la 1ʳᵉ sélection ; un swap passe déjà par un redémarrage de Claude Code (nouvel
-// .env). La clé Gemini reste lue paresseusement à l'embed → coller la clé après
-// coup marche toujours.
+// Process-level memoized embedder: chosen once, shared by ALL callers (search_vault
+// on every query AND the MCP server's auto-reindex). Without this sharing, the
+// in-process adapter recreates an ONNX session per search → ~440 ms of reloading on
+// EVERY query, and two concurrent sessions (search + indexing) over-subscribe the
+// cores → search up to ×50 slower (measured, cf. rag/scripts/measure-contention.mts).
+// A single hot session: search ~40 ms at rest, ~0.7 s during a background indexing.
+// The provider is frozen at the first selection; a swap already goes through a Claude
+// Code restart (new .env). The Gemini key stays read lazily at embed time → pasting
+// the key after the fact still works.
 let memoizedEmbedder: Embedder | null = null;
 
 /**
- * Point de sélection UNIQUE de l'embedder (port `Embedder`). Lit l'environnement
- * et délègue à `selectEmbedder` — la bascule de provider vit ICI et NULLE PART
- * AILLEURS, sans toucher au harnais ni au port MCP. Mémoïsé (cf. ci-dessus) : le
- * même embedder est rendu à tous les appels du process.
+ * The SINGLE selection point for the embedder (the `Embedder` port). Reads the
+ * environment and delegates to `selectEmbedder` — the provider switch lives HERE
+ * and NOWHERE ELSE, without touching the harness or the MCP port. Memoized (cf.
+ * above): the same embedder is returned to every call in the process.
  *
- * Vit dans `embedder.ts` (et non `config.ts` comme esquissé au plan) pour éviter
- * un cycle d'import : `embedder.ts` dépend déjà de `config.ts`. Le foyer naturel
- * d'une fabrique reste de toute façon auprès des implémentations qu'elle choisit.
+ * Lives in `embedder.ts` (and not `config.ts` as sketched in the plan) to avoid an
+ * import cycle: `embedder.ts` already depends on `config.ts`. A factory's natural
+ * home is, in any case, alongside the implementations it chooses.
  */
 export function createEmbedder(): Embedder {
   if (!memoizedEmbedder) {
@@ -231,9 +230,9 @@ export function createEmbedder(): Embedder {
   return memoizedEmbedder;
 }
 
-// Fonctions libres conservées le temps de la transition : elles délèguent au port
-// via une instance à deps explicites. Les consommateurs migreront vers `Embedder`
-// (injecté par createEmbedder) au pas suivant, après quoi elles disparaîtront.
+// Free functions kept for the duration of the transition: they delegate to the
+// port via an instance with explicit deps. Consumers will migrate to `Embedder`
+// (injected by createEmbedder) in the next step, after which they'll disappear.
 export function embedTexts(
   texts: string[],
   deps: EmbedDeps = defaultDeps()

@@ -5,8 +5,8 @@ import {
   type EmbeddingFetch,
 } from "./openai-compatible-embedder.js";
 
-// Capture la requête HTTP sortante et renvoie une réponse OpenAI canonique,
-// sans toucher au réseau. `vectors` = ce que le faux endpoint renvoie, dans l'ordre.
+// Captures the outgoing HTTP request and returns a canonical OpenAI response,
+// without touching the network. `vectors` = what the fake endpoint returns, in order.
 function fakeFetch(vectors: number[][]): {
   fetch: EmbeddingFetch;
   calls: { url: string; init: RequestInit }[];
@@ -23,7 +23,7 @@ function fakeFetch(vectors: number[][]): {
   return { fetch, calls };
 }
 
-test("identity (provider/modèle/dimension) renseignée depuis la config — clé de l'estampille", () => {
+test("identity (provider/model/dimension) populated from the config — the stamp key", () => {
   const embedder = new OpenAiCompatibleEmbedder({
     baseURL: "http://localhost:11434/v1",
     apiKey: "",
@@ -38,7 +38,7 @@ test("identity (provider/modèle/dimension) renseignée depuis la config — cl�
   });
 });
 
-test("embedQuery : POST { model, input } sur <baseURL>/embeddings, lit data[0].embedding", async () => {
+test("embedQuery: POST { model, input } to <baseURL>/embeddings, reads data[0].embedding", async () => {
   const { fetch, calls } = fakeFetch([[0.1, 0.2, 0.3]]);
   const embedder = new OpenAiCompatibleEmbedder(
     {
@@ -50,7 +50,7 @@ test("embedQuery : POST { model, input } sur <baseURL>/embeddings, lit data[0].e
     fetch
   );
 
-  const vector = await embedder.embedQuery("une question");
+  const vector = await embedder.embedQuery("a question");
 
   assert.deepEqual(vector, [0.1, 0.2, 0.3]);
   assert.equal(calls.length, 1);
@@ -58,11 +58,11 @@ test("embedQuery : POST { model, input } sur <baseURL>/embeddings, lit data[0].e
   assert.equal(calls[0].init.method, "POST");
   assert.deepEqual(JSON.parse(calls[0].init.body as string), {
     model: "bge-m3",
-    input: "une question",
+    input: "a question",
   });
 });
 
-test("embedDocuments : envoie le lot en input[], lit data[].embedding dans l'ordre", async () => {
+test("embedDocuments: sends the batch as input[], reads data[].embedding in order", async () => {
   const { fetch, calls } = fakeFetch([
     [1, 0],
     [0, 1],
@@ -89,7 +89,7 @@ test("embedDocuments : envoie le lot en input[], lit data[].embedding dans l'ord
   ]);
 });
 
-test("clé présente (endpoint API) → header Authorization: Bearer <clé>", async () => {
+test("key present (API endpoint) → Authorization: Bearer <key> header", async () => {
   const { fetch, calls } = fakeFetch([[1]]);
   const embedder = new OpenAiCompatibleEmbedder(
     {
@@ -107,7 +107,7 @@ test("clé présente (endpoint API) → header Authorization: Bearer <clé>", as
   assert.equal(headers.Authorization, "Bearer sk-secret");
 });
 
-test("clé vide (local Ollama) → AUCUN header Authorization", async () => {
+test("empty key (local Ollama) → NO Authorization header", async () => {
   const { fetch, calls } = fakeFetch([[1]]);
   const embedder = new OpenAiCompatibleEmbedder(
     {
@@ -125,7 +125,7 @@ test("clé vide (local Ollama) → AUCUN header Authorization", async () => {
   assert.equal("Authorization" in headers, false);
 });
 
-test("réponse HTTP non-ok → erreur claire (statut visible), pas un vecteur vide silencieux", async () => {
+test("non-ok HTTP response → clear error (status visible), not a silent empty vector", async () => {
   const failingFetch: EmbeddingFetch = async () => ({
     ok: false,
     status: 401,

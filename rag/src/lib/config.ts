@@ -17,10 +17,10 @@ export const CACHE_DIR = resolve(__dirname, "../../.cache");
 export const DB_PATH = resolve(CACHE_DIR, "vault.db");
 export const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY ?? "";
 
-// Choix de la clé Gemini à utiliser, PUR (testable) : si une clé non vide est déjà
-// chargée en mémoire, on la garde ; sinon on relit le .env via `reloadFromEnvFile`.
-// Couvre le scénario d'onboarding : l'utilisateur colle sa clé dans .env APRÈS avoir
-// déjà lancé Claude Code (le process MCP tournait alors avec une clé vide).
+// Picks the Gemini key to use, PURE (testable): if a non-empty key is already
+// loaded in memory, we keep it; otherwise we re-read the .env via `reloadFromEnvFile`.
+// Covers the onboarding scenario: the user pastes their key into .env AFTER having
+// already launched Claude Code (the MCP process was then running with an empty key).
 export function resolveKey(
   current: string | undefined,
   reloadFromEnvFile: () => string | undefined
@@ -29,10 +29,10 @@ export function resolveKey(
   return reloadFromEnvFile() ?? "";
 }
 
-// Clé Gemini « live » : relit le .env à la volée si la clé manquait au démarrage,
-// pour qu'une clé collée après coup soit prise en compte SANS reconnecter le MCP.
-// `override: true` est sûr ici car on ne recharge que si la clé courante est vide
-// (cas du `.env` livré avec `GOOGLE_GEMINI_API_KEY=` vide → process.env fige "").
+// "Live" Gemini key: re-reads the .env on the fly if the key was missing at startup,
+// so a key pasted after the fact is taken into account WITHOUT reconnecting the MCP.
+// `override: true` is safe here because we only reload if the current key is empty
+// (the case of the `.env` shipped with `GOOGLE_GEMINI_API_KEY=` empty → process.env freezes "").
 export function readGeminiKey(): string {
   return resolveKey(process.env.GOOGLE_GEMINI_API_KEY, () => {
     if (existsSync(envPath)) config({ path: envPath, override: true });
@@ -43,16 +43,16 @@ export const EMBEDDING_MODEL = "gemini-embedding-001";
 export const CHUNK_MAX_CHARS = 8000;
 export const SEARCH_DEFAULT_LIMIT = 5;
 
-// Garde-fou A : plafond dur de requêtes d'embedding par jour (réinit. minuit Pacifique).
-// Depuis le passage au tier PAYANT Gemini (2026-06-01), ce n'est plus aligné sur les
-// 1000/jour du free tier : c'est désormais un simple filet anti-emballement (boucle folle,
-// ré-index redondant), et c'est lui la vraie contrainte (plus de mur Google à 1000).
-// Défaut 7600 (×4 de l'ancien 1900). Surchargeable via .env.
+// Guardrail A: hard cap on embedding requests per day (resets at Pacific midnight).
+// Since moving to the PAID Gemini tier (2026-06-01), this is no longer aligned with the
+// free tier's 1000/day: it is now simply a runaway safety net (infinite loop,
+// redundant re-index), and it is the real constraint (no more Google wall at 1000).
+// Default 7600 (×4 of the former 1900). Overridable via .env.
 export const MAX_EMBED_REQUESTS_PER_DAY = Number(
   process.env.MAX_EMBED_REQUESTS_PER_DAY ?? 7600
 );
 
-// Réserve de quota dédiée aux requêtes de recherche : l'indexation s'arrête à
-// MAX_EMBED_REQUESTS_PER_DAY − QUERY_RESERVE, garantissant que « parler » (search)
-// n'est jamais bloqué par un gros jour d'indexation. Surchargeable via .env.
+// Quota reserve dedicated to search requests: indexing stops at
+// MAX_EMBED_REQUESTS_PER_DAY − QUERY_RESERVE, guaranteeing that "talking" (search)
+// is never blocked by a heavy indexing day. Overridable via .env.
 export const QUERY_RESERVE = Number(process.env.QUERY_RESERVE ?? 50);

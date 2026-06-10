@@ -10,7 +10,7 @@ import {
 } from "./reindex-reporter.js";
 import type { RunProgress } from "./progress-report.js";
 
-/** Storage mémoire pour les tests. */
+/** In-memory storage for the tests. */
 function memoryStorage(): ProgressStorage & { state: RunProgress | null } {
   return {
     state: null as RunProgress | null,
@@ -25,7 +25,7 @@ function memoryStorage(): ProgressStorage & { state: RunProgress | null } {
 
 const fixedNow = () => new Date("2026-05-31T12:00:00Z");
 
-test("C.6 — start : persiste un état running (compteurs initiaux + startedAt)", () => {
+test("C.6 — start: persists a running state (initial counters + startedAt)", () => {
   const storage = memoryStorage();
   const reporter = new ReindexReporter({ storage, now: fixedNow });
 
@@ -44,7 +44,7 @@ test("C.6 — start : persiste un état running (compteurs initiaux + startedAt)
   assert.equal(state.hitCap, false);
 });
 
-test("C.7 — tick : incrémente doneChunks au fil de l'eau", () => {
+test("C.7 — tick: increments doneChunks incrementally", () => {
   const storage = memoryStorage();
   const reporter = new ReindexReporter({ storage, now: fixedNow });
   reporter.start({ totalChunks: 660, scanned: 211, skipped: 103, removed: 0 });
@@ -57,7 +57,7 @@ test("C.7 — tick : incrémente doneChunks au fil de l'eau", () => {
   assert.equal(state.status, "running");
 });
 
-test("C.8 — finish sans hitCap → done, finishedAt, compteurs", () => {
+test("C.8 — finish without hitCap → done, finishedAt, counters", () => {
   const storage = memoryStorage();
   let clock = new Date("2026-05-31T12:00:00Z");
   const reporter = new ReindexReporter({ storage, now: () => clock });
@@ -73,7 +73,7 @@ test("C.8 — finish sans hitCap → done, finishedAt, compteurs", () => {
   assert.equal(state.hitCap, false);
 });
 
-test("C.8 — finish avec hitCap → incomplete", () => {
+test("C.8 — finish with hitCap → incomplete", () => {
   const storage = memoryStorage();
   const reporter = new ReindexReporter({ storage, now: fixedNow });
   reporter.start({ totalChunks: 660, scanned: 211, skipped: 103, removed: 0 });
@@ -83,7 +83,7 @@ test("C.8 — finish avec hitCap → incomplete", () => {
   assert.equal(storage.load()!.status, "incomplete");
 });
 
-test("C.9 — recordError : accumule les erreurs, statut reste running", () => {
+test("C.9 — recordError: accumulates errors, status stays running", () => {
   const storage = memoryStorage();
   const reporter = new ReindexReporter({ storage, now: fixedNow });
   reporter.start({ totalChunks: 660, scanned: 211, skipped: 103, removed: 0 });
@@ -96,7 +96,7 @@ test("C.9 — recordError : accumule les erreurs, statut reste running", () => {
   assert.equal(state.status, "running");
 });
 
-test("C.9 — fail : échec dur → statut error, erreur ajoutée, finishedAt", () => {
+test("C.9 — fail: hard failure → status error, error appended, finishedAt", () => {
   const storage = memoryStorage();
   let clock = new Date("2026-05-31T12:00:00Z");
   const reporter = new ReindexReporter({ storage, now: () => clock });
@@ -112,7 +112,7 @@ test("C.9 — fail : échec dur → statut error, erreur ajoutée, finishedAt", 
   assert.deepEqual(state.errors, ["doc-A: quota 429", "DB lock: disk I/O error"]);
 });
 
-test("C.9 — finish préserve les erreurs accumulées (merge, pas écrasement)", () => {
+test("C.9 — finish preserves accumulated errors (merge, not overwrite)", () => {
   const storage = memoryStorage();
   const reporter = new ReindexReporter({ storage, now: fixedNow });
   reporter.start({ totalChunks: 660, scanned: 211, skipped: 103, removed: 0 });
@@ -136,12 +136,12 @@ const sampleState: RunProgress = {
   hitCap: false,
 };
 
-test("C.10 — FileProgressStorage : round-trip load/save sur fichier temp", () => {
+test("C.10 — FileProgressStorage: round-trip load/save on a temp file", () => {
   const path = resolve(tmpdir(), `reindex-progress-test-${process.pid}.json`);
   rmSync(path, { force: true });
   const storage = new FileProgressStorage(path);
   try {
-    assert.equal(storage.load(), null); // vide au départ
+    assert.equal(storage.load(), null); // empty to start with
     storage.save(sampleState);
     assert.deepEqual(storage.load(), sampleState);
   } finally {
@@ -149,9 +149,9 @@ test("C.10 — FileProgressStorage : round-trip load/save sur fichier temp", () 
   }
 });
 
-test("C.10 — FileProgressStorage : fichier corrompu → état absent (null)", () => {
+test("C.10 — FileProgressStorage: corrupt file → absent state (null)", () => {
   const path = resolve(tmpdir(), `reindex-progress-corrupt-${process.pid}.json`);
-  writeFileSync(path, "{ pas du json", "utf-8");
+  writeFileSync(path, "{ not json", "utf-8");
   const storage = new FileProgressStorage(path);
   try {
     assert.equal(storage.load(), null);

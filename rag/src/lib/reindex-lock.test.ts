@@ -10,7 +10,7 @@ import {
   type LockStorage,
 } from "./reindex-lock.js";
 
-// Stockage en mémoire — découple les tests du système de fichiers.
+// In-memory storage — decouples the tests from the file system.
 class MemStorage implements LockStorage {
   state: LockState | null;
   constructor(initial: LockState | null = null) {
@@ -29,7 +29,7 @@ class MemStorage implements LockStorage {
 
 const at = (iso: string) => () => new Date(iso);
 
-test("lock neuf : acquire() réussit et holder().pid = notre PID", () => {
+test("fresh lock: acquire() succeeds and holder().pid = our PID", () => {
   const lock = new ReindexLock({
     storage: new MemStorage(),
     now: at("2026-05-31T18:00:00Z"),
@@ -39,42 +39,42 @@ test("lock neuf : acquire() réussit et holder().pid = notre PID", () => {
   assert.equal(lock.holder()?.pid, 1234);
 });
 
-test("lock tenu par un autre process vivant : acquire() renvoie false", () => {
+test("lock held by another live process: acquire() returns false", () => {
   const lock = new ReindexLock({
     storage: new MemStorage({ pid: 999, acquiredAt: "2026-05-31T17:55:00Z" }),
-    now: at("2026-05-31T18:00:00Z"), // lock récent (5 min) → non périmé
+    now: at("2026-05-31T18:00:00Z"), // recent lock (5 min) → not stale
     pid: 1234,
     isAlive: () => true,
   });
   assert.equal(lock.acquire(), false);
-  assert.equal(lock.holder()?.pid, 999); // l'autre garde le lock
+  assert.equal(lock.holder()?.pid, 999); // the other one keeps the lock
 });
 
-test("lock tenu par un process mort : reclaim → acquire() true", () => {
+test("lock held by a dead process: reclaim → acquire() true", () => {
   const lock = new ReindexLock({
     storage: new MemStorage({ pid: 999, acquiredAt: "2026-05-31T17:00:00Z" }),
     now: at("2026-05-31T18:00:00Z"),
     pid: 1234,
-    isAlive: () => false, // 999 n'existe plus
+    isAlive: () => false, // 999 no longer exists
   });
   assert.equal(lock.acquire(), true);
-  assert.equal(lock.holder()?.pid, 1234); // on a repris le lock
+  assert.equal(lock.holder()?.pid, 1234); // we took over the lock
 });
 
-test("lock périmé (plus vieux que staleAfterMs) : reclaim même si le PID est vivant", () => {
+test("stale lock (older than staleAfterMs): reclaim even if the PID is alive", () => {
   const lock = new ReindexLock({
-    // acquis il y a 2h ; un reindex ne dure jamais aussi longtemps → présumé planté
+    // acquired 2h ago; a reindex never takes this long → presumed crashed
     storage: new MemStorage({ pid: 999, acquiredAt: "2026-05-31T16:00:00Z" }),
     now: at("2026-05-31T18:00:00Z"),
     pid: 1234,
-    isAlive: () => true, // PID réutilisé par un process sans rapport
+    isAlive: () => true, // PID reused by an unrelated process
     staleAfterMs: 10 * 60 * 1000, // 10 min
   });
   assert.equal(lock.acquire(), true);
   assert.equal(lock.holder()?.pid, 1234);
 });
 
-test("release() libère : holder() null, prochaine acquire() true", () => {
+test("release() frees the lock: holder() null, next acquire() true", () => {
   const lock = new ReindexLock({
     storage: new MemStorage(),
     now: at("2026-05-31T18:00:00Z"),
@@ -86,29 +86,29 @@ test("release() libère : holder() null, prochaine acquire() true", () => {
   assert.equal(lock.acquire(), true);
 });
 
-test("ré-entrant : le même PID peut ré-acquérir (pas d'auto-blocage)", () => {
+test("re-entrant: the same PID can re-acquire (no self-deadlock)", () => {
   const lock = new ReindexLock({
     storage: new MemStorage(),
     now: at("2026-05-31T18:00:00Z"),
     pid: 1234,
-    isAlive: () => true, // notre propre PID est vivant
+    isAlive: () => true, // our own PID is alive
   });
   assert.equal(lock.acquire(), true);
-  assert.equal(lock.acquire(), true); // ré-acquisition idempotente
+  assert.equal(lock.acquire(), true); // idempotent re-acquisition
   assert.equal(lock.holder()?.pid, 1234);
 });
 
-test("activeHolder() : lock tenu par process vivant et récent → renvoie le holder", () => {
+test("activeHolder(): lock held by a live, recent process → returns the holder", () => {
   const lock = new ReindexLock({
     storage: new MemStorage({ pid: 999, acquiredAt: "2026-05-31T17:55:00Z" }),
-    now: at("2026-05-31T18:00:00Z"), // 5 min → non périmé
+    now: at("2026-05-31T18:00:00Z"), // 5 min → not stale
     pid: 1234,
     isAlive: () => true,
   });
   assert.equal(lock.activeHolder()?.pid, 999);
 });
 
-test("activeHolder() : holder mort → null (pas de reindex réellement en cours)", () => {
+test("activeHolder(): dead holder → null (no reindex actually in progress)", () => {
   const lock = new ReindexLock({
     storage: new MemStorage({ pid: 999, acquiredAt: "2026-05-31T17:55:00Z" }),
     now: at("2026-05-31T18:00:00Z"),
@@ -118,7 +118,7 @@ test("activeHolder() : holder mort → null (pas de reindex réellement en cours
   assert.equal(lock.activeHolder(), null);
 });
 
-test("activeHolder() : holder périmé → null même si le PID est vivant", () => {
+test("activeHolder(): stale holder → null even if the PID is alive", () => {
   const lock = new ReindexLock({
     storage: new MemStorage({ pid: 999, acquiredAt: "2026-05-31T16:00:00Z" }),
     now: at("2026-05-31T18:00:00Z"),
@@ -129,7 +129,7 @@ test("activeHolder() : holder périmé → null même si le PID est vivant", () 
   assert.equal(lock.activeHolder(), null);
 });
 
-test("activeHolder() : aucun lock → null", () => {
+test("activeHolder(): no lock → null", () => {
   const lock = new ReindexLock({
     storage: new MemStorage(),
     now: at("2026-05-31T18:00:00Z"),
@@ -138,12 +138,12 @@ test("activeHolder() : aucun lock → null", () => {
   assert.equal(lock.activeHolder(), null);
 });
 
-test("FileLockStorage : round-trip load/save/clear sur fichier temp", () => {
+test("FileLockStorage: round-trip load/save/clear on a temp file", () => {
   const path = resolve(tmpdir(), `reindex-lock-test-${process.pid}.json`);
   rmSync(path, { force: true });
   const storage = new FileLockStorage(path);
   try {
-    assert.equal(storage.load(), null); // vide au départ
+    assert.equal(storage.load(), null); // empty to start with
     const state: LockState = { pid: 1234, acquiredAt: "2026-05-31T18:00:00Z" };
     storage.save(state);
     assert.deepEqual(storage.load(), state);

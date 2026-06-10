@@ -1,32 +1,32 @@
 export type TimerHandle = ReturnType<typeof setTimeout>;
 
 export interface ReindexSchedulerOptions {
-  /** Le reindex effectif à déclencher (injecté). */
+  /** The actual reindex to trigger (injected). */
   run: () => Promise<unknown>;
-  /** Fenêtre de regroupement d'une rafale d'écritures (défaut : 5 s). */
+  /** Window for coalescing a burst of writes (default: 5 s). */
   debounceMs?: number;
-  /** Programmation d'un timer (défaut : setTimeout global). */
+  /** Scheduling a timer (default: global setTimeout). */
   setTimer?: (fn: () => void, ms: number) => TimerHandle;
-  /** Annulation d'un timer (défaut : clearTimeout global). */
+  /** Cancelling a timer (default: global clearTimeout). */
   clearTimer?: (handle: TimerHandle) => void;
 }
 
 const DEFAULT_DEBOUNCE_MS = 5000;
 
-/** Instantané de l'état mémoire du scheduler (liveness temps réel). */
+/** Snapshot of the scheduler's in-memory state (real-time liveness). */
 export interface SchedulerState {
-  /** Un reindex est programmé (debounce armé), pas encore parti. */
+  /** A reindex is scheduled (debounce armed), not yet started. */
   scheduled: boolean;
-  /** Un reindex est en cours d'exécution. */
+  /** A reindex is currently running. */
   running: boolean;
-  /** Une écriture est survenue pendant le run → un rerun est en attente. */
+  /** A write occurred during the run → a rerun is pending. */
   pending: boolean;
 }
 
 /**
- * Ordonnanceur de reindex « au fil de l'eau » : regroupe une rafale d'écritures
- * (debounce) en un seul reindex. Logique pure/injectable — le watcher filesystem
- * (chokidar) reste une fine couche d'I/O par-dessus.
+ * Incremental reindex scheduler: coalesces a burst of writes (debounce) into a
+ * single reindex. Pure/injectable logic — the filesystem watcher (chokidar)
+ * stays a thin I/O layer on top.
  */
 export class ReindexScheduler {
   private readonly run: () => Promise<unknown>;
@@ -44,7 +44,7 @@ export class ReindexScheduler {
     this.clearTimer = opts.clearTimer ?? ((h) => clearTimeout(h));
   }
 
-  /** État mémoire courant — pour exposer la liveness (watcher actif côté serveur). */
+  /** Current in-memory state — to expose liveness (watcher active on the server side). */
   state(): SchedulerState {
     return {
       scheduled: this.timer !== null,
@@ -53,7 +53,7 @@ export class ReindexScheduler {
     };
   }
 
-  /** Signale une écriture dans le vault → (re)programme un reindex débouncé. */
+  /** Signals a write in the vault → (re)schedules a debounced reindex. */
   notify(): void {
     if (this.timer !== null) {
       this.clearTimer(this.timer);
@@ -65,9 +65,9 @@ export class ReindexScheduler {
   }
 
   /**
-   * Lance un run, sauf si un est déjà en cours : dans ce cas on pose un flag
-   * `pending` (coalescing) pour relancer exactement une fois à la fin — jamais
-   * en parallèle, jamais de déclenchement perdu.
+   * Starts a run, unless one is already in progress: in that case we set a
+   * `pending` flag (coalescing) to rerun exactly once at the end — never in
+   * parallel, never a lost trigger.
    */
   private trigger(): void {
     if (this.running) {

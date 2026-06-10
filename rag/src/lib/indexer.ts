@@ -1,11 +1,11 @@
-/** Un chunk prêt à être embeddé puis persisté. */
+/** A chunk ready to be embedded and then persisted. */
 export interface PreparedChunk {
   section: string;
   content: string;
   chunkIndex: number;
 }
 
-/** Un document prêt : métadonnées + chunks. Le hash sert au diff incrémental. */
+/** A ready document: metadata + chunks. The hash drives the incremental diff. */
 export interface PreparedDoc {
   relativePath: string;
   title: string;
@@ -15,7 +15,7 @@ export interface PreparedDoc {
   chunks: PreparedChunk[];
 }
 
-/** Dépendances injectées — découplent l'orchestration de l'API et de SQLite. */
+/** Injected dependencies — decouple the orchestration from the API and SQLite. */
 export interface IndexPorts {
   embed(texts: string[]): Promise<number[][]>;
   persist(doc: PreparedDoc, embeddings: number[][]): void;
@@ -27,8 +27,8 @@ export interface IndexRunResult {
 }
 
 /**
- * Indexe les docs un par un : embedde les chunks du doc, puis persiste le doc
- * (atomiquement, côté port). Tout doc terminé est sauvé immédiatement.
+ * Indexes the docs one by one: embeds the doc's chunks, then persists the doc
+ * (atomically, on the port side). Every completed doc is saved immediately.
  */
 export async function indexPreparedDocs(
   docs: PreparedDoc[],
@@ -45,9 +45,9 @@ export async function indexPreparedDocs(
     try {
       embeddings = await ports.embed(doc.chunks.map((c) => c.content));
     } catch (err) {
-      // Cas dominant : mur quota (ou réseau). Les docs suivants échoueraient
-      // aussi → on s'arrête. Les docs déjà persistés sont saufs ; la reprise
-      // au run suivant est gratuite grâce au diff incrémental par hash.
+      // Dominant case: quota wall (or network). The following docs would fail
+      // too → we stop. The docs already persisted are safe; resuming on the
+      // next run is free thanks to the incremental diff by hash.
       errors.push(`Embedding error at ${doc.relativePath}: ${err}`);
       break;
     }
@@ -57,10 +57,10 @@ export async function indexPreparedDocs(
       indexed++;
       onProgress?.(doc.chunks.length);
     } catch (err) {
-      // Échec isolé de persistance (ex. contrainte SQLite) : ce doc est
-      // empoisonné, mais les suivants n'ont aucune raison d'échouer. On le
-      // saute et on continue — surtout pas de break, sinon un seul doc gèle
-      // tout le rattrapage à chaque démarrage.
+      // Isolated persistence failure (e.g. SQLite constraint): this doc is
+      // poisoned, but the following ones have no reason to fail. We skip it
+      // and continue — definitely no break, otherwise a single doc freezes
+      // the entire catch-up on every startup.
       errors.push(`Persist error at ${doc.relativePath}: ${err}`);
     }
   }

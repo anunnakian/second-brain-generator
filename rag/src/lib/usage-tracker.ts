@@ -2,38 +2,38 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { CACHE_DIR } from "./config.js";
 
-/** État de consommation pour un jour donné. */
+/** Consumption state for a given day. */
 export interface UsageState {
-  /** Clé de jour au format YYYY-MM-DD (dans le fuseau de référence). */
+  /** Day key in YYYY-MM-DD format (in the reference time zone). */
   date: string;
-  /** Nombre de requêtes d'embedding consommées ce jour-là. */
+  /** Number of embedding requests consumed that day. */
   count: number;
 }
 
-/** Persistance du compteur. Injectable pour les tests. */
+/** Counter persistence. Injectable for tests. */
 export interface UsageStorage {
   load(): UsageState | null;
   save(state: UsageState): void;
 }
 
-/** Levée quand une consommation ferait dépasser le plafond journalier. */
+/** Thrown when a consumption would exceed the daily cap. */
 export class DailyCapExceededError extends Error {
   constructor(
     public readonly used: number,
     public readonly max: number
   ) {
     super(
-      `Plafond journalier d'embeddings atteint (${used}/${max}). ` +
-        `Réessaie demain (le quota se réinitialise à minuit Pacifique) ` +
-        `ou augmente MAX_EMBED_REQUESTS_PER_DAY dans .env.`
+      `Daily embedding cap reached (${used}/${max}). ` +
+        `Try again tomorrow (the quota resets at midnight Pacific time) ` +
+        `or raise MAX_EMBED_REQUESTS_PER_DAY in .env.`
     );
     this.name = "DailyCapExceededError";
   }
 }
 
-/** Clé de jour (YYYY-MM-DD) calculée dans le fuseau donné. */
+/** Day key (YYYY-MM-DD) computed in the given time zone. */
 export function dayKey(now: Date, timeZone: string): string {
-  // en-CA produit nativement le format YYYY-MM-DD.
+  // en-CA natively produces the YYYY-MM-DD format.
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
@@ -43,30 +43,30 @@ export function dayKey(now: Date, timeZone: string): string {
 }
 
 export interface UsageTrackerOptions {
-  /** Plafond de requêtes d'embedding par jour. */
+  /** Cap on embedding requests per day. */
   maxPerDay: number;
   /**
-   * Crédits réservés aux consommations prioritaires (requêtes de recherche).
-   * L'indexation s'arrête à `maxPerDay − reserveForPriority` ; les requêtes
-   * gardent accès jusqu'à `maxPerDay`. Défaut : 0 (pas de réserve).
+   * Credits reserved for priority consumption (search requests).
+   * Indexing stops at `maxPerDay − reserveForPriority`; search requests
+   * keep access up to `maxPerDay`. Default: 0 (no reserve).
    */
   reserveForPriority?: number;
-  /** Fuseau de référence pour la frontière de jour (défaut : Pacifique, aligné sur Gemini). */
+  /** Reference time zone for the day boundary (default: Pacific, aligned with Gemini). */
   timeZone?: string;
-  /** Horloge injectable (défaut : Date courante). */
+  /** Injectable clock (default: current Date). */
   now?: () => Date;
-  /** Persistance injectable (défaut : fichier JSON dans CACHE_DIR). */
+  /** Injectable persistence (default: JSON file in CACHE_DIR). */
   storage?: UsageStorage;
 }
 
 /**
- * Garde-fou A : plafond dur, local, du nombre de requêtes d'embedding par jour.
- * Indépendant du tier Gemini (free ou payant), il protège contre les boucles
- * folles et les ré-indexations redondantes qui brûleraient le quota / le budget.
+ * Guardrail A: a hard, local cap on the number of embedding requests per day.
+ * Independent of the Gemini tier (free or paid), it protects against runaway
+ * loops and redundant re-indexing that would burn through the quota / budget.
  *
- * Le compteur est persisté → partagé entre processus (serveur MCP + CLI) et
- * entre lancements. La frontière de jour suit le fuseau Pacifique pour
- * s'aligner sur la réinitialisation du quota Gemini free tier.
+ * The counter is persisted → shared across processes (MCP server + CLI) and
+ * across launches. The day boundary follows the Pacific time zone to align
+ * with the Gemini free tier quota reset.
  */
 export class UsageTracker {
   private readonly maxPerDay: number;
@@ -83,7 +83,7 @@ export class UsageTracker {
     this.storage = opts.storage ?? new FileUsageStorage();
   }
 
-  /** État du jour courant — relit le storage à chaque appel (sûr entre processus). */
+  /** Current day's state — re-reads storage on each call (safe across processes). */
   private currentState(): UsageState {
     const today = dayKey(this.now(), this.timeZone);
     const stored = this.storage.load();
@@ -101,36 +101,36 @@ export class UsageTracker {
     return Math.max(0, this.maxPerDay - this.currentState().count);
   }
 
-  /** Crédits encore disponibles pour l'indexation (réserve déduite, plancher 0). */
+  /** Credits still available for indexing (reserve deducted, floored at 0). */
   remainingForIndexing(): number {
     return Math.max(0, this.indexingCap() - this.currentState().count);
   }
 
-  /** Plafond applicable à l'indexation : le plafond plein moins la réserve. */
+  /** Cap applicable to indexing: the full cap minus the reserve. */
   private indexingCap(): number {
     return this.maxPerDay - this.reserveForPriority;
   }
 
   /**
-   * Consommation d'indexation : réserve `n` requêtes sous le plafond indexation
-   * (`maxPerDay − réserve`). Lève DailyCapExceededError au-delà — auquel cas RIEN
-   * n'est consommé (atomique au niveau logique), laissant la réserve intacte
-   * pour la recherche.
+   * Indexing consumption: reserves `n` requests under the indexing cap
+   * (`maxPerDay − reserve`). Throws DailyCapExceededError beyond it — in which
+   * case NOTHING is consumed (logically atomic), leaving the reserve intact
+   * for search.
    */
   consume(n = 1): void {
     this.consumeWithCap(n, this.indexingCap());
   }
 
   /**
-   * Consommation prioritaire (requête de recherche) : peut piocher dans la
-   * réserve, donc va jusqu'au plafond plein `maxPerDay`. Parler n'est jamais
-   * bloqué par l'indexation.
+   * Priority consumption (search request): may draw from the reserve, so it
+   * goes up to the full cap `maxPerDay`. Asking questions is never blocked by
+   * indexing.
    */
   consumePriority(n = 1): void {
     this.consumeWithCap(n, this.maxPerDay);
   }
 
-  /** Réserve `n` requêtes sous le plafond `cap` donné — rien si ça dépasse. */
+  /** Reserves `n` requests under the given `cap` — nothing if it would exceed it. */
   private consumeWithCap(n: number, cap: number): void {
     const state = this.currentState();
     if (state.count + n > cap) {
@@ -141,7 +141,7 @@ export class UsageTracker {
   }
 }
 
-/** Persistance par défaut : un petit JSON dans CACHE_DIR (gitignoré). */
+/** Default persistence: a small JSON file in CACHE_DIR (gitignored). */
 export class FileUsageStorage implements UsageStorage {
   private readonly path: string;
 
@@ -159,7 +159,7 @@ export class FileUsageStorage implements UsageStorage {
       }
       return null;
     } catch {
-      return null; // fichier corrompu → on repart à zéro plutôt que de planter
+      return null; // corrupt file → start from zero rather than crash
     }
   }
 

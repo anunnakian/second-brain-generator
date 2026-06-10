@@ -8,7 +8,7 @@ import {
   type UsageStorage,
 } from "./usage-tracker.js";
 
-// Stockage en mémoire — découple les tests du système de fichiers.
+// In-memory storage — decouples tests from the file system.
 class MemStorage implements UsageStorage {
   state: UsageState | null;
   constructor(initial: UsageState | null = null) {
@@ -25,7 +25,7 @@ class MemStorage implements UsageStorage {
 const PT = "America/Los_Angeles";
 const at = (iso: string) => () => new Date(iso);
 
-test("tracker neuf : quota plein disponible", () => {
+test("fresh tracker: full quota available", () => {
   const t = new UsageTracker({
     maxPerDay: 1000,
     timeZone: PT,
@@ -36,7 +36,7 @@ test("tracker neuf : quota plein disponible", () => {
   assert.equal(t.remainingToday(), 1000);
 });
 
-test("consume décrémente le restant", () => {
+test("consume decrements the remaining", () => {
   const t = new UsageTracker({
     maxPerDay: 1000,
     timeZone: PT,
@@ -48,7 +48,7 @@ test("consume décrémente le restant", () => {
   assert.equal(t.remainingToday(), 990);
 });
 
-test("consume jusqu'au plafond OK, au-delà ça throw", () => {
+test("consume up to the cap is OK, beyond it throws", () => {
   const t = new UsageTracker({
     maxPerDay: 5,
     timeZone: PT,
@@ -60,7 +60,7 @@ test("consume jusqu'au plafond OK, au-delà ça throw", () => {
   assert.throws(() => t.consume(1), DailyCapExceededError);
 });
 
-test("un consume qui dépasserait ne consomme RIEN (pas de demi-consommation)", () => {
+test("a consume that would exceed consumes NOTHING (no half-consumption)", () => {
   const storage = new MemStorage();
   const t = new UsageTracker({
     maxPerDay: 5,
@@ -70,10 +70,10 @@ test("un consume qui dépasserait ne consomme RIEN (pas de demi-consommation)", 
   });
   t.consume(3);
   assert.throws(() => t.consume(5), DailyCapExceededError); // 3 + 5 > 5
-  assert.equal(t.usedToday(), 3); // inchangé
+  assert.equal(t.usedToday(), 3); // unchanged
 });
 
-test("le compteur se réinitialise à la frontière de jour (PT)", () => {
+test("the counter resets at the day boundary (PT)", () => {
   let clock = new Date("2026-05-30T18:00:00Z");
   const t = new UsageTracker({
     maxPerDay: 1000,
@@ -83,12 +83,12 @@ test("le compteur se réinitialise à la frontière de jour (PT)", () => {
   });
   t.consume(900);
   assert.equal(t.usedToday(), 900);
-  clock = new Date("2026-05-31T18:00:00Z"); // jour suivant
+  clock = new Date("2026-05-31T18:00:00Z"); // next day
   assert.equal(t.usedToday(), 0);
   assert.equal(t.remainingToday(), 1000);
 });
 
-test("l'état persiste entre deux instances via le storage", () => {
+test("state persists across two instances via storage", () => {
   const storage = new MemStorage();
   const now = at("2026-05-30T18:00:00Z");
   new UsageTracker({ maxPerDay: 1000, timeZone: PT, now, storage }).consume(42);
@@ -96,7 +96,7 @@ test("l'état persiste entre deux instances via le storage", () => {
   assert.equal(t2.usedToday(), 42);
 });
 
-test("conso indexation : throw quand count + n dépasse maxPerDay − reserve", () => {
+test("indexing consumption: throws when count + n exceeds maxPerDay − reserve", () => {
   const t = new UsageTracker({
     maxPerDay: 10,
     reserveForPriority: 3,
@@ -104,11 +104,11 @@ test("conso indexation : throw quand count + n dépasse maxPerDay − reserve", 
     now: at("2026-05-30T18:00:00Z"),
     storage: new MemStorage(),
   });
-  t.consume(7); // 7 == 10 − 3, le plafond indexation est atteint
+  t.consume(7); // 7 == 10 − 3, the indexing cap is reached
   assert.throws(() => t.consume(1), DailyCapExceededError);
 });
 
-test("conso prioritaire : peut aller jusqu'à maxPerDay, ignore la réserve", () => {
+test("priority consumption: can go up to maxPerDay, ignores the reserve", () => {
   const t = new UsageTracker({
     maxPerDay: 10,
     reserveForPriority: 3,
@@ -116,15 +116,15 @@ test("conso prioritaire : peut aller jusqu'à maxPerDay, ignore la réserve", ()
     now: at("2026-05-30T18:00:00Z"),
     storage: new MemStorage(),
   });
-  t.consume(7); // indexation jusqu'au plafond indexation (10 − 3)
-  // une requête prioritaire pioche dans la réserve : 7 + 3 == 10 OK
+  t.consume(7); // indexing up to the indexing cap (10 − 3)
+  // a priority request draws from the reserve: 7 + 3 == 10 OK
   assert.doesNotThrow(() => t.consumePriority(3));
   assert.equal(t.usedToday(), 10);
-  // mais au-delà du plafond plein, ça throw
+  // but beyond the full cap, it throws
   assert.throws(() => t.consumePriority(1), DailyCapExceededError);
 });
 
-test("remainingForIndexing reflète la réserve, plancher à 0", () => {
+test("remainingForIndexing reflects the reserve, floored at 0", () => {
   const t = new UsageTracker({
     maxPerDay: 10,
     reserveForPriority: 3,
@@ -135,14 +135,14 @@ test("remainingForIndexing reflète la réserve, plancher à 0", () => {
   assert.equal(t.remainingForIndexing(), 7); // 10 − 3 − 0
   t.consume(5);
   assert.equal(t.remainingForIndexing(), 2); // 10 − 3 − 5
-  // une requête prioritaire pioche dans la réserve → indexation à sec
+  // a priority request draws from the reserve → indexing runs dry
   t.consumePriority(3);
-  assert.equal(t.remainingForIndexing(), 0); // plancher, pas négatif
+  assert.equal(t.remainingForIndexing(), 0); // floored, not negative
 });
 
-test("dayKey utilise bien la frontière du fuseau Pacifique", () => {
-  // 2026-05-30T05:00Z = 2026-05-29 22:00 PDT → encore le 29 en PT
+test("dayKey correctly uses the Pacific time zone boundary", () => {
+  // 2026-05-30T05:00Z = 2026-05-29 22:00 PDT → still the 29th in PT
   assert.equal(dayKey(new Date("2026-05-30T05:00:00Z"), PT), "2026-05-29");
-  // 2026-05-30T18:00Z = 2026-05-30 11:00 PDT → le 30
+  // 2026-05-30T18:00Z = 2026-05-30 11:00 PDT → the 30th
   assert.equal(dayKey(new Date("2026-05-30T18:00:00Z"), PT), "2026-05-30");
 });
