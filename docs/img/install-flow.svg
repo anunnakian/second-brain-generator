@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="140" viewBox="0 0 900 140" role="img" aria-label="Install flow in four steps: clone the launcher, answer four questions in chat, the brain folder is created, then open a new conversation rooted in it.">
+  <title>Install flow — four steps</title>
+  <style>
+    .card { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1.5; }
+    .emoji { font-size: 34px; text-anchor: middle; }
+    .label { font: 600 15px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #1f2328; text-anchor: middle; }
+    .step { font: 700 12px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #6e7781; text-anchor: middle; }
+    .arrow { font-size: 30px; fill: #57606a; text-anchor: middle; }
+  </style>
+
+  <!-- Step 1 -->
+  <rect class="card" x="12" y="20" width="180" height="100" rx="14"/>
+  <text class="step" x="102" y="42">STEP 1</text>
+  <text class="emoji" x="102" y="84">📋</text>
+  <text class="label" x="102" y="108">Clone the launcher</text>
+
+  <text class="arrow" x="216" y="80">→</text>
+
+  <!-- Step 2 -->
+  <rect class="card" x="240" y="20" width="180" height="100" rx="14"/>
+  <text class="step" x="330" y="42">STEP 2</text>
+  <text class="emoji" x="330" y="84">💬</text>
+  <text class="label" x="330" y="108">Answer 4 questions</text>
+
+  <text class="arrow" x="444" y="80">→</text>
+
+  <!-- Step 3 -->
+  <rect class="card" x="468" y="20" width="180" height="100" rx="14"/>
+  <text class="step" x="558" y="42">STEP 3</text>
+  <text class="emoji" x="558" y="84">🧠</text>
+  <text class="label" x="558" y="108">Brain created</text>
+
+  <text class="arrow" x="672" y="80">→</text>
+
+  <!-- Step 4 -->
+  <rect class="card" x="696" y="20" width="180" height="100" rx="14"/>
+  <text class="step" x="786" y="42">STEP 4</text>
+  <text class="emoji" x="786" y="84">🔄</text>
+  <text class="label" x="786" y="108">New conversation</text>
+</svg>

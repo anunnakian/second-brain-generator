@@ -7,6 +7,8 @@
 
 **🛟 Bulletproof & zero chores.** Backup, freshness, recovery after a glitch: **its** job, not yours. *You just have to talk.*
 
+**[🧠 What's a second brain?](#what-is-a-second-brain) · [🚀 Install yours now](#ready-to-try-it)**
+
 > 🧑 *"Where are we on the billing project — who owns what, and what's been decided?"*
 >
 > 🧠 *"At the January 15 team sync: the database was settled (PostgreSQL over MongoDB),
@@ -134,9 +136,18 @@ The infra, the storage, the concurrency, the guardrails: that's **its** job — 
 
 ---
 
-## Ready to try it?
+> 🚀 **Install in one paste — Claude does the rest.** Pick your privacy option, check what you need,
+> and copy the single instruction below. ~15 minutes, once.
 
-### How do I choose my semantic search (my RAG)?
+<a id="ready-to-try-it"></a>
+
+## 🚀 Ready to try it? — install your brain in one paste
+
+![Install flow in four steps: clone the launcher → answer 4 questions in chat → the brain folder is created → open a new conversation rooted in it](docs/img/install-flow.svg)
+
+<a id="how-do-i-choose-my-semantic-search-my-rag"></a>
+
+### 🧭 How do I choose my semantic search (my RAG)?
 
 This is **the** privacy choice, and it boils down to one question: *who's allowed to read your notes
 to index them?* Three answers — and you can **change your mind whenever you want** (we re-index in a
@@ -148,15 +159,15 @@ few minutes, nothing is lost):
 | 🟡 **With an API key** | Small setup, or Intel Mac | Your notes go through the provider — Gemini, OpenAI, **your company's endpoint** | ~€0.10 / 1,000 notes · ~€1 / 10,000 |
 | 🟢 **Ollama, locally** *(advanced)* | Comfortable installing an app | **Nothing leaves** either | Free |
 
-> 💶 With an API key, Gemini's **free** tier is enough to get started — but *free ≠ private*: turning
-> on billing (a few cents per year) takes your notes out of the training scope. Details:
-> [SETUP §9](SETUP.md).
+> 💶 With an API key, Gemini's **free** tier is enough to get started. Depending on the provider & plan,
+> pick the right settings so your notes aren't used for training (e.g. enable billing — a few cents per
+> year — or a "no-training" / data-controls option). Details: [SETUP §9](SETUP.md).
 
 At install time, Claude presents the 3 options and **recommends based on your machine**; with no
 preference, the local default applies on its own if the machine can handle it. *(The "how it works":
 ["the RAG à la carte"](#-the-rag-à-la-carte--you-choose-who-vectorizes-your-notes).)*
 
-### What you need
+### 📦 What you need
 
 - **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** and
   **git**. *(The installer checks everything — if one is missing, it tells you cleanly.)*
@@ -166,7 +177,7 @@ preference, the local default applies on its own if the machine can handle it. *
 - **Your information sources** (Slack, Drive, emails, Notion, transcripts…), to wire up according to
   *your* tools. Optional to begin with. *(see [SETUP §6](SETUP.md))*
 
-### Installation — Claude installs everything for you
+### ⚙️ Installation — Claude installs everything for you
 
 You use Claude Code and you have the generator's URL? Let **Claude install everything for you** —
 that's the only move you make. Open Claude Code in **any empty folder on your machine** (a temporary
@@ -192,13 +203,13 @@ RAG engine, verification). The install can't **half-succeed**: either it goes al
 **stops dead and tells you why** — **never a ghost install** that looks OK but doesn't work. That
 leaves you **3 moves**:
 
-1. **A key to paste — only if you chose the "API key" option.** With the local option (the default),
+1. **🔑 A key to paste — only if you chose the "API key" option.** With the local option (the default),
    **you skip this move**, nothing to paste. Otherwise, Claude guides you to paste your key into
    `.env` (never in chat) — details [SETUP §1.1](SETUP.md).
-2. **Remote repository?** Claude will ask whether you want a **remote** git repository (backup +
+2. **💾 Remote repository?** Claude will ask whether you want a **remote** git repository (backup +
    multi-machine). **Saying no is risk-free**: everything stays versioned locally, nothing is lost,
    and auto-commit **pushes nowhere** (push opt-in disabled by default). You can add one later.
-3. **Reopen Claude Code** in the **brain folder that was created** (e.g. `~/second-brain`) — this
+3. **🔄 Reopen Claude Code** in the **brain folder that was created** (e.g. `~/second-brain`) — this
    activates the search engine. (The launcher itself can be reused for another brain or deleted.)
    👉 **This is the step most often missed on Claude Desktop — see just below.**
 
@@ -315,17 +326,17 @@ auto-commit hook **pushes on every change** — backup and switching between lap
 ## And the privacy of my data?
 
 A fair question: your vault can be **confidential**. Depending on the search option you chose, **one
-or two** services see your content — and **in every case, you can shut the door on them exploiting
-it** (and in fully-local mode, the indexing engine sees **nothing**):
+or two** services may see your content — and **in every case, the right plan/settings keep it from
+being used for training** (and in fully-local mode, the indexing engine sees **nothing**):
 
 - **Claude** (which reasons and answers) reads your vault. On **API / Team / Enterprise**, your data
   is **not** used for training. On the **consumer** plan (claude.ai Free/Pro/Max), go to
   **Settings → Privacy** and **uncheck** the use of your conversations for model improvement.
 - **The indexing engine** receives the **text of your notes** — *only* if you chose the **API key**
   option (Gemini, OpenAI, company endpoint). With the **local** or **Ollama** option, **nothing
-  leaves**: your notes never leave your machine. ⚠️ And if you go through **Gemini on the free tier**,
-  Google **may exploit** that content (human review possible): **turning on billing = the move that
-  protects you** (Google then commits to **not** using it for training).
+  leaves**: your notes never leave your machine. ℹ️ And if you go through **Gemini on the free tier**,
+  Google **may use** that content to improve its products (human review possible): **turning on billing
+  / data controls** keeps it out of training (Google then commits to **not** using it for training).
 
 **The most private is also the recommended default** (fully-local); and even with the key option, for
 the price of a coffee a year your data leaves the training scope. Details and pricing chart:
