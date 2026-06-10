@@ -1,4 +1,4 @@
-# Second Brain Generator &nbsp;<img src="docs/img/rag-inside.svg" alt="RAG inside" height="26" valign="middle">
+# Second Brain Generator &nbsp;<img src="docs/img/rag-inside.svg" alt="RAG inside" height="34" valign="middle">
 
 *By Thomas Pierrain (VP Tech at [shodo](https://shodo.io/))*
 
