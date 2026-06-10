@@ -10,9 +10,9 @@ const STUB = join(HERE, "__fixtures__", "stub-mcp-server.mjs");
 
 const EXPECTED = ["search_vault", "get_document", "list_documents", "vault_stats"];
 
-test("succès : le serveur répond, tous les outils attendus présents", async () => {
+test("success: the server answers, all expected tools present", async () => {
   const res = await smokeTestMcp({
-    command: process.execPath, // node courant (multi-OS)
+    command: process.execPath, // current node (cross-OS)
     args: [STUB],
     cwd: HERE,
     expectTools: EXPECTED,
@@ -20,27 +20,27 @@ test("succès : le serveur répond, tous les outils attendus présents", async (
   });
 
   assert.equal(res.ok, true);
-  for (const t of EXPECTED) assert.ok(res.tools.includes(t), `outil manquant : ${t}`);
+  for (const t of EXPECTED) assert.ok(res.tools.includes(t), `missing tool: ${t}`);
   assert.equal(res.error, undefined);
 });
 
-test("outil manquant : ok=false même si le serveur répond", async () => {
+test("missing tool: ok=false even if the server answers", async () => {
   const res = await smokeTestMcp({
     command: process.execPath,
     args: [STUB],
     cwd: HERE,
     expectTools: EXPECTED,
     timeoutMs: 5000,
-    env: { STUB_TOOLS: "search_vault,get_document,list_documents" }, // vault_stats absent
+    env: { STUB_TOOLS: "search_vault,get_document,list_documents" }, // vault_stats missing
   });
 
   assert.equal(res.ok, false);
-  assert.ok(res.tools.includes("search_vault")); // la liste réelle reste exposée
+  assert.ok(res.tools.includes("search_vault")); // the actual list stays exposed
   assert.ok(!res.tools.includes("vault_stats"));
-  assert.match(res.error ?? "", /vault_stats/); // l'erreur nomme le manquant
+  assert.match(res.error ?? "", /vault_stats/); // the error names the missing one
 });
 
-test("timeout : serveur muet → ok=false, error timeout", async () => {
+test("timeout: silent server → ok=false, error timeout", async () => {
   const res = await smokeTestMcp({
     command: process.execPath,
     args: [STUB],
@@ -54,48 +54,48 @@ test("timeout : serveur muet → ok=false, error timeout", async () => {
   assert.match(res.error ?? "", /timeout/i);
 });
 
-test("probe sourcé : search_vault cite une source du vault → ok=true, probeText matche /vault\\//", async () => {
+test("sourced probe: search_vault cites a vault source → ok=true, probeText matches /vault\\//", async () => {
   const res = await smokeTestMcp({
     command: process.execPath,
     args: [STUB],
     cwd: HERE,
     expectTools: EXPECTED,
     timeoutMs: 5000,
-    probe: { tool: "search_vault", args: { query: "démo" }, expectText: /vault\// },
+    probe: { tool: "search_vault", args: { query: "demo" }, expectText: /vault\// },
   });
 
   assert.equal(res.ok, true);
-  assert.match(res.probeText ?? "", /vault\//); // la réponse cite bien une source du vault
+  assert.match(res.probeText ?? "", /vault\//); // the response does cite a vault source
   assert.equal(res.error, undefined);
 });
 
-test("probe non sourcé : RAG vide/down → ok=false, error nomme l'absence de source", async () => {
+test("unsourced probe: empty/down RAG → ok=false, error names the missing source", async () => {
   const res = await smokeTestMcp({
     command: process.execPath,
     args: [STUB],
     cwd: HERE,
     expectTools: EXPECTED,
     timeoutMs: 5000,
-    env: { STUB_SEARCH: "norag" }, // « Aucun résultat trouvé dans le vault. »
-    probe: { tool: "search_vault", args: { query: "démo" }, expectText: /vault\// },
+    env: { STUB_SEARCH: "norag" }, // "No results found in the vault."
+    probe: { tool: "search_vault", args: { query: "demo" }, expectText: /vault\// },
   });
 
   assert.equal(res.ok, false);
-  assert.ok(res.tools.includes("search_vault")); // structurel OK, c'est le probe qui échoue
-  assert.match(res.error ?? "", /source/i); // l'erreur nomme l'absence de source
+  assert.ok(res.tools.includes("search_vault")); // structural OK, it's the probe that fails
+  assert.match(res.error ?? "", /source/i); // the error names the missing source
 });
 
-test("serveur qui meurt : détecté vite, ok=false, error ≠ timeout", async () => {
+test("dying server: detected fast, ok=false, error ≠ timeout", async () => {
   const res = await smokeTestMcp({
     command: process.execPath,
     args: [STUB],
     cwd: HERE,
     expectTools: EXPECTED,
-    timeoutMs: 5000, // gros timeout : si on tombe dedans, c'est qu'on n'a PAS détecté la mort
+    timeoutMs: 5000, // large timeout: hitting it means we did NOT detect the death
     env: { STUB_MODE: "crash" },
   });
 
   assert.equal(res.ok, false);
-  assert.ok(res.error, "une error doit être renseignée");
+  assert.ok(res.error, "an error must be set");
   assert.doesNotMatch(res.error ?? "", /timeout/i);
 });

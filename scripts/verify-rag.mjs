@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// verify-rag.mjs — à lancer DEPUIS le dossier cerveau, APRÈS avoir collé la clé
-// Gemini dans .env (la clé n'est jamais là au moment de l'installation).
+// verify-rag.mjs — to run FROM the brain folder, AFTER pasting the Gemini key
+// into .env (the key is never there at install time).
 //
-// (Ré)indexe le vault d'exemple, puis prouve de façon DÉTERMINISTE et BRUYANTE que
-// la question de démo répond DEPUIS le vault — en exigeant le token canari unique
-// « Mollecuisse » (introuvable hors-vault). C'est l'attrape-panne-B post-clé :
-//   exit 0 = le cerveau marche vraiment ; exit 1 = échec, à relayer tel quel.
+// (Re)indexes the sample vault, then proves in a DETERMINISTIC and LOUD way that
+// the demo question answers FROM the vault — by requiring the unique canary token
+// "Mollecuisse" (not found outside the vault). This is the post-key failure-catch B:
+//   exit 0 = the brain really works; exit 1 = failure, to relay as-is.
 // ─────────────────────────────────────────────────────────────────────────────
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -30,41 +30,41 @@ const rag = join(ROOT, "rag");
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 
-// 1. Clé présente ? — UNIQUEMENT si l'embedder choisi est Gemini. Les embedders
-//    locaux (in-process « Gemma inside » / Ollama) et les endpoints compatibles-
-//    OpenAI n'ont pas de clé Gemini : la vérif a alors tout son sens sans elle
-//    (le canari Mollecuisse passe aussi en in-process). On délègue à l'index la
-//    détection d'une config alternative incomplète (échec bruyant à l'étape 2).
+// 1. Key present? — ONLY if the chosen embedder is Gemini. Local embedders
+//    (in-process "Gemma inside" / Ollama) and OpenAI-compatible endpoints have
+//    no Gemini key: the check then makes full sense without it (the Mollecuisse
+//    canary passes in-process too). We delegate to the index the detection of an
+//    incomplete alternative config (loud failure at step 2).
 const envPath = join(ROOT, ".env");
 const envContent = existsSync(envPath) ? readFileSync(envPath, "utf8") : null;
 if (geminiKeyRequired(envContent) && !hasGeminiKey(envContent)) {
-  err("Pas de clé Gemini dans .env — impossible de vérifier le RAG.");
-  err(`Colle ta clé dans ${envPath} (ligne GOOGLE_GEMINI_API_KEY=) puis relance : node scripts/verify-rag.mjs`);
+  err("No Gemini key in .env — cannot verify the RAG.");
+  err(`Paste your key into ${envPath} (line GOOGLE_GEMINI_API_KEY=) then re-run: node scripts/verify-rag.mjs`);
   process.exit(1);
 }
 
-// 2. Indexation bloquante — sépare « index KO » (clé invalide / quota / réseau)
-//    de « retrieval KO » (le RAG répond mais pas depuis le vault).
-step("Indexation du vault");
+// 2. Blocking indexing — separates "index KO" (invalid key / quota / network)
+//    from "retrieval KO" (the RAG answers but not from the vault).
+step("Indexing the vault");
 const idx = spawnSync(NPM, ["run", "--silent", "index"], { cwd: rag, stdio: "inherit" });
 if (idx.status !== 0) {
-  err("Indexation échouée (clé invalide ? quota Gemini ? réseau ?) — voir SETUP.md §8/§9.");
+  err("Indexing failed (invalid key? Gemini quota? network?) — see SETUP.md §8/§9.");
   process.exit(1);
 }
-ok("vault indexé");
+ok("vault indexed");
 
-// 3. Probe canari — BRUYANT.
-step("Vérification : la démo répond-elle DEPUIS le vault ?");
+// 3. Canary probe — LOUD.
+step("Verification: does the demo answer FROM the vault?");
 let srv;
 try {
   const mcp = JSON.parse(readFileSync(join(ROOT, ".mcp.json"), "utf8"));
   srv = mcp.mcpServers?.["vault-rag"];
 } catch (e) {
-  err(`.mcp.json illisible (${e.message}) — relance l'installeur depuis le launcher ?`);
+  err(`.mcp.json unreadable (${e.message}) — re-run the installer from the launcher?`);
   process.exit(1);
 }
 if (!srv) {
-  err(".mcp.json sans serveur « vault-rag ».");
+  err(".mcp.json without a \"vault-rag\" server.");
   process.exit(1);
 }
 
@@ -78,11 +78,11 @@ const res = await smokeTestMcp({
 });
 
 if (res.ok) {
-  ok("RAG vérifié — la démo répond DEPUIS le vault (canari Pélagie de Mollecuisse retrouvé).");
-  console.log(`  Tu peux ouvrir Claude Code et poser : « ${DEMO_QUESTION} »`);
+  ok("RAG verified — the demo answers FROM the vault (canary Pélagie de Mollecuisse found).");
+  console.log(`  You can open Claude Code and ask: "${DEMO_QUESTION}"`);
   process.exit(0);
 }
 
-err(`VÉRIF RAG ÉCHEC — la démo ne répond PAS depuis le vault : ${res.error ?? "raison inconnue"}`);
-err("Le RAG ne ressort pas le fait introuvable hors-vault (canari). Dépannage : SETUP.md §8.");
+err(`RAG VERIFY FAILED — the demo does NOT answer from the vault: ${res.error ?? "unknown reason"}`);
+err("The RAG doesn't surface the fact unfindable outside the vault (canary). Troubleshooting: SETUP.md §8.");
 process.exit(1);

@@ -2,22 +2,22 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseLsFilesZ, filterCopyable } from "./tracked-files.mjs";
 
-test("parseLsFilesZ — sépare sur NUL et ignore l'entrée vide finale", () => {
+test("parseLsFilesZ — splits on NUL and ignores the trailing empty entry", () => {
   assert.deepEqual(parseLsFilesZ("a\0b/c\0"), ["a", "b/c"]);
 });
 
-test("parseLsFilesZ — sortie vide → []", () => {
+test("parseLsFilesZ — empty output → []", () => {
   assert.deepEqual(parseLsFilesZ(""), []);
 });
 
-test("filterCopyable — exclut DEVELOPING.md (fichier du launcher uniquement)", () => {
+test("filterCopyable — excludes DEVELOPING.md (launcher-only file)", () => {
   assert.deepEqual(
     filterCopyable(["README.md", "DEVELOPING.md", "rag/src/index.ts"]),
     ["README.md", "rag/src/index.ts"],
   );
 });
 
-test("filterCopyable — exclut EN-QUOI-C-EST-DIFFERENT.md (fiche de positionnement du launcher)", () => {
+test("filterCopyable — excludes EN-QUOI-C-EST-DIFFERENT.md (launcher positioning sheet)", () => {
   assert.deepEqual(
     filterCopyable([
       "README.md",
@@ -28,7 +28,7 @@ test("filterCopyable — exclut EN-QUOI-C-EST-DIFFERENT.md (fiche de positionnem
   );
 });
 
-test("filterCopyable — exclut tout le dossier maintainers/ (contexte de dev du générateur)", () => {
+test("filterCopyable — excludes the whole maintainers/ folder (generator's dev context)", () => {
   assert.deepEqual(
     filterCopyable([
       "README.md",
@@ -40,10 +40,10 @@ test("filterCopyable — exclut tout le dossier maintainers/ (contexte de dev du
   );
 });
 
-test("filterCopyable — exclut l'outillage de mesure rag/scripts/ (dev-only : caler EMBED_BATCH, défaut = vault confidentiel)", () => {
+test("filterCopyable — excludes the rag/scripts/ measurement tooling (dev-only: tune EMBED_BATCH, default = confidential vault)", () => {
   assert.deepEqual(
     filterCopyable([
-      "rag/src/index.ts", // moteur RAG : copié
+      "rag/src/index.ts", // RAG engine: copied
       "rag/scripts/measure-batch.mts",
     ]),
     ["rag/src/index.ts"],
@@ -62,10 +62,10 @@ test("filterCopyable — excludes templates/ (locale sources are overlaid, not b
   );
 });
 
-test("filterCopyable — exclut l'outillage d'eval-set (dev-only : sert à choisir l'embedder du launcher)", () => {
+test("filterCopyable — excludes the eval-set tooling (dev-only: used to choose the launcher's embedder)", () => {
   assert.deepEqual(
     filterCopyable([
-      "scripts/verify-rag.mjs", // reste copié (utilisé dans le cerveau)
+      "scripts/verify-rag.mjs", // stays copied (used inside the brain)
       "scripts/run-eval.mjs",
       "scripts/lib/eval-judge.mjs",
       "scripts/lib/eval-judge.test.mjs",

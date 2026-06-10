@@ -1,19 +1,19 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// eval-judge.mjs — cœur PUR de l'eval-set RAG (Étape 2 du plan embedder).
-// Le juge est Claude (`claude -p`, en sous-process côté orchestrateur) ; ici on ne
-// fait que le déterministe et testable : construire le prompt, lire son verdict,
-// agréger en un score chiffré reproductible. Aucune I/O.
+// eval-judge.mjs — PURE core of the RAG eval-set (Step 2 of the embedder plan).
+// The judge is Claude (`claude -p`, as a subprocess on the orchestrator side); here
+// we only do the deterministic, testable part: build the prompt, read its verdict,
+// aggregate into a reproducible numeric score. No I/O.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Lit le verdict rendu par le juge. Contrat : le juge termine par une ligne
-// `VERDICT: PASS` (les passages remontés permettent de répondre) ou `VERDICT: FAIL`.
+// Reads the verdict returned by the judge. Contract: the judge ends with a line
+// `VERDICT: PASS` (the returned passages make it possible to answer) or `VERDICT: FAIL`.
 export function parseVerdict(output) {
   if (/VERDICT:\s*PASS/i.test(output)) return { pass: true };
   if (/VERDICT:\s*FAIL/i.test(output)) return { pass: false };
   return { pass: false, unreadable: true };
 }
 
-// Agrège les verdicts d'une passe d'eval en un score chiffré reproductible.
+// Aggregates the verdicts of an eval pass into a reproducible numeric score.
 export function scoreEval(results) {
   const total = results.length;
   const passed = results.filter((r) => r.pass).length;
@@ -21,24 +21,24 @@ export function scoreEval(results) {
   return { passed, total, unreadable, score: total === 0 ? 0 : passed / total };
 }
 
-// Construit le prompt du juge (Claude) : la question, la réponse attendue, les
-// passages réellement remontés par search_vault, et la consigne de verdict.
+// Builds the judge's prompt (Claude): the question, the expected answer, the passages
+// actually returned by search_vault, and the verdict instruction.
 export function buildJudgePrompt(item, retrievedText) {
   return [
-    "Tu es un juge d'évaluation RAG. On a posé une question à un moteur de recherche",
-    "sémantique sur un vault de notes ; voici la réponse ATTENDUE et les passages",
-    "qu'il a réellement remontés. Juge UNIQUEMENT si ces passages contiennent",
-    "l'information permettant de répondre correctement (peu importe la formulation).",
-    "Ne te fie pas à tes connaissances : seuls les passages comptent.",
+    "You are a RAG evaluation judge. A question was put to a semantic search engine",
+    "over a vault of notes; here is the EXPECTED answer and the passages it actually",
+    "returned. Judge ONLY whether these passages contain the information needed to",
+    "answer correctly (regardless of wording).",
+    "Do not rely on your own knowledge: only the passages count.",
     "",
-    `Question : ${item.question}`,
-    `Réponse attendue : ${item.expect}`,
+    `Question: ${item.question}`,
+    `Expected answer: ${item.expect}`,
     "",
-    "Passages remontés :",
+    "Returned passages:",
     retrievedText,
     "",
-    "Termine ta réponse par une ligne EXACTEMENT au format suivant :",
-    "VERDICT: PASS  (si les passages suffisent à répondre)",
-    "VERDICT: FAIL  (s'ils ne suffisent pas)",
+    "End your reply with a line EXACTLY in the following format:",
+    "VERDICT: PASS  (if the passages are enough to answer)",
+    "VERDICT: FAIL  (if they are not enough)",
   ].join("\n");
 }

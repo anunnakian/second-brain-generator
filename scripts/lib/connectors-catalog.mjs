@@ -1,30 +1,30 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// connectors-catalog.mjs — catalogue neutre de sources externes branchables.
+// connectors-catalog.mjs — neutral catalog of pluggable external sources.
 //
-// Deux familles :
-//  • kind:'mcp'    → serveur MCP self-hosted/communautaire. L'installeur peut écrire
-//                    son `serverConfig` dans .mcp.json et ses `permissions` dans
-//                    settings.json (cf. connectors-merge.mjs). Les valeurs d'env sont
-//                    des PLACEHOLDERS `<...>` : l'utilisateur renseigne ses vrais
-//                    credentials lui-même (neutralité : aucun secret en dur).
-//  • kind:'native' → connecteur géré par le compte claude.ai (Slack, Gmail,
-//                    Calendar…). Pas de .mcp.json à écrire : on se contente de
-//                    pointer l'utilisateur vers les *Connectors* de son compte.
+// Two families:
+//  • kind:'mcp'    → self-hosted/community MCP server. The installer can write
+//                    its `serverConfig` into .mcp.json and its `permissions` into
+//                    settings.json (see connectors-merge.mjs). The env values are
+//                    PLACEHOLDERS `<...>`: the user fills in their real
+//                    credentials themselves (neutrality: no hard-coded secret).
+//  • kind:'native' → connector managed by the claude.ai account (Slack, Gmail,
+//                    Calendar…). No .mcp.json to write: we just point the user to
+//                    the *Connectors* of their account.
 //
-// `useCases` : pour chaque connecteur, quelques idées de « pour quoi faire » —
-// affichées par le wizard pour aider l'utilisateur à choisir, et reprises dans la
-// doc (README §Connecteurs, SETUP §6, CONNECTORS.md). Les transcripts de réunion
-// (Meet/Gemini) ne sont PAS un produit tiers à brancher : c'est un cas d'usage
-// servi par Google Calendar (le lien est souvent dans l'invitation) + Google Drive
-// (où atterrit le doc de transcription). On les cite donc en useCases, pas en entrée.
+// `useCases`: for each connector, a few "what for" ideas — shown by the wizard
+// to help the user choose, and reused in the docs (README §Connectors, SETUP §6,
+// CONNECTORS.md). Meeting transcripts (Meet/Gemini) are NOT a third-party product
+// to plug in: it's a use case served by Google Calendar (the link is often in the
+// invite) + Google Drive (where the transcription doc lands). So we cite them in
+// useCases, not as an entry.
 //
-// Garder ce catalogue court et crédible (≤ 8 entrées), neutre, sans secret en dur.
+// Keep this catalog short and credible (≤ 8 entries), neutral, no hard-coded secret.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const CONNECTORS = [
   {
     id: "google-drive",
-    label: "Google Drive (serveur MCP communautaire)",
+    label: "Google Drive (community MCP server)",
     kind: "mcp",
     serverConfig: {
       type: "stdio",
@@ -39,16 +39,16 @@ export const CONNECTORS = [
       "mcp__google-drive__read_file",
     ],
     useCases: [
-      "Retrouver et lire des documents (specs, comptes-rendus, exports).",
-      "Récupérer les transcripts de réunion (Meet/Gemini) : le doc de transcription atterrit sur le Drive — rechercher par date de modification puis le lire.",
+      "Find and read documents (specs, minutes, exports).",
+      "Fetch meeting transcripts (Meet/Gemini): the transcription doc lands on Drive — search by modification date then read it.",
     ],
     credentialsHint:
-      "Crée un client OAuth Google (scope Drive lecture seule), télécharge le " +
-      "credentials.json et renseigne GDRIVE_CREDENTIALS_PATH. Détails : SETUP §6.",
+      "Create a Google OAuth client (read-only Drive scope), download the " +
+      "credentials.json and set GDRIVE_CREDENTIALS_PATH. Details: SETUP §6.",
   },
   {
     id: "notion",
-    label: "Notion (serveur MCP communautaire)",
+    label: "Notion (community MCP server)",
     kind: "mcp",
     serverConfig: {
       type: "stdio",
@@ -63,47 +63,47 @@ export const CONNECTORS = [
       "mcp__notion__fetch",
     ],
     useCases: [
-      "Chercher dans tes bases et pages Notion (specs produit, wikis, bases de connaissances).",
-      "Lire une page précise pour la croiser avec tes notes du vault.",
+      "Search across your Notion databases and pages (product specs, wikis, knowledge bases).",
+      "Read a specific page to cross-reference it with your vault notes.",
     ],
     credentialsHint:
-      "Crée une intégration interne Notion, partage les pages voulues avec elle, " +
-      "puis colle son token dans NOTION_API_TOKEN. Détails : SETUP §6.",
+      "Create an internal Notion integration, share the desired pages with it, " +
+      "then paste its token into NOTION_API_TOKEN. Details: SETUP §6.",
   },
   {
     id: "slack",
-    label: "Slack (connecteur natif du compte claude.ai)",
+    label: "Slack (native connector of the claude.ai account)",
     kind: "native",
     useCases: [
-      "Chercher des messages et fils sur un sujet ou une personne.",
-      "Lire un channel ou les non-lus pour capter ce qui a bougé depuis le dernier passage.",
+      "Search for messages and threads on a topic or a person.",
+      "Read a channel or the unreads to catch what changed since the last pass.",
     ],
     credentialsHint:
-      "Slack se branche côté compte claude.ai (Settings → Connectors), pas via " +
-      ".mcp.json. Active le connecteur Slack sur ton compte. Détails : SETUP §6.",
+      "Slack is wired on the claude.ai account side (Settings → Connectors), not via " +
+      ".mcp.json. Enable the Slack connector on your account. Details: SETUP §6.",
   },
   {
     id: "gmail",
-    label: "Gmail (connecteur natif du compte claude.ai)",
+    label: "Gmail (native connector of the claude.ai account)",
     kind: "native",
     useCases: [
-      "Retrouver un mail ou un fil sur un sujet, un client, un engagement.",
-      "Capter des décisions et actions échangées par mail pour les croiser avec tes notes.",
+      "Find an email or a thread on a topic, a client, a commitment.",
+      "Catch decisions and actions exchanged by email to cross-reference them with your notes.",
     ],
     credentialsHint:
-      "Gmail se branche côté compte claude.ai (Settings → Connectors), pas via " +
-      ".mcp.json. Active le connecteur Gmail sur ton compte. Détails : SETUP §6.",
+      "Gmail is wired on the claude.ai account side (Settings → Connectors), not via " +
+      ".mcp.json. Enable the Gmail connector on your account. Details: SETUP §6.",
   },
   {
     id: "google-calendar",
-    label: "Google Calendar (connecteur natif du compte claude.ai)",
+    label: "Google Calendar (native connector of the claude.ai account)",
     kind: "native",
     useCases: [
-      "Lire l'agenda du jour / de la semaine pour contextualiser une question ou un briefing.",
-      "Récupérer les transcripts de réunion (Meet) : le lien de l'enregistrement/transcription est souvent attaché à l'invitation de l'événement.",
+      "Read the day's / week's agenda to give context to a question or a briefing.",
+      "Fetch meeting transcripts (Meet): the recording/transcription link is often attached to the event invite.",
     ],
     credentialsHint:
-      "Google Calendar se branche côté compte claude.ai (Settings → Connectors), " +
-      "pas via .mcp.json. Active le connecteur sur ton compte. Détails : SETUP §6.",
+      "Google Calendar is wired on the claude.ai account side (Settings → Connectors), " +
+      "not via .mcp.json. Enable the connector on your account. Details: SETUP §6.",
   },
 ];

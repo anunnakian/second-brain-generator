@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// stub-mcp-server.mjs — faux serveur MCP pour tester smokeTestMcp() sans réseau
-// ni Gemini. Parle le JSON-RPC stdio newline-delimited (une ligne = un message).
+// stub-mcp-server.mjs — fake MCP server to test smokeTestMcp() without network
+// or Gemini. Speaks newline-delimited stdio JSON-RPC (one line = one message).
 //
-// Pilotable par variables d'environnement (le test choisit le scénario) :
-//   STUB_TOOLS=a,b,c   liste d'outils renvoyée par tools/list (défaut : les 4 réels)
-//   STUB_MODE=success  (défaut) handshake complet
-//            =silent   ne répond jamais → provoque un timeout côté smoke-test
-//            =crash    se termine (code 1) dès la 1re requête → serveur qui meurt
-//   STUB_SEARCH=sourced (défaut) tools/call renvoie un texte qui cite une source
-//                                vault (« **Path:** `vault/…` ») → probe PASS
-//              =norag             renvoie « Aucun résultat trouvé dans le vault. »
-//                                (pas de slash) → probe FAIL (RAG vide / down)
+// Driven by environment variables (the test picks the scenario):
+//   STUB_TOOLS=a,b,c   tools list returned by tools/list (default: the 4 real ones)
+//   STUB_MODE=success  (default) full handshake
+//            =silent   never answers → triggers a timeout on the smoke-test side
+//            =crash    exits (code 1) on the 1st request → dying server
+//   STUB_SEARCH=sourced (default) tools/call returns text that cites a vault
+//                                source ("**Path:** `vault/…`") → probe PASS
+//              =norag             returns "No results found in the vault."
+//                                (no slash) → probe FAIL (empty / down RAG)
 // ─────────────────────────────────────────────────────────────────────────────
 import { stdin, stdout, env, exit } from "node:process";
 
@@ -22,7 +22,7 @@ const TOOLS = (env.STUB_TOOLS ?? "search_vault,get_document,list_documents,vault
   .filter(Boolean);
 
 if (MODE === "silent") {
-  // On garde le process vivant sans jamais répondre (stdin ouvert).
+  // Keep the process alive without ever answering (stdin open).
   stdin.resume();
 } else {
   let buf = "";
@@ -47,7 +47,7 @@ function handle(line) {
   try {
     msg = JSON.parse(line);
   } catch {
-    return; // ligne non-JSON : ignorée
+    return; // non-JSON line: ignored
   }
 
   if (MODE === "crash") exit(1);
@@ -65,7 +65,7 @@ function handle(line) {
       });
       break;
     case "notifications/initialized":
-      break; // notification : pas de réponse
+      break; // notification: no response
     case "tools/list":
       send({
         jsonrpc: "2.0",
@@ -77,10 +77,10 @@ function handle(line) {
       const mode = env.STUB_SEARCH ?? "sourced";
       const text =
         mode === "norag"
-          ? "Aucun résultat trouvé dans le vault."
+          ? "No results found in the vault."
           : mode === "echo"
-            ? `query=${msg.params?.arguments?.query ?? ""}` // renvoie la query → test de corrélation
-            : "Résultat 1\n**Path:** `vault/decisions/0001-exemple.md`\nExtrait pertinent…";
+            ? `query=${msg.params?.arguments?.query ?? ""}` // echoes the query → correlation test
+            : "Result 1\n**Path:** `vault/decisions/0001-example.md`\nRelevant excerpt…";
       send({
         jsonrpc: "2.0",
         id: msg.id,

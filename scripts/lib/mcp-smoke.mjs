@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// mcp-smoke.mjs — vérifie qu'un serveur MCP stdio répond au handshake JSON-RPC.
-// Spawn le serveur, déroule initialize → initialized → tools/list, et renvoie
-// { ok, tools, error? }. Aucune clé Gemini requise : lister les outils n'embedde
-// rien. Pur Node, multi-OS.
+// mcp-smoke.mjs — checks that a stdio MCP server answers the JSON-RPC handshake.
+// Spawns the server, runs through initialize → initialized → tools/list, and
+// returns { ok, tools, error? }. No Gemini key required: listing the tools
+// embeds nothing. Pure Node, cross-OS.
 // ─────────────────────────────────────────────────────────────────────────────
 import { spawn } from "node:child_process";
 
@@ -15,7 +15,7 @@ export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeou
     });
     let buf = "";
     let done = false;
-    let lastTools = []; // mémorise la liste d'outils (id:2) pour la rendre après le probe (id:3)
+    let lastTools = []; // remembers the tools list (id:2) to return it after the probe (id:3)
     const timer = setTimeout(
       () => finish({ ok: false, tools: [], error: "timeout" }),
       timeoutMs
@@ -42,7 +42,7 @@ export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeou
       finish({
         ok: false,
         tools: [],
-        error: `serveur terminé avant la fin du handshake (code ${code ?? signal})`,
+        error: `server exited before the handshake completed (code ${code ?? signal})`,
       })
     );
 
@@ -58,7 +58,7 @@ export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeou
         try {
           msg = JSON.parse(line);
         } catch {
-          continue; // ligne non-JSON (logs éventuels) : ignorée
+          continue; // non-JSON line (possible logs): ignored
         }
         handle(msg);
       }
@@ -73,10 +73,10 @@ export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeou
         lastTools = tools;
         const missing = expectTools.filter((t) => !tools.includes(t));
         if (missing.length > 0) {
-          finish({ ok: false, tools, error: `outils manquants : ${missing.join(", ")}` });
+          finish({ ok: false, tools, error: `missing tools: ${missing.join(", ")}` });
         } else if (probe) {
-          // Smoke structurel OK : on pousse jusqu'à un probe FONCTIONNEL — appeler
-          // réellement l'outil et vérifier que sa réponse cite une source du vault.
+          // Structural smoke OK: we go further with a FUNCTIONAL probe — actually
+          // call the tool and check that its response cites a vault source.
           send({
             jsonrpc: "2.0",
             id: 3,
@@ -84,12 +84,12 @@ export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeou
             params: { name: probe.tool, arguments: probe.args ?? {} },
           });
         } else {
-          finish({ ok: true, tools }); // sans probe : comportement inchangé
+          finish({ ok: true, tools }); // without probe: behavior unchanged
         }
       } else if (msg.id === 3 && probe) {
         const tools = lastTools;
         if (msg.error) {
-          finish({ ok: false, tools, error: `tools/call ${probe.tool} a échoué : ${msg.error.message ?? "erreur"}` });
+          finish({ ok: false, tools, error: `tools/call ${probe.tool} failed: ${msg.error.message ?? "error"}` });
           return;
         }
         const text = (msg.result?.content ?? []).map((c) => c.text ?? "").join("\n");
@@ -98,7 +98,7 @@ export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeou
           ok,
           tools,
           probeText: text,
-          error: ok ? undefined : "réponse de search_vault sans source vault citée",
+          error: ok ? undefined : "search_vault response with no vault source cited",
         });
       }
     }

@@ -8,22 +8,22 @@ import { mcpSearch } from "./mcp-search.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const STUB = join(HERE, "__fixtures__", "stub-mcp-server.mjs");
 
-test("mcpSearch lance N requêtes sur une session et corrèle chaque réponse à sa query", async () => {
+test("mcpSearch issues N queries on one session and correlates each response to its query", async () => {
   const results = await mcpSearch({
     command: process.execPath,
     args: [STUB],
     cwd: HERE,
-    queries: ["première question", "deuxième question"],
+    queries: ["first question", "second question"],
     timeoutMs: 5000,
     env: { STUB_SEARCH: "echo" },
   });
 
   assert.equal(results.length, 2);
-  assert.deepEqual(results[0], { query: "première question", text: "query=première question" });
-  assert.deepEqual(results[1], { query: "deuxième question", text: "query=deuxième question" });
+  assert.deepEqual(results[0], { query: "first question", text: "query=first question" });
+  assert.deepEqual(results[1], { query: "second question", text: "query=second question" });
 });
 
-test("mcpSearch rejette bruyamment si le serveur MCP meurt (pas de score faux)", async () => {
+test("mcpSearch rejects loudly if the MCP server dies (no fake score)", async () => {
   await assert.rejects(
     mcpSearch({
       command: process.execPath,
@@ -33,6 +33,6 @@ test("mcpSearch rejette bruyamment si le serveur MCP meurt (pas de score faux)",
       timeoutMs: 5000,
       env: { STUB_MODE: "crash" },
     }),
-    /termin|MCP/i
+    /exited|MCP/i
   );
 });

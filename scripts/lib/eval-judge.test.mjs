@@ -4,33 +4,33 @@ import assert from "node:assert/strict";
 import { parseVerdict, scoreEval, buildJudgePrompt } from "./eval-judge.mjs";
 
 const ITEM = {
-  question: "Qui a remporté le Trophée de l'Inertie 2025 ?",
-  expect: "Pélagie de Mollecuisse, avec un TRF de 98,7 %.",
+  question: "Who won the Inertia Trophy 2025?",
+  expect: "Pélagie de Mollecuisse, with a DNR of 98.7%.",
 };
-const RETRIEVED = "### 1. Trophée de l'Inertie — Conséquences\nPélagie de Mollecuisse, TRF 98,7 %.";
+const RETRIEVED = "### 1. Inertia Trophy — Consequences\nPélagie de Mollecuisse, DNR 98.7%.";
 
-test("parseVerdict lit un PASS dans la sortie du juge", () => {
-  assert.deepEqual(parseVerdict("Les passages contiennent la réponse.\nVERDICT: PASS"), {
+test("parseVerdict reads a PASS in the judge's output", () => {
+  assert.deepEqual(parseVerdict("The passages contain the answer.\nVERDICT: PASS"), {
     pass: true,
   });
 });
 
-test("parseVerdict lit un FAIL dans la sortie du juge", () => {
-  assert.deepEqual(parseVerdict("Le bon passage manque.\nVERDICT: FAIL"), {
+test("parseVerdict reads a FAIL in the judge's output", () => {
+  assert.deepEqual(parseVerdict("The right passage is missing.\nVERDICT: FAIL"), {
     pass: false,
   });
 });
 
-test("parseVerdict signale un verdict illisible (ni PASS ni FAIL)", () => {
-  // Juge planté / sortie vide : on NE compte pas un FAIL silencieux (fausserait le
-  // score) → on marque indéterminé pour que l'eval le remonte bruyamment.
-  assert.deepEqual(parseVerdict("blah blah sans verdict"), {
+test("parseVerdict flags an unreadable verdict (neither PASS nor FAIL)", () => {
+  // Crashed judge / empty output: we do NOT count a silent FAIL (it would skew the
+  // score) → we mark it indeterminate so the eval surfaces it loudly.
+  assert.deepEqual(parseVerdict("blah blah no verdict"), {
     pass: false,
     unreadable: true,
   });
 });
 
-test("scoreEval agrège un seul PASS en score 1", () => {
+test("scoreEval aggregates a single PASS into a score of 1", () => {
   assert.deepEqual(scoreEval([{ pass: true }]), {
     passed: 1,
     total: 1,
@@ -39,7 +39,7 @@ test("scoreEval agrège un seul PASS en score 1", () => {
   });
 });
 
-test("scoreEval compte les illisibles dans le total et calcule le ratio", () => {
+test("scoreEval counts unreadable ones in the total and computes the ratio", () => {
   const results = [{ pass: true }, { pass: false }, { pass: false, unreadable: true }];
   assert.deepEqual(scoreEval(results), {
     passed: 1,
@@ -49,23 +49,23 @@ test("scoreEval compte les illisibles dans le total et calcule le ratio", () => 
   });
 });
 
-test("scoreEval sur une liste vide donne 0, pas NaN", () => {
+test("scoreEval on an empty list gives 0, not NaN", () => {
   assert.deepEqual(scoreEval([]), { passed: 0, total: 0, unreadable: 0, score: 0 });
 });
 
-test("buildJudgePrompt inclut la question à juger", () => {
+test("buildJudgePrompt includes the question to judge", () => {
   assert.ok(buildJudgePrompt(ITEM, RETRIEVED).includes(ITEM.question));
 });
 
-test("buildJudgePrompt inclut la réponse attendue", () => {
+test("buildJudgePrompt includes the expected answer", () => {
   assert.ok(buildJudgePrompt(ITEM, RETRIEVED).includes(ITEM.expect));
 });
 
-test("buildJudgePrompt inclut les passages remontés par la recherche", () => {
+test("buildJudgePrompt includes the passages returned by the search", () => {
   assert.ok(buildJudgePrompt(ITEM, RETRIEVED).includes(RETRIEVED));
 });
 
-test("buildJudgePrompt impose le format de verdict attendu par parseVerdict", () => {
+test("buildJudgePrompt enforces the verdict format expected by parseVerdict", () => {
   const prompt = buildJudgePrompt(ITEM, RETRIEVED);
   assert.ok(prompt.includes("VERDICT: PASS"));
   assert.ok(prompt.includes("VERDICT: FAIL"));

@@ -1,14 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// repo-status.mjs — décide la ligne « repo » de la bannière SessionStart à partir
-// de faits git déjà collectés (pas d'I/O ici → testable). Inclut le garde-fou
-// FAIL-LOUD : si des notes du vault sont restées NON committées, c'est le symptôme
-// d'un auto-commit qui n'a pas tourné (typiquement hooks muets sous nvm / PATH
-// minimal de l'app desktop) → on CRIE au lieu d'afficher un ✅ trompeur.
+// repo-status.mjs — decides the "repo" line of the SessionStart banner from git
+// facts already collected (no I/O here → testable). Includes the FAIL-LOUD
+// guard: if vault notes were left UNcommitted, that's the symptom of an
+// auto-commit that didn't run (typically silent hooks under nvm / the desktop
+// app's minimal PATH) → we SHOUT instead of showing a misleading ✅.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Compte les entrées de `git status --porcelain` qui concernent le vault. Le
-// format porcelain = 2 caractères de statut + espace + chemin (ex. « ?? vault/x.md »,
-// «  M vault/y.md ») → on isole le chemin (slice 3) et on garde ceux sous vault/.
+// Counts the `git status --porcelain` entries that concern the vault. The
+// porcelain format = 2 status chars + space + path (e.g. "?? vault/x.md",
+// "  M vault/y.md") → we isolate the path (slice 3) and keep those under vault/.
 export function countVaultUncommitted(porcelainOut) {
   return porcelainOut
     .split("\n")
@@ -17,24 +17,24 @@ export function countVaultUncommitted(porcelainOut) {
     .length;
 }
 
-// Champs attendus :
-//   pullOk          : bool   — le `git pull --rebase` a réussi (ou pas de remote → true)
-//   pullOut         : string — sa sortie (pour détecter « à jour »)
-//   short           : string — HEAD court
-//   changedCount    : number — fichiers changés par le pull (si mise à jour)
-//   uncommittedVault: number — fichiers du vault non committés (porcelain filtré)
+// Expected fields:
+//   pullOk          : bool   — the `git pull --rebase` succeeded (or no remote → true)
+//   pullOut         : string — its output (to detect "up to date")
+//   short           : string — short HEAD
+//   changedCount    : number — files changed by the pull (if updated)
+//   uncommittedVault: number — uncommitted vault files (filtered porcelain)
 export function repoStatusLine({ pullOk, pullOut, short, changedCount = 0, uncommittedVault = 0 }) {
-  // Priorité au garde-fou : des notes non committées au démarrage = l'auto-commit
-  // n'a pas tourné. On le signale fort, avant tout statut « à jour » rassurant.
+  // Guard takes priority: uncommitted notes at startup = the auto-commit didn't
+  // run. We flag it loudly, ahead of any reassuring "up to date" status.
   if (uncommittedVault > 0) {
     return (
-      `⚠️ ${uncommittedVault} note(s) du vault NON committée(s) — l'auto-commit n'a pas ` +
-      `tourné (hooks muets ?). Tes notes sont SUR LE DISQUE mais pas versionnées. ` +
-      `Vérifie les hooks (scripts/run-node.sh trouve-t-il node ?), ou commit à la main : ` +
+      `⚠️ ${uncommittedVault} vault note(s) NOT committed — the auto-commit didn't ` +
+      `run (silent hooks?). Your notes are ON DISK but not versioned. ` +
+      `Check the hooks (can scripts/run-node.sh find node?), or commit by hand: ` +
       `git add -A && git commit.`
     );
   }
-  if (!pullOk) return "⚠️ Pull échoué — vérifier manuellement.";
-  if (/already up to date|déjà à jour/i.test(pullOut)) return `✅ Repo à jour (commit ${short}).`;
-  return `📥 Repo mis à jour — ${changedCount} fichier(s) modifié(s) (commit ${short}).`;
+  if (!pullOk) return "⚠️ Pull failed — check manually.";
+  if (/already up to date|déjà à jour/i.test(pullOut)) return `✅ Repo up to date (commit ${short}).`;
+  return `📥 Repo updated — ${changedCount} file(s) changed (commit ${short}).`;
 }

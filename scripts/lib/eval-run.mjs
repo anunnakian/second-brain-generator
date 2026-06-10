@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// eval-run.mjs — orchestration PURE de l'eval-set : pour chaque item, recherche
-// (search), construction du prompt, jugement (judge = Claude), lecture du verdict,
-// puis agrégation en un score. `search` et `judge` sont INJECTÉS → testable sans
-// spawner MCP ni `claude`. L'exécutable run-eval.mjs câble les vraies impls.
+// eval-run.mjs — PURE orchestration of the eval-set: for each item, search
+// (search), prompt building, judging (judge = Claude), reading the verdict, then
+// aggregation into a score. `search` and `judge` are INJECTED → testable without
+// spawning MCP or `claude`. The run-eval.mjs executable wires the real impls.
 // ─────────────────────────────────────────────────────────────────────────────
 import { buildJudgePrompt, parseVerdict, scoreEval } from "./eval-judge.mjs";
 

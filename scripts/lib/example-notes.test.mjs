@@ -7,17 +7,17 @@ import { isExampleNote, findExampleNotes, clearExampleNotes } from "./example-no
 
 const fmExemple = "---\ntype: topic\ntags: [exemple, architecture]\n---\n\n# Demo\n";
 const fmHarnais = "---\ntype: backlog\ntags: [harnais, backlog]\n---\n\n# Frictions\n";
-const noFm = "# vault/ — Ton contenu\n\nDoc, pas une note.\n";
+const noFm = "# vault/ — Your content\n\nDoc, not a note.\n";
 
-test("isExampleNote — vrai si le tag exemple est présent", () => {
+test("isExampleNote — true if the exemple tag is present", () => {
   assert.equal(isExampleNote(fmExemple), true);
 });
 
-test("isExampleNote — faux si pas de tag exemple", () => {
+test("isExampleNote — false if no exemple tag", () => {
   assert.equal(isExampleNote(fmHarnais), false);
 });
 
-test("isExampleNote — faux sans frontmatter", () => {
+test("isExampleNote — false without frontmatter", () => {
   assert.equal(isExampleNote(noFm), false);
 });
 
@@ -31,7 +31,7 @@ function makeVault() {
   return dir;
 }
 
-test("findExampleNotes — ne retourne que les notes taggées exemple", () => {
+test("findExampleNotes — returns only the notes tagged exemple", () => {
   const dir = makeVault();
   try {
     const found = findExampleNotes(dir);
@@ -41,7 +41,7 @@ test("findExampleNotes — ne retourne que les notes taggées exemple", () => {
   }
 });
 
-test("clearExampleNotes — supprime les exemples, garde la machinerie", () => {
+test("clearExampleNotes — removes the examples, keeps the machinery", () => {
   const dir = makeVault();
   try {
     const deleted = clearExampleNotes(dir);

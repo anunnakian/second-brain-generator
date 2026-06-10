@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// auto-commit.mjs — persistance déterministe du vault. Appelé par le hook
-// PostToolUse (Write|Edit) : commit (+ push si un remote existe) à chaque
-// modification de fichier — d'où les commits « auto: … ».
+// auto-commit.mjs — deterministic vault persistence. Called by the PostToolUse
+// hook (Write|Edit): commit (+ push if a remote exists) on every file
+// modification — hence the "auto: …" commits.
 //
-// Multi-OS : pur Node, aucune dépendance shell. La racine du repo est dérivée
-// de l'emplacement du script (pas du cwd du hook).
+// Cross-OS: pure Node, no shell dependency. The repo root is derived from the
+// script location (not the hook's cwd).
 // ─────────────────────────────────────────────────────────────────────────────
 import { execFileSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
@@ -26,7 +26,7 @@ function git(args) {
   }
 }
 
-// Pause synchrone (le hook tourne en mode bloquant, timeout côté Claude Code).
+// Synchronous pause (the hook runs in blocking mode, with a timeout on the Claude Code side).
 function sleepSync(ms) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
@@ -37,18 +37,19 @@ if (!dirty) process.exit(0);
 git(["add", "."]);
 git(["commit", "-m", "auto: vault/claude sync"]);
 
-// Push OPT-IN explicite (Couche 1) : la simple présence d'un remote ne suffit
-// PAS. On ne pousse que si l'utilisateur l'a activé (`git config
-// secondbrain.autopush true`, posé par l'étape « dépôt distant » de l'install).
-// Garantie : un remote hérité (clone resté lié au générateur) ne reçoit JAMAIS les
-// notes privées — la fuite est impossible par défaut, sans toucher au .git.
+// Explicit OPT-IN push (Layer 1): the mere presence of a remote is NOT enough.
+// We only push if the user has enabled it (`git config secondbrain.autopush
+// true`, set by the "remote repository" step of the install).
+// Guarantee: an inherited remote (a clone still linked to the generator) NEVER
+// receives the private notes — leaking is impossible by default, without
+// touching .git.
 const hasRemote = git(["remote"]).out.trim().length > 0;
 const autopush = git(["config", "--get", "secondbrain.autopush"]).out.trim() === "true";
 if (hasRemote && autopush && !git(["push"]).ok) {
   sleepSync(3000);
   if (!git(["push"]).ok) {
     process.stdout.write(
-      "\n⚠️  PUSH ÉCHOUÉ — commit local OK mais non poussé. Vérifie le réseau puis: git push\n"
+      "\n⚠️  PUSH FAILED — local commit OK but not pushed. Check your network then: git push\n"
     );
   }
 }
