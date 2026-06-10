@@ -1,87 +1,87 @@
-# Connecteurs — brancher tes sources externes
+# Connectors — wiring up your external sources
 
-Le moteur RAG du générateur répond depuis **tes notes** (le `vault/`). Les **connecteurs** lui
-donnent accès à tes **autres sources** — mail, agenda, Notion, fichiers, chat — pour qu'il croise
-tout au même endroit. **Tout est optionnel** : sans aucun connecteur, le second cerveau fonctionne
-déjà, il répond seul depuis le vault.
+The generator's RAG engine answers from **your notes** (the `vault/`). **Connectors** give it
+access to your **other sources** — mail, calendar, Notion, files, chat — so it can cross-reference
+everything in one place. **Everything is optional**: with no connector at all, the second brain
+already works — it answers on its own from the vault.
 
-Ce fichier est un **menu d'idées** pour t'aider à choisir *quoi* brancher selon *ton* besoin. Le
-*comment* (wizard, manuel, credentials) est détaillé dans [SETUP §6](SETUP.md).
+This file is an **idea menu** to help you choose *what* to wire up based on *your* need. The
+*how* (wizard, manual, credentials) is detailed in [SETUP §6](SETUP.md).
 
 ---
 
-## Deux familles de connecteurs
+## Two families of connectors
 
-| Famille | C'est quoi | Où ça se branche |
+| Family | What it is | Where it plugs in |
 |---|---|---|
-| **Natif claude.ai** | Connecteur géré par ton compte claude.ai (Slack, Gmail, Calendar, Notion, Drive…). | Côté compte : *Settings → Connectors*. **Rien** à écrire dans `.mcp.json`. |
-| **MCP communautaire** | Un serveur MCP que tu héberges/lances toi-même (souvent un paquet npm). | Dans `.mcp.json` (le wizard de l'installeur peut le faire pour toi) + permissions dans `.claude/settings.json`. |
+| **Native claude.ai** | A connector managed by your claude.ai account (Slack, Gmail, Calendar, Notion, Drive…). | Account-side: *Settings → Connectors*. **Nothing** to write in `.mcp.json`. |
+| **Community MCP** | An MCP server you host/run yourself (often an npm package). | In `.mcp.json` (the installer wizard can do it for you) + permissions in `.claude/settings.json`. |
 
-> Plusieurs sources existent **dans les deux familles** (ex. Google Drive, Notion). Le **natif** est
-> en général le plus simple à démarrer ; le **MCP communautaire** te donne plus de contrôle (scopes,
-> self-hosting, credentials à toi).
+> Several sources exist **in both families** (e.g. Google Drive, Notion). The **native** one is
+> generally the simplest to get started; the **community MCP** gives you more control (scopes,
+> self-hosting, your own credentials).
 
 ---
 
-## Menu — quel connecteur pour quel besoin
+## Menu — which connector for which need
 
-| Tu veux interroger… | Idée de connecteur | Famille | À quoi ça sert |
+| You want to query… | Connector idea | Family | What it's for |
 |---|---|---|---|
-| **Notes / wikis** Notion | `@notionhq/notion-mcp-server`, ou Notion natif | MCP **ou** natif | Chercher dans tes bases/pages (specs, wikis, KB) ; lire une page pour la croiser avec tes notes. |
-| **Mails** | Gmail natif | natif | Retrouver un mail/fil sur un sujet, un client, un engagement ; capter décisions et actions échangées par mail. |
-| **Agenda** | Google Calendar natif | natif | Lire l'agenda du jour/semaine pour contextualiser une question ou un briefing. |
-| **Fichiers / documents** | `@modelcontextprotocol/server-gdrive`, `@isaacphi/mcp-gdrive`, ou Drive natif | MCP **ou** natif | Retrouver et lire specs, comptes-rendus, exports. |
-| **Chat d'équipe** | Slack natif | natif | Chercher messages et fils ; lire un channel / les non-lus pour capter ce qui a bougé. |
-| **Transcripts de réunion** (Meet) | **Calendar + Drive** | natif + MCP | Voir la section dédiée ci-dessous. |
+| **Notes / wikis** Notion | `@notionhq/notion-mcp-server`, or native Notion | MCP **or** native | Search your databases/pages (specs, wikis, KB); read a page to cross-reference with your notes. |
+| **Mail** | Native Gmail | native | Find a mail/thread on a topic, a client, a commitment; capture decisions and actions exchanged by mail. |
+| **Calendar** | Native Google Calendar | native | Read the day's/week's calendar to give context to a question or a briefing. |
+| **Files / documents** | `@modelcontextprotocol/server-gdrive`, `@isaacphi/mcp-gdrive`, or native Drive | MCP **or** native | Find and read specs, meeting notes, exports. |
+| **Team chat** | Native Slack | native | Search messages and threads; read a channel / unreads to capture what's moved. |
+| **Meeting transcripts** (Meet) | **Calendar + Drive** | native + MCP | See the dedicated section below. |
 
 ---
 
-## 🎙️ Transcripts de réunion — un cas d'usage, pas un connecteur
+## 🎙️ Meeting transcripts — a use case, not a connector
 
-C'est le piège classique : on cherche « le connecteur transcripts ». **Il n'y en a pas besoin.**
-Quand tu enregistres une visio (Google Meet / Gemini), la transcription se matérialise à **deux
-endroits** que tu as probablement déjà branchés :
+This is the classic trap: people go looking for "the transcripts connector." **You don't need
+one.** When you record a video call (Google Meet / Gemini), the transcription shows up in **two
+places** you've probably already wired up:
 
-1. **Dans l'invitation de l'événement** → le lien de l'enregistrement / de la transcription est
-   souvent attaché à l'événement. On le récupère via le **Google Calendar**.
-2. **Sur ton Google Drive** → le **document de transcription** y atterrit automatiquement. On le
-   retrouve via le **Google Drive** (rechercher les docs récents, puis lire le bon).
+1. **In the event invitation** → the link to the recording / transcription is often attached to
+   the event. You retrieve it via **Google Calendar**.
+2. **On your Google Drive** → the **transcription document** lands there automatically. You find it
+   via **Google Drive** (search recent docs, then read the right one).
 
-Donc : branche **Calendar** *et* **Drive**, et tes transcripts sont accessibles — **sans** dépendre
-d'un outil de meeting-bot tiers (Fireflies, Fathom, Granola, tl;dv…). Si tu utilises un de ces
-outils et qu'il expose un MCP, tu peux l'ajouter en plus, mais ce n'est **pas nécessaire** pour
-démarrer.
-
----
-
-## Comment les brancher
-
-Trois chemins, détaillés dans [SETUP §6](SETUP.md) :
-
-- **(a) Le wizard de l'installeur** *(recommandé)* — à l'étape **5/9**, il propose le catalogue, te
-  montre **à quoi sert** chaque source, et pour les connecteurs **MCP** écrit tout seul le bloc
-  serveur dans `.mcp.json` + les permissions dans `.claude/settings.json` (idempotent).
-- **(b) À la main** — tu ajoutes toi-même le MCP server dans `.mcp.json` et les permissions.
-- **(c) Connecteurs natifs claude.ai** — rien dans `.mcp.json` : active-les depuis *Settings →
-  Connectors* de ton compte.
-
-> 🔐 **Neutralité / sécurité.** Le générateur ne met **aucun secret en dur** : les credentials des
-> MCP sont des placeholders `<…>` que **tu** renseignes. Ne commite jamais tes vrais tokens.
+So: wire up **Calendar** *and* **Drive**, and your transcripts are accessible — **without**
+depending on a third-party meeting-bot tool (Fireflies, Fathom, Granola, tl;dv…). If you use one
+of these tools and it exposes an MCP, you can add it on top, but it's **not necessary** to get
+started.
 
 ---
 
-## Une fois branché — documente le routage
+## How to wire them up
 
-Quand un connecteur est en place, dis à Claude **quel outil pour quoi** dans ton `CLAUDE.md`
-(section **4. Routage**, sous-partie *Sources externes*). C'est ce qui évite qu'il hésite entre
-deux MCP qui se chevauchent. Exemple de table à remplir :
+Three paths, detailed in [SETUP §6](SETUP.md):
 
-| Source | Outil MCP | Quand l'utiliser |
+- **(a) The installer wizard** *(recommended)* — at step **5/9**, it offers the catalog, shows you
+  **what each source is for**, and for **MCP** connectors it writes the server block in `.mcp.json`
+  + the permissions in `.claude/settings.json` all on its own (idempotent).
+- **(b) By hand** — you add the MCP server in `.mcp.json` and the permissions yourself.
+- **(c) Native claude.ai connectors** — nothing in `.mcp.json`: enable them from your account's
+  *Settings → Connectors*.
+
+> 🔐 **Neutrality / security.** The generator hardcodes **no secret**: MCP credentials are `<…>`
+> placeholders that **you** fill in. Never commit your real tokens.
+
+---
+
+## Once wired up — document the routing
+
+When a connector is in place, tell Claude **which tool for what** in your `CLAUDE.md`
+(section **4. Routing**, sub-part *External sources*). That's what keeps it from hesitating between
+two overlapping MCPs. Example table to fill in:
+
+| Source | MCP tool | When to use it |
 |---|---|---|
-| Drive | `mcp__<drive>__search` | découverte de documents / transcripts récents |
-| Calendar | `mcp__<calendar>__list_events` | agenda du jour, lien de transcription dans l'événement |
+| Drive | `mcp__<drive>__search` | document discovery / recent transcripts |
+| Calendar | `mcp__<calendar>__list_events` | today's calendar, transcription link in the event |
 | … | … | … |
 
-L'outillage interne [`sync-sources`](.claude/skills/sync-sources/SKILL.md) (le moteur de la Phase 2
-— aspiration du **delta** des sources en sous-agents **lecture seule**) s'appuie sur ces connecteurs.
-Remplace-y les placeholders `mcp__<slack>__…`, `mcp__<drive>__…` par les noms réels de tes outils.
+The internal tooling [`sync-sources`](.claude/skills/sync-sources/SKILL.md) (the engine of Phase 2
+— pulling the **delta** of sources in **read-only** sub-agents) relies on these connectors. Replace
+its `mcp__<slack>__…`, `mcp__<drive>__…` placeholders with the real names of your tools.

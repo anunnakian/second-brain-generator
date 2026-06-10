@@ -1,258 +1,258 @@
-# En quoi c'est différent — de la recette qu'on bricole soi-même comme des autres « seconds cerveaux » / « LLM wikis » ?
+# What makes it different — from the recipe you cobble together yourself and from the other "second brains" / "LLM wikis"?
 
-> **En une phrase.** Tu peux te bricoler un « second cerveau » avec un `CLAUDE.md` et quelques
-> notes — comme les recettes qui circulent sur les réseaux. Ici, tu as **la même idée, mais rendue
-> robuste et automatique** : fichiers Markdown que **tu possèdes**, recherche sémantique qui **cite
-> ses sources**, **transversale** à tous tes outils, **moteur à la carte** — et surtout des
-> garde-fous qui font que **ça marche vraiment** au lieu de *sembler* marcher.
+> **In one sentence.** You can cobble together a "second brain" with a `CLAUDE.md` and a few
+> notes — like the recipes making the rounds on social media. Here you get **the same idea, but made
+> robust and automatic**: Markdown files that **you own**, semantic search that **cites its sources**,
+> **cutting across** all your tools, an **à la carte engine** — and above all guardrails that make
+> sure **it actually works** instead of merely *seeming* to work.
 
-Le vrai comparatif que tu cherches n'est probablement pas « ce projet *vs* Notion AI ». C'est
-**« ce projet *vs* la recette `CLAUDE.md` + quelques notes que j'ai vue passer sur les réseaux »** —
-alors c'est par là qu'on commence. Suivent ce qui rend la démarche singulière — son
-**fonctionnement**, le fait que ce soit un **générateur, pas un produit**, le **cerveau** lui-même,
-son **installation/packaging**, le **RAG à la carte** —, ses **limites assumées**, et — tout en bas,
-pour mémoire — un coup d'œil au **paysage des apps du marché**.
+The real comparison you're after probably isn't "this project *vs* Notion AI". It's
+**"this project *vs* the `CLAUDE.md` + a few notes recipe I saw going around on social media"** —
+so that's where we start. Then come the things that make the approach singular — how it
+**works**, the fact that it's a **generator, not a product**, the **brain** itself, its
+**installation/packaging**, the **à la carte RAG** —, its **owned-up limitations**, and — right at the bottom,
+for the record — a glance at the **landscape of market apps**.
 
 ---
 
-## 1. Pourquoi ce n'est pas « juste un `CLAUDE.md` + quelques notes »
+## 1. Why it isn't "just a `CLAUDE.md` + a few notes"
 
-C'est le réflexe naturel de quiconque connaît un peu l'outil : « un second cerveau, c'est bien juste
-un dossier Markdown + un fichier de règles qu'on fait lire à Claude, non ? » Fait **à la légère**,
-ça **a l'air** de marcher… puis ça **lâche en silence** — le pire des échecs, parce qu'on ne s'en
-rend même pas compte.
+It's the natural reflex of anyone who knows the tool a little: "a second brain is really just
+a Markdown folder + a rules file you make Claude read, right?" Done **carelessly**,
+it **looks** like it works… then it **fails silently** — the worst kind of failure, because you
+don't even notice.
 
-La robustesse, ici, ne tombe pas du ciel :
+Robustness, here, doesn't fall from the sky:
 
-> 🧱 **Des mécanismes de renforcement packagés, invisibles et testés — qui bouchent un par un les
-> trous où la version bricolée se casse.**
+> 🧱 **Packaged, invisible, tested hardening mechanisms — plugging, one by one, the
+> holes where the cobbled-together version breaks.**
 
-Concrètement, trou par trou :
+Concretely, hole by hole:
 
-| Fait « à la légère » (un `.md` + un `CLAUDE.md`) | Le symptôme silencieux | Le mécanisme de renforcement ici |
+| Done "carelessly" (a `.md` + a `CLAUDE.md`) | The silent symptom | The hardening mechanism here |
 |---|---|---|
-| Pas de persistance automatique | Tes réponses/notes ne sont **jamais sauvées** ; tout se perd | **Hook auto-commit** (+ push *opt-in*) |
-| Pas d'indexation | La recherche **invente** au lieu de chercher dans tes notes | **Réindexation incrémentale** automatique du RAG |
-| Conversation pas « rootée » dans le cerveau | Hooks muets, réponses hors-vault — *et ça semble marcher* | Onboarding qui **force l'ouverture au bon endroit** + vérif `pwd` |
-| `node` installé via nvm, invisible des hooks GUI | Auto-commit **silencieusement KO** | Wrapper **`run-node`** qui re-résout la toolchain à chaque exécution |
-| Install sur une machine nue | État **« Frankenstein »** semi-fonctionnel, indiagnosticable | **Vérification « fail-loud »** à l'install — prouve ou échoue franchement |
+| No automatic persistence | Your answers/notes are **never saved**; everything is lost | **Auto-commit hook** (+ *opt-in* push) |
+| No indexing | Search **makes things up** instead of searching your notes | Automatic **incremental reindexing** of the RAG |
+| Conversation not "rooted" in the brain | Mute hooks, out-of-vault answers — *and it seems to work* | Onboarding that **forces opening in the right place** + `pwd` check |
+| `node` installed via nvm, invisible to GUI hooks | Auto-commit **silently broken** | **`run-node`** wrapper that re-resolves the toolchain on every run |
+| Install on a bare machine | Half-working **"Frankenstein"** state, undiagnosable | **"Fail-loud" verification** at install — proves it or fails plainly |
 
-> 🛡️ **Le fil rouge : échouer bruyamment plutôt que faire semblant.** À l'install, une vérification
-> déterministe (`verify-rag`) **prouve** que la démo répond *depuis ton vault* (le canari
-> « Mollecuisse », introuvable ailleurs). Tant que ce n'est pas vert, on ne te dit pas que c'est
-> prêt. C'est l'exact inverse du « ça a l'air de marcher ».
+> 🛡️ **The through-line: fail loudly rather than pretend.** At install, a deterministic
+> verification (`verify-rag`) **proves** that the demo answers *from your vault* (the
+> "Mollecuisse" canary, not findable anywhere else). Until that's green, we don't tell you it's
+> ready. It's the exact opposite of "it looks like it works".
 
-### Le résultat : presque rien à faire (l'affordance)
+### The result: almost nothing to do (the affordance)
 
-Une fois le setup passé (une seule fois, ~15 min, guidé), **tu n'as plus rien à faire** : tu poses
-des questions, tu lis des réponses. Tout le reste tourne tout seul.
+Once setup is done (just once, ~15 min, guided), **there's nothing left for you to do**: you ask
+questions, you read answers. Everything else runs on its own.
 
-- **Sauvegarde** : chaque modif est **commitée automatiquement** (et **poussée** si tu as branché
-  un dépôt distant). Tu n'as jamais à savoir que git existe.
-- **Indexation** : l'index sémantique se **reconstruit seul**, incrémentalement, dès que le vault
-  change.
-- **Fraîcheur** : à chaque question, le delta des sources externes est aspiré en arrière-plan.
-- **Tu n'as à comprendre ni comment c'est fait, ni comment c'est rangé** — ni git, ni MCP, ni
-  embeddings, ni hooks.
+- **Backup**: every change is **committed automatically** (and **pushed** if you've wired up
+  a remote repository). You never have to know git exists.
+- **Indexing**: the semantic index **rebuilds itself**, incrementally, as soon as the vault
+  changes.
+- **Freshness**: on every question, the delta of external sources is pulled in the background.
+- **You have to understand neither how it's built nor how it's organized** — not git, not MCP, not
+  embeddings, not hooks.
 
-C'est de l'**affordance** au sens propre : la conception rend le bon comportement **automatique** et
-**cache la complexité**, au lieu de te la refiler. Tous ces garde-fous sont **packagés** — tu n'as
-ni à les connaître, ni à les assembler ; le générateur les pose pour toi, et l'usage reste « pose ta
-question, c'est tout ».
+This is **affordance** in the proper sense: the design makes the right behavior **automatic** and
+**hides the complexity** instead of dumping it on you. All these guardrails are **packaged** — you
+don't have to know them or assemble them; the generator sets them up for you, and usage stays "ask your
+question, that's it".
 
-> 🧬 **« Rangé pour toi » fait partie de l'ADN.** Le *« ni comment c'est rangé »* n'est pas un détail
-> qu'on cache : c'est un **parti-pris**. Tu n'as ni à concevoir une arborescence, ni à te demander
-> « où va cette note ? ». Le cerveau part de **conventions saines** (notes datées, fiches *people* /
-> *topics* / *décisions*, frontmatter, liens `[[wikilink]]`) puis **te propose et fait évoluer la
-> structure la mieux adaptée aux besoins que *tu* formules** : tu dis ce que tu veux suivre (tes
-> équipes, tes décisions produit, un domaine client…), il en déduit et maintient le rangement. C'est
-> l'esprit *use case driven* — la structure **émerge de tes usages**, elle ne t'est ni imposée
-> d'avance, ni laissée sur les bras.
+> 🧬 **"Organized for you" is part of the DNA.** The *"nor how it's organized"* isn't a detail
+> being hidden: it's a **deliberate stance**. You don't have to design a tree structure, nor wonder
+> "where does this note go?". The brain starts from **sound conventions** (dated notes, *people* /
+> *topics* / *decisions* cards, frontmatter, `[[wikilink]]` links) then **proposes and evolves the
+> structure best suited to the needs *you* express**: you say what you want to track (your
+> teams, your product decisions, a client domain…), it infers and maintains the organization. That's
+> the *use case driven* spirit — the structure **emerges from your usage**, it's neither imposed on you
+> up front, nor left on your shoulders.
 
-> 📌 *Épisode/décision de fond :* l'anecdote fondatrice (la machine nue de Richard, l'état
-> « Frankenstein ») et le renversement « confiance à Claude + échec bruyant » sont dans l'ADR
+> 📌 *Founding episode/decision:* the founding anecdote (Richard's bare machine, the
+> "Frankenstein" state) and the "trust Claude + fail loudly" reversal are in ADR
 > [`0005`](maintainers/decisions/0005-support-onglet-code-desktop.md).
 
 ---
 
-## 2. Comment il fonctionne : « répondre tout de suite, vérifier ensuite »
+## 2. How it works: "answer right away, verify afterwards"
 
-Là où beaucoup d'outils te font **attendre** qu'une recherche se termine, ici le parti-pris est
-**l'expérience d'abord** — le pattern *stale-while-revalidate* du web appliqué à ta mémoire :
+Where many tools make you **wait** for a search to finish, here the stance is
+**experience first** — the web's *stale-while-revalidate* pattern applied to your memory:
 
 ```
 Question
    │
-   ▼  PHASE 1 — Réponse immédiate depuis le vault (recherche sémantique)
-   ├──▶ PHASE 2 — (optionnel) Sync des sources externes en arrière-plan
-   ▼  PHASE 3 — Amender la réponse si du nouveau est trouvé
-   ▼  PHASE 4 — Persistance : tout est sauvé dans le vault + commit auto
+   ▼  PHASE 1 — Immediate answer from the vault (semantic search)
+   ├──▶ PHASE 2 — (optional) Sync external sources in the background
+   ▼  PHASE 3 — Amend the answer if something new is found
+   ▼  PHASE 4 — Persistence: everything is saved in the vault + auto-commit
 ```
 
-- **Recherche sémantique** (RAG) : il retrouve une note **par le sens**, même formulée autrement —
-  pas par mots-clés exacts. Tu peux questionner en français des notes rédigées en anglais.
-- **Delta, en arrière-plan** : à chaque question il n'aspire que **les nouveautés** des sources, et
-  re-vérifie pendant que tu lis — la fraîcheur suit sans pénaliser la rapidité.
-- **Moteur = serveur MCP standard.** Le RAG est un serveur **MCP** (protocole **ouvert**), pas une
-  boîte noire couplée à un fournisseur. Le vault (Markdown pur) et le moteur (MCP) sont **déjà
-  agnostiques** — ce qui garde la porte du multi-client ouverte à faible coût.
+- **Semantic search** (RAG): it finds a note **by meaning**, even worded differently —
+  not by exact keywords. You can query in French notes written in English.
+- **Delta, in the background**: on every question it pulls only **what's new** from the sources, and
+  re-verifies while you read — freshness keeps up without penalizing speed.
+- **Engine = standard MCP server.** The RAG is an **MCP** server (an **open** protocol), not a
+  black box coupled to a vendor. The vault (pure Markdown) and the engine (MCP) are **already
+  agnostic** — which keeps the multi-client door open at low cost.
 
 ---
 
-## 3. La différence de fond : un *générateur*, pas un produit
+## 3. The fundamental difference: a *generator*, not a product
 
-C'est le pivot qui explique tout le reste.
+It's the pivot that explains everything else.
 
-Un second cerveau utile est **personnel** : ce qui sert un Head of Engineering, un PM ou un
-chercheur n'a rien à voir. Un produit unique pour tous serait fade pour chacun. Donc ce repo ne te
-livre **pas un cerveau** — il te livre **la mécanique** (le moteur de recherche) **+ une méthode**
-(l'approche *use case driven* de Thomas Pierrain). Tu pars d'une **graine**, et tu la fais pousser
-en t'en servant : tes notes, tes règles (`CLAUDE.md`), tes skills.
+A useful second brain is **personal**: what serves a Head of Engineering, a PM or a
+researcher has nothing in common. A single product for everyone would be bland for each. So this repo
+delivers you **not a brain** — it delivers you **the machinery** (the search engine) **+ a method**
+(Thomas Pierrain's *use case driven* approach). You start from a **seed**, and you grow it
+by using it: your notes, your rules (`CLAUDE.md`), your skills.
 
-| | Outils « second cerveau » classiques | Cette démarche |
+| | Classic "second brain" tools | This approach |
 |---|---|---|
-| **Objet livré** | Un produit fini, identique pour tous | Un **générateur** qui produit **ton** instance |
-| **Personnalisation** | Réglages dans une UI fermée | **Ta constitution** (`CLAUDE.md`) + **tes skills**, en clair, modifiables |
-| **Partage** | Comptes/espaces partagés | On partage le **générateur**, pas le cerveau : chacun a le sien |
+| **What's delivered** | A finished product, identical for everyone | A **generator** that produces **your** instance |
+| **Customization** | Settings in a closed UI | **Your constitution** (`CLAUDE.md`) + **your skills**, in the clear, editable |
+| **Sharing** | Shared accounts/spaces | We share the **generator**, not the brain: everyone has their own |
 
-> 📌 *Décisions de fond :* [`maintainers/decisions/0001`](maintainers/decisions/0001-launcher-vs-brain.md)
-> (launcher réutilisable vs cerveau créé ailleurs) et
-> [`0002`](maintainers/decisions/0002-installateur-maison-vs-plugin.md) (installateur maison plutôt
-> que plugin).
-
----
-
-## 4. Le cerveau lui-même : 4 propriétés que les autres n'ont pas toutes
-
-1. **Il est à toi, en format ouvert.** Le substrat n'est pas une base propriétaire : c'est un
-   dossier de fichiers **Markdown** reliés par des `[[wikilinks]]`, **compatible Obsidian**, dans
-   **ton repo git privé**. Tu n'es **pas locataire** d'un SaaS — tu es propriétaire, et tu peux
-   tout lire/éditer/exporter sans l'outil. **Zéro lock-in.**
-2. **Il se souvient.** Ce n'est pas un « chat with your docs » sans mémoire : chaque réponse, chaque
-   info nouvelle est **persistée** dans le vault et **commitée automatiquement** (git). La mémoire
-   **grossit** à chaque question — et un profil non-technique **n'a jamais à connaître git**.
-3. **Il est transversal.** Pas cloisonné à un outil : Slack **+** Drive **+** mails **+** transcripts
-   de réunion **+** tes notes, au même endroit, via des **connecteurs** (natifs claude.ai ou MCP).
-4. **Il cite ses sources, et reste ancré.** Chaque réponse remonte à la note/au message d'origine,
-   avec sa date. La démo le **prouve** par un canari (un fait inventé, « Mollecuisse / Flemmr »,
-   introuvable hors du vault) : si la bonne réponse sort, c'est que le cerveau a bien interrogé
-   **tes** données et non Internet.
-
-Et une posture rare : **sûr par construction.** Le cerveau **ne prend aucune action** sur tes
-outils — il **lit et répond**, point. Rien ne part en ton nom. (On peut lui ajouter des capacités
-d'action plus tard, **délibérément et sous ton contrôle**, jamais par défaut.)
+> 📌 *Underlying decisions:* [`maintainers/decisions/0001`](maintainers/decisions/0001-launcher-vs-brain.md)
+> (reusable launcher vs brain created elsewhere) and
+> [`0002`](maintainers/decisions/0002-installateur-maison-vs-plugin.md) (home-grown installer rather
+> than a plugin).
 
 ---
 
-## 5. L'installation & le packaging : auto-suffisant, sans dépendance amont
+## 4. The brain itself: 4 properties the others don't all have
 
-| | Approche habituelle | Ici |
+1. **It's yours, in an open format.** The substrate isn't a proprietary database: it's a
+   folder of **Markdown** files linked by `[[wikilinks]]`, **Obsidian-compatible**, in
+   **your private git repo**. You're **not a tenant** of a SaaS — you're the owner, and you can
+   read/edit/export everything without the tool. **Zero lock-in.**
+2. **It remembers.** It's not a memoryless "chat with your docs": every answer, every
+   new piece of info is **persisted** in the vault and **committed automatically** (git). The memory
+   **grows** with every question — and a non-technical profile **never has to know git**.
+3. **It's cross-cutting.** Not walled off to a single tool: Slack **+** Drive **+** mail **+** meeting
+   transcripts **+** your notes, in one place, via **connectors** (native claude.ai or MCP).
+4. **It cites its sources, and stays grounded.** Every answer traces back to the originating
+   note/message, with its date. The demo **proves** it with a canary (a made-up fact, "Mollecuisse / Flemmr",
+   not findable outside the vault): if the right answer comes out, it means the brain genuinely queried
+   **your** data and not the Internet.
+
+And a rare stance: **safe by construction.** The brain **takes no action** on your
+tools — it **reads and answers**, period. Nothing goes out in your name. (Action capabilities can be
+added later, **deliberately and under your control**, never by default.)
+
+---
+
+## 5. Installation & packaging: self-sufficient, no upstream dependency
+
+| | Usual approach | Here |
 |---|---|---|
-| **Distribution** | Plugin/marketplace, ou compte SaaS à créer | **Installateur maison** piloté **en chat** par Claude : « pose-moi des questions, je m'installe » — pensé **non-tech** |
-| **Ce qui est créé** | Un espace chez l'éditeur | Un **dépôt git possédé**, avec sa constitution `CLAUDE.md` générée sur mesure |
-| **Dépendance amont** | L'app peut changer/casser/fermer sous toi | **Aucune** : le cerveau est **auto-suffisant**, fonctionne **hors-ligne pour toujours**, tel que généré |
-| **Évolution** | Update imposée par l'éditeur | **Itération locale** : tu ajoutes/modifies tes propres skills, dans ton cerveau |
+| **Distribution** | Plugin/marketplace, or a SaaS account to create | **Home-grown installer** driven **in chat** by Claude: "ask me questions, I'll install myself" — designed **non-tech** |
+| **What gets created** | A space at the vendor's | An **owned git repository**, with its custom-generated `CLAUDE.md` constitution |
+| **Upstream dependency** | The app can change/break/shut down under you | **None**: the brain is **self-sufficient**, works **offline forever**, as generated |
+| **Evolution** | Update forced by the vendor | **Local iteration**: you add/modify your own skills, in your brain |
 
-Le **launcher** (ce repo) est **réutilisable et jamais modifié** : il **crée ailleurs** un dossier
-cerveau neuf (copie des fichiers + `git init`, **0 remote**), donc **aucun lien** vers le launcher,
-par construction. Sauvegarde/multi-machine = brancher **ton** dépôt distant, **opt-in** (rien n'est
-poussé tant que tu ne l'as pas demandé).
+The **launcher** (this repo) is **reusable and never modified**: it **creates elsewhere** a fresh
+brain folder (copies the files + `git init`, **0 remotes**), so **no link** to the launcher,
+by construction. Backup/multi-machine = wire up **your** remote repository, **opt-in** (nothing is
+pushed until you ask for it).
 
-> 📌 *Décisions de fond :* [`0002`](maintainers/decisions/0002-installateur-maison-vs-plugin.md)
-> (maison vs plugin), [`0003`](maintainers/decisions/0003-pas-upgrade-capacites-cerveaux.md)
-> (auto-suffisance plutôt qu'upgradabilité amont).
+> 📌 *Underlying decisions:* [`0002`](maintainers/decisions/0002-installateur-maison-vs-plugin.md)
+> (home-grown vs plugin), [`0003`](maintainers/decisions/0003-pas-upgrade-capacites-cerveaux.md)
+> (self-sufficiency rather than upstream upgradability).
 
 ---
 
-## 6. Le RAG « à la carte » : tu choisis ton moteur selon **tes** contraintes
+## 6. The "à la carte" RAG: you pick your engine according to **your** constraints
 
-C'est sans doute le différenciateur le plus structurant — et le moins répandu ailleurs. La plupart
-des outils t'**imposent** un moteur de recherche (souvent une API cloud unique). Ici, le moteur RAG
-est conçu comme un **hexagone** : sa surface **MCP** (les outils `search_vault`, `get_document`…)
-est un **contrat stable** dont dépend tout le harnais, tandis que le **moteur d'embeddings, le
-vector store et le chunking sont des adaptateurs interchangeables** (port SPI `Embedder`).
+It's arguably the most structuring differentiator — and the least common elsewhere. Most
+tools **impose** a search engine on you (often a single cloud API). Here, the RAG engine
+is designed as a **hexagon**: its **MCP** surface (the `search_vault`, `get_document`… tools)
+is a **stable contract** the whole harness depends on, while the **embedding engine, the
+vector store and the chunking are interchangeable adapters** (`Embedder` SPI port).
 
-Conséquence : **tu choisis ton moteur d'embedding à l'installation**, selon tes besoins (privacy,
-budget, puissance machine, OS) — **sans casser** ni tes notes ni tes skills (changer d'option
-ré-encode en quelques minutes, aucune note perdue). **Trois options livrées**, de la plus privée à
-la plus légère :
+Consequence: **you pick your embedding engine at install time**, according to your needs (privacy,
+budget, machine power, OS) — **without breaking** either your notes or your skills (changing options
+re-encodes in a few minutes, no note lost). **Three options shipped**, from the most private to
+the most lightweight:
 
-| Option d'embedding | Pour qui | Stack |
+| Embedding option | For whom | Stack |
 |---|---|---|
-| **Tout sur ta machine** (« Gemma inside », défaut recommandé ≥ 12 Go RAM, hors Mac Intel) | Non-dev, gratuit, **privé**, rien à installer | `InProcessEmbedder` — **EmbeddingGemma** via Transformers.js, **in-process** (zéro app, zéro clé) |
-| **Avec une clé d'API** (recommandé sur petite machine / Mac Intel) | Veut zéro charge machine, accepte cloud + clé | `OpenAiCompatibleEmbedder` ou **Gemini** natif — clé + URL configurables (OpenAI, Azure, **endpoint entreprise**…) |
-| **Local via Ollama** *(avancé)* | Veut tout-local sur Mac Intel ou un modèle précis | adaptateur compatible-OpenAI pointé sur `localhost:11434` (**app séparée** à installer) |
+| **Everything on your machine** ("Gemma inside", recommended default ≥ 12 GB RAM, excluding Mac Intel) | Non-dev, free, **private**, nothing to install | `InProcessEmbedder` — **EmbeddingGemma** via Transformers.js, **in-process** (zero app, zero key) |
+| **With an API key** (recommended on a small machine / Mac Intel) | Wants zero machine load, accepts cloud + key | `OpenAiCompatibleEmbedder` or native **Gemini** — configurable key + URL (OpenAI, Azure, **enterprise endpoint**…) |
+| **Local via Ollama** *(advanced)* | Wants fully-local on Mac Intel or a specific model | OpenAI-compatible adapter pointed at `localhost:11434` (**separate app** to install) |
 
-> ✅ **Livré (2026-06-09).** Ce n'est plus une ambition : l'installeur **pose le choix** (option C de
-> l'ADR 0007) et la **recommandation s'adapte à la machine** (in-process si ≥ 12 Go & pas Mac Intel,
-> sinon clé). Mesuré : l'in-process « Gemma inside » fait **90 %** (= Ollama, > Gemini 80 %) sur
-> l'eval-set. L'architecture (contrat MCP stable + port SPI) est ce qui rend le swap **sûr** :
-> estampille d'identité de l'index + confirmation explicite, jamais de réindexation silencieuse. Voir
-> l'ADR [`0007`](maintainers/decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md)
-> (décision + addendum D1) et [`0006`](maintainers/decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md).
+> ✅ **Shipped (2026-06-09).** It's no longer an ambition: the installer **poses the choice** (option C of
+> ADR 0007) and the **recommendation adapts to the machine** (in-process if ≥ 12 GB & not Mac Intel,
+> otherwise key). Measured: the in-process "Gemma inside" scores **90%** (= Ollama, > Gemini 80%) on
+> the eval-set. The architecture (stable MCP contract + SPI port) is what makes the swap **safe**:
+> index identity stamp + explicit confirmation, never a silent reindex. See
+> ADR [`0007`](maintainers/decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md)
+> (decision + addendum D1) and [`0006`](maintainers/decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md).
 >
-> 🔭 **Encore au stade ambition** (non livré) : le profil **« grosse machine »** opt-in (embedder
-> lourd type Qwen3, reranking, éventuellement GraphRAG/LightRAG — cf. ADR
+> 🔭 **Still at the ambition stage** (not shipped): the opt-in **"big machine"** profile (heavy
+> embedder such as Qwen3, reranking, possibly GraphRAG/LightRAG — cf. ADR
 > [`0008`](maintainers/decisions/0008-lightrag-et-graph-rag-differes.md)).
 
 ---
 
-## 7. Ce que ce **n'est pas** (les limites assumées)
+## 7. What it is **not** (the owned-up limitations)
 
-L'honnêteté fait partie de la démarche :
+Honesty is part of the approach:
 
-- **Ce n'est pas « 100 % privé » de bout en bout.** Le RAG (embeddings + index + recherche) est
-  **entièrement local par défaut** (option « Gemma inside »), mais le LLM qui **raisonne et répond
-  reste Claude** (cloud). On ne survend pas : le morceau on-device, c'est la recherche, pas la génération.
-- **Ce n'est pas zéro-install ni zéro-compétence pour démarrer.** L'**usage** quotidien ne demande
-  aucune compétence ; l'**installation** (une fois, ~15 min) suppose git + Node (et une clé API
-  *seulement* si tu choisis l'option clé — l'option tout-local n'en demande pas) — guidée pas à pas,
-  vérifiée par l'installeur.
-- **Ce n'est pas (encore) multi-IA.** C'est **Claude-only** pour l'instant (couche de pilotage :
-  hooks, skills, constitution). Le vault et le moteur restent agnostiques pour ne pas fermer la
-  porte — mais le cross-plateforme n'est pas livré.
-- **Ce n'est pas une flotte synchronisée.** Pas de mise à jour centrale poussée sur les cerveaux
-  générés : chacun est figé à sa version d'install et **évolue en local**. C'est un choix
-  (auto-suffisance), pas un oubli.
-
----
-
-## 8. Alors, c'est pour qui — et quand préférer autre chose ?
-
-**Cette démarche brille si** tu veux **posséder** ta mémoire (format ouvert, ton repo), la vouloir
-**transverse** à tous tes outils, **sourcée** et **persistante**, et la **façonner** à tes usages
-(quitte à toucher un peu à l'install une fois).
-
-**Un SaaS classique sera sans doute plus simple si** tu veux du zéro-install collaboratif clés en
-main, que la propriété/le format ouvert te sont indifférents, et que le périmètre d'un seul outil
-te suffit.
+- **It's not "100% private" end-to-end.** The RAG (embeddings + index + search) is
+  **entirely local by default** (the "Gemma inside" option), but the LLM that **reasons and answers
+  is still Claude** (cloud). We don't oversell: the on-device piece is the search, not the generation.
+- **It's not zero-install or zero-skill to get started.** Daily **usage** requires
+  no skill; **installation** (once, ~15 min) assumes git + Node (and an API key
+  *only* if you choose the key option — the fully-local option doesn't ask for one) — guided step by step,
+  verified by the installer.
+- **It's not (yet) multi-AI.** It's **Claude-only** for now (the driving layer:
+  hooks, skills, constitution). The vault and the engine stay agnostic so as not to close the
+  door — but cross-platform isn't shipped.
+- **It's not a synced fleet.** No central update pushed onto the generated brains:
+  each is frozen at its install version and **evolves locally**. It's a choice
+  (self-sufficiency), not an oversight.
 
 ---
 
-## 9. Pour mémoire — et par rapport aux apps du marché ?
+## 8. So, who is it for — and when to prefer something else?
 
-*(Le comparatif « produit *vs* produit » n'est pas le cœur du sujet — c'est surtout la recette
-bricolée du §1 que les gens hésitent à remplacer. On le garde ici, pour situer.)*
+**This approach shines if** you want to **own** your memory (open format, your repo), want it
+**cross-cutting** across all your tools, **sourced** and **persistent**, and want to **shape** it
+to your usage (even if it means touching the install a little, once).
 
-« Second cerveau » / « LLM wiki » recouvre, en vrac, des familles d'outils très différentes :
+**A classic SaaS will probably be simpler if** you want turnkey collaborative zero-install,
+ownership/open format are indifferent to you, and the scope of a single tool
+is enough for you.
 
-| Famille | Exemples typiques | Le modèle |
+---
+
+## 9. For the record — and compared to the market apps?
+
+*(The "product *vs* product" comparison isn't the heart of the matter — it's mainly the cobbled-together
+recipe from §1 that people hesitate to replace. We keep it here, to situate things.)*
+
+"Second brain" / "LLM wiki" covers, loosely, very different families of tools:
+
+| Family | Typical examples | The model |
 |---|---|---|
-| **Apps de notes IA (SaaS)** | Notion AI, Mem, Reflect, Tana… | Tes notes vivent **chez l'éditeur** ; l'IA répond depuis **ce seul outil**. |
-| **« Chat with your notes » local** | Obsidian + plugins (Smart Connections…), Logseq, AnythingLLM, Khoj… | Tu poses des questions à un dossier de notes ; périmètre = **ce dossier**, souvent un branchement à configurer soi-même. |
-| **GPT/Projects « à connaissance »** | Custom GPT, Claude Projects, NotebookLM… | Tu **téléverses** des docs dans un espace ; pratique, mais **cloisonné** et hébergé chez le fournisseur. |
-| **Recherche IA d'un outil** | Recherche Slack, Glean, Google Workspace AI… | Excellent **dans le périmètre d'un outil** (ou d'une suite), mais pas **ta** mémoire transverse à toi. |
+| **AI note apps (SaaS)** | Notion AI, Mem, Reflect, Tana… | Your notes live **at the vendor's**; the AI answers from **that single tool**. |
+| **Local "chat with your notes"** | Obsidian + plugins (Smart Connections…), Logseq, AnythingLLM, Khoj… | You ask questions to a folder of notes; scope = **that folder**, often a wiring to configure yourself. |
+| **"Knowledge" GPTs/Projects** | Custom GPT, Claude Projects, NotebookLM… | You **upload** docs into a space; handy, but **walled off** and hosted at the vendor's. |
+| **A tool's AI search** | Slack search, Glean, Google Workspace AI… | Excellent **within a tool's scope** (or a suite's), but not **your** cross-cutting memory. |
 
-Trois limites récurrentes les rapprochent : ils sont **mono-outil** (ou mono-suite), tes données
-sont **chez un tiers en format fermé**, et ils **n'accumulent pas** une mémoire qui te suit et te
-cite ses sources de façon vérifiable — précisément les trois points que cette démarche prend à
-contre-pied.
+Three recurring limits bring them together: they're **single-tool** (or single-suite), your data
+is **at a third party's in a closed format**, and they **don't accumulate** a memory that follows you and
+cites its sources verifiably — precisely the three points this approach takes
+the opposite way.
 
 ---
 
-### Pour aller plus loin
+### Going further
 
-- [README](README.md) — le tour complet (installation, sous le capot, connecteurs).
-- [SETUP.md](SETUP.md) — pas-à-pas, confidentialité, dépôt distant, troubleshooting.
-- [`maintainers/decisions/`](maintainers/decisions/) — les ADR (le *pourquoi* de chaque parti-pris).
-- La série d'articles de Thomas Pierrain (liens en bas du README).
+- [README](README.md) — the full tour (installation, under the hood, connectors).
+- [SETUP.md](SETUP.md) — step-by-step, privacy, remote repository, troubleshooting.
+- [`maintainers/decisions/`](maintainers/decisions/) — the ADRs (the *why* of each stance).
+- Thomas Pierrain's article series (links at the bottom of the README).

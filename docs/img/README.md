@@ -1,11 +1,11 @@
-# Captures du README
+# README screenshots
 
-Le README référence deux captures de l'onglet **Code** de Claude Desktop. Dépose ici les deux PNG
-**avec exactement ces noms** :
+The README references two screenshots of the **Code** tab in Claude Desktop. Drop the two PNGs
+here **with exactly these names**:
 
-| Fichier attendu | Contenu de la capture |
+| Expected file | Screenshot content |
 |---|---|
-| `desktop-folder-chips.png` | Le bas d'une **New session** : la rangée de puces `💻 Local · 📁 tmp · ➕`, juste au-dessus du champ de saisie. |
-| `desktop-recent-menu.png` | Le menu **« Recent »** déroulé après clic sur la puce dossier : la liste des dossiers récents avec le **✓** sur le dossier courant, et **« Open folder… »** en bas. |
+| `desktop-folder-chips.png` | The bottom of a **New session**: the row of chips `💻 Local · 📁 tmp · ➕`, just above the input field. |
+| `desktop-recent-menu.png` | The **"Recent"** menu opened after clicking the folder chip: the list of recent folders with the **✓** on the current folder, and **"Open folder…"** at the bottom. |
 
-Tant que ces fichiers ne sont pas là, les deux images du README s'afficheront cassées.
+Until these files are present, the two README images will appear broken.
