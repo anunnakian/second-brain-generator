@@ -79,7 +79,7 @@ périmé sur ces points :
 |---|---|
 | `bootstrap.mjs` | **`installer.mjs`** (renommé ; ~205 lignes FR) |
 | `scripts/lib/bootstrap-args.mjs` | **`scripts/lib/installer-args.mjs`** |
-| marqueur `second-brain-starter:bootstrap-stub` | **`installer-stub`** (lu par `isBootstrapStub`/équiv. dans `claude-md.mjs`) |
+| marqueur `second-brain-starter:bootstrap-stub` | **`<!-- second-brain-generator:installer-stub -->`** (lu par `isInstallerStub` dans `claude-md.mjs`) |
 | vault démo « Star Wars » (luke-skywalker, la-force, death-star) | **univers « Flemmr »** : `vault/topics/flemmr.md`, `vault/people/jean-kevin-de-la-glandee.md`, `vault/decisions/2025-11-20-trophee-de-l-inertie.md` |
 | démo générée par `example-notes.mjs` | **FAUX** : `example-notes.mjs` ne fait que **détecter/supprimer** les notes taguées `exemple`. **Source de vérité du contenu démo = les fichiers `vault/**` versionnés** + `demo.mjs` (question canari + assertion « Mollecuisse ») |
 | ADRs maintainer = 1 (`launcher-vs-brain`) | **`maintainers/decisions/0001→0008`** (8 décisions) |
@@ -106,7 +106,8 @@ périmé sur ces points :
 - [ ] `EN-QUOI-C-EST-DIFFERENT.md` (≈258 l.) 🆕
 - [ ] `DEVELOPING.md` 🆕
 - [ ] `CONNECTORS.md`
-- [ ] `CLAUDE.md` (l'**amorce**/installer-stub — **garder le marqueur `installer-stub`**, cf.
+- [ ] `CLAUDE.md` (l'**amorce**/installer-stub — **garder le marqueur**
+      `<!-- second-brain-generator:installer-stub -->`, détecté par `isInstallerStub` dans
       `scripts/lib/claude-md.mjs`)
 - [ ] `CLAUDE.md.template` (constitution **générée** → 🌍 localisée `en`+`fr`, placeholders `{{…}}` intacts)
 - [ ] `.env.example` (commentaires)
@@ -127,7 +128,6 @@ périmé sur ces points :
 ### C. Code — 🇬🇧 EN unique (commentaires FR + messages console)
 - [ ] `installer.mjs` (orchestration : **~205 lignes FR**, le gros morceau code) 🆕 *(ex `bootstrap.mjs`)*
 - [ ] `scripts/auto-commit.mjs`
-- [ ] `scripts/run-node.mjs` 🆕
 - [ ] `scripts/lib/installer-args.mjs` 🆕 *(ex `bootstrap-args.mjs`)*
 - [ ] `scripts/lib/claude-md.mjs`
 - [ ] `scripts/lib/connectors-apply.mjs`
@@ -140,8 +140,10 @@ périmé sur ces points :
 - [ ] `scripts/lib/gemini-key.mjs`
 - [ ] `scripts/lib/mcp-search.mjs` 🆕
 - [ ] `scripts/lib/mcp-smoke.mjs`
-- [ ] `scripts/lib/rag-launcher.mjs` 🆕 *(~44 lignes FR)*
-- [ ] `scripts/lib/repo-status.mjs` 🆕 *(statusLine ; ex « session-status »)*
+- [ ] `scripts/lib/rag-launcher.mjs` 🆕 *(~44 lignes FR ; contient aussi le wrapper shell `run-node`
+      GÉNÉRÉ par `buildNodeRunnerSh` — il n'existe PAS de fichier `scripts/run-node.mjs`, seul son
+      test `scripts/run-node.test.mjs` existe)*
+- [ ] `scripts/lib/repo-status.mjs` 🆕 *(bannière SessionStart, ligne « repo » + garde-fou fail-loud)*
 - [ ] `scripts/lib/tracked-files.mjs`
 - [ ] `scripts/lib/__fixtures__/stub-mcp-server.mjs`
 - [ ] `rag/src/index.ts`
@@ -213,8 +215,9 @@ RAG (`rag/src/`) :
 ## 2. Points d'attention (corner-cases à ne pas rater)
 
 1. **Placeholders & marqueurs à NE PAS traduire** : `{{…}}` dans les `*.template` ; le marqueur
-   **`installer-stub`** (sinon le détecteur dans `claude-md.mjs` casse et l'installeur ne remplace
-   plus l'amorce) ; les noms de dossiers de skills (`prepare-1-1`, `sync-sources`…).
+   **`<!-- second-brain-generator:installer-stub -->`** (sinon `isInstallerStub` dans
+   `claude-md.mjs` ne reconnaît plus l'amorce et l'installeur ne la remplace plus) ; les noms de
+   dossiers de skills (`prepare-1-1`, `sync-sources`…).
 2. **Frontmatter structurel vs prose** : `type:`, `tags:`, `name:` (slugs) sont des **contrats**
    lus par le code → ne traduire que si on traduit le lecteur en face, **ensemble**. Cas concret :
    le tag **`exemple`** lu par `isExampleNote()` (`example-notes.mjs`). **TRANCHÉ (2026-06-10,
