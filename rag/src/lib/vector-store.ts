@@ -8,7 +8,7 @@ export type { EmbedderIdentity };
 
 let db: Database.Database | null = null;
 
-/** Crée le schéma (idempotent) sur une DB donnée — testable en in-memory. */
+/** Creates the schema (idempotent) on a given DB — testable in-memory. */
 export function applySchema(database: Database.Database): void {
   database.exec(`
     CREATE TABLE IF NOT EXISTS documents (
@@ -38,7 +38,7 @@ export function applySchema(database: Database.Database): void {
   `);
 }
 
-/** Estampille l'identité de l'embedder courant (ligne unique, upsert). */
+/** Stamps the identity of the current embedder (single row, upsert). */
 export function writeIndexIdentity(
   database: Database.Database,
   identity: EmbedderIdentity
@@ -55,7 +55,7 @@ export function writeIndexIdentity(
     .run(identity.providerId, identity.model, identity.dimension);
 }
 
-/** Relit l'identité estampillée, ou null si l'index n'a jamais été estampillé. */
+/** Reads back the stamped identity, or null if the index was never stamped. */
 export function readIndexIdentity(
   database: Database.Database
 ): EmbedderIdentity | null {
@@ -82,12 +82,12 @@ function getDb(): Database.Database {
   return db;
 }
 
-/** Estampille l'identité de l'embedder sur l'index actif (singleton). */
+/** Stamps the embedder identity on the active index (singleton). */
 export function stampIndexIdentity(identity: EmbedderIdentity): void {
   writeIndexIdentity(getDb(), identity);
 }
 
-/** Identité estampillée sur l'index actif, ou null si jamais estampillé. */
+/** Identity stamped on the active index, or null if never stamped. */
 export function currentIndexIdentity(): EmbedderIdentity | null {
   return readIndexIdentity(getDb());
 }
@@ -100,10 +100,10 @@ export function getDocumentHash(path: string): string | null {
 }
 
 /**
- * Persiste un document entier de façon ATOMIQUE : suppression des anciens chunks,
- * insertion des nouveaux, et écriture du hash — le tout dans une seule transaction.
- * Garantit qu'un doc est soit complètement indexé (hash présent), soit pas du tout :
- * jamais un hash sans ses chunks (ce qui le ferait "skip" à tort au run incrémental).
+ * Persists an entire document ATOMICALLY: deletes the old chunks, inserts the new
+ * ones, and writes the hash — all within a single transaction.
+ * Guarantees that a doc is either fully indexed (hash present) or not at all:
+ * never a hash without its chunks (which would wrongly "skip" it on an incremental run).
  */
 export function indexDocument(
   path: string,
@@ -134,10 +134,10 @@ export function indexDocument(
   );
 
   const tx = d.transaction(() => {
-    // La ligne parente DOIT exister avant d'insérer ses chunks : la FK
-    // chunks.doc_path → documents.path est appliquée (better-sqlite3 active
-    // PRAGMA foreign_keys=ON par défaut). Pour un doc neuf, insérer les chunks
-    // d'abord violait la contrainte → FOREIGN KEY constraint failed.
+    // The parent row MUST exist before inserting its chunks: the FK
+    // chunks.doc_path → documents.path is enforced (better-sqlite3 enables
+    // PRAGMA foreign_keys=ON by default). For a brand-new doc, inserting the
+    // chunks first violated the constraint → FOREIGN KEY constraint failed.
     upsertDocStmt.run(path, title, type, JSON.stringify(tags), hash);
     d.prepare("DELETE FROM chunks WHERE doc_path = ?").run(path);
     for (const c of chunks) {

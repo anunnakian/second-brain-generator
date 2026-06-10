@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// run-eval.mjs — eval-set RAG (Étape 2 du plan embedder). À lancer DEPUIS le repo,
-// avec une clé Gemini dans .env (la recherche embedde les questions).
+// run-eval.mjs — RAG eval-set (Step 2 of the embedder plan). Run FROM the repo, with
+// a Gemini key in .env (search embeds the questions).
 //
-// (Ré)indexe le vault d'exemple, puis pour chaque question de l'eval-set : lance
-// search_vault (via le VRAI serveur MCP vault-rag) et fait JUGER par Claude (`claude
-// -p`) si les passages remontés suffisent à répondre. Sortie : un SCORE chiffré
-// reproductible = la baseline de l'embedder courant (Gemini).
+// (Re)indexes the example vault, then for each eval-set question: runs search_vault
+// (via the REAL vault-rag MCP server) and has Claude JUDGE (`claude -p`) whether the
+// returned passages are enough to answer. Output: a reproducible numeric SCORE = the
+// baseline of the current embedder (Gemini).
 //
-//   exit 0 = eval menée à bien (le score, lui, peut être bas — c'est une MESURE).
-//   exit 1 = échec OPÉRATIONNEL (pas de clé, index KO, MCP mort, juge illisible)
-//            → on relaie l'erreur, on ne publie pas un score invalide.
+//   exit 0 = eval carried out (the score itself may be low — it is a MEASUREMENT).
+//   exit 1 = OPERATIONAL failure (no key, broken index, dead MCP, unreadable judge)
+//            → we relay the error, we do not publish an invalid score.
 //
-// Le cœur (prompt/verdict/score/orchestration) est pur et testé : eval-judge.mjs,
-// eval-run.mjs, mcp-search.mjs. Ici = uniquement le câblage I/O.
+// The core (prompt/verdict/score/orchestration) is pure and tested: eval-judge.mjs,
+// eval-run.mjs, mcp-search.mjs. Here = only the I/O wiring.
 // ─────────────────────────────────────────────────────────────────────────────
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -36,36 +36,36 @@ const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 const ROOT = process.cwd();
 const rag = join(ROOT, "rag");
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
-const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL; // optionnel : pinner un modèle (ex. haiku)
+const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL; // optional: pin a model (e.g. haiku)
 
-// 1. Clé Gemini : la recherche embedde chaque question → sans elle, rien à mesurer.
+// 1. Gemini key: search embeds each question → without it, nothing to measure.
 const envPath = join(ROOT, ".env");
 const envContent = existsSync(envPath) ? readFileSync(envPath, "utf8") : null;
 if (!hasGeminiKey(envContent)) {
-  err("Pas de clé Gemini dans .env — impossible d'embedder les questions de l'eval.");
-  err(`Colle ta clé dans ${envPath} (GOOGLE_GEMINI_API_KEY=) puis relance : node scripts/run-eval.mjs`);
+  err("No Gemini key in .env — cannot embed the eval questions.");
+  err(`Paste your key into ${envPath} (GOOGLE_GEMINI_API_KEY=) then rerun: node scripts/run-eval.mjs`);
   process.exit(1);
 }
 
-// 2. Indexation bloquante — l'eval mesure le retrieval sur un index frais.
-step("Indexation du vault");
+// 2. Blocking indexing — the eval measures retrieval against a fresh index.
+step("Indexing the vault");
 const idx = spawnSync(NPM, ["run", "--silent", "index"], { cwd: rag, stdio: "inherit" });
 if (idx.status !== 0) {
-  err("Indexation échouée (clé invalide ? quota ? réseau ?) — voir SETUP.md §8/§9.");
+  err("Indexing failed (invalid key? quota? network?) — see SETUP.md §8/§9.");
   process.exit(1);
 }
-ok("vault indexé");
+ok("vault indexed");
 
-// 3. Serveur MCP vault-rag (le vrai contrat de recherche). Si un .mcp.json est là
-//    (cerveau installé) on l'utilise tel quel ; sinon (launcher) on lance le serveur
-//    RAG directement → l'eval reste rejouable sur le vault d'exemple Flemmr.
+// 3. vault-rag MCP server (the real search contract). If a .mcp.json is present
+//    (brain installed) we use it as-is; otherwise (launcher) we start the RAG server
+//    directly → the eval stays replayable on the Flemmr example vault.
 let srv;
 const mcpPath = join(ROOT, ".mcp.json");
 if (existsSync(mcpPath)) {
   try {
     srv = JSON.parse(readFileSync(mcpPath, "utf8")).mcpServers?.["vault-rag"];
   } catch (e) {
-    err(`.mcp.json illisible (${e.message}).`);
+    err(`.mcp.json unreadable (${e.message}).`);
     process.exit(1);
   }
 }
@@ -76,30 +76,30 @@ if (!srv) {
 const search = (queries) =>
   mcpSearch({ command: srv.command, args: srv.args ?? [], cwd: srv.cwd ?? ROOT, queries, timeoutMs: 120000 });
 
-// Juge = Claude en sous-process (`claude -p`). Prompt sur stdin (robuste aux retours
-// ligne / caractères spéciaux). Échec de spawn ou status ≠ 0 → on lève (fail-loud).
+// Judge = Claude in a subprocess (`claude -p`). Prompt on stdin (robust to line
+// breaks / special characters). Spawn failure or status ≠ 0 → we throw (fail-loud).
 const judge = async (prompt) => {
   const args = JUDGE_MODEL ? ["-p", "--model", JUDGE_MODEL] : ["-p"];
   const res = spawnSync("claude", args, { input: prompt, encoding: "utf8", maxBuffer: 10 * 1024 * 1024 });
   if (res.error) {
-    if (res.error.code === "ENOENT") throw new Error("CLI `claude` introuvable dans le PATH — installe Claude Code.");
+    if (res.error.code === "ENOENT") throw new Error("`claude` CLI not found in PATH — install Claude Code.");
     throw res.error;
   }
-  if (res.status !== 0) throw new Error(`\`claude -p\` a échoué (code ${res.status}) : ${(res.stderr ?? "").trim()}`);
+  if (res.status !== 0) throw new Error(`\`claude -p\` failed (code ${res.status}): ${(res.stderr ?? "").trim()}`);
   return res.stdout ?? "";
 };
 
-// 4. Dérouler l'eval.
-step(`Eval-set : ${EVAL_SET.length} questions — recherche + jugement Claude`);
+// 4. Run the eval.
+step(`Eval-set: ${EVAL_SET.length} questions — search + Claude judgment`);
 let report;
 try {
   report = await runEval({ items: EVAL_SET, search, judge });
 } catch (e) {
-  err(`Eval interrompue : ${e.message}`);
+  err(`Eval interrupted: ${e.message}`);
   process.exit(1);
 }
 
-// 5. Rapport.
+// 5. Report.
 console.log("");
 for (const r of report.results) {
   const mark = r.unreadable ? `${c.Y}?${c.X}` : r.pass ? `${c.G}✓${c.X}` : `${c.R}✗${c.X}`;
@@ -107,11 +107,11 @@ for (const r of report.results) {
 }
 step("Score");
 const pct = (report.score * 100).toFixed(1);
-console.log(`  ${c.B}${report.passed}/${report.total}${c.X} questions répondues depuis le vault — score ${c.B}${pct}%${c.X}  (embedder courant : Gemini)`);
+console.log(`  ${c.B}${report.passed}/${report.total}${c.X} questions answered from the vault — score ${c.B}${pct}%${c.X}  (current embedder: Gemini)`);
 
 if (report.unreadable > 0) {
-  err(`${report.unreadable} verdict(s) illisible(s) → mesure invalide. Le juge n'a pas suivi le format VERDICT: PASS/FAIL.`);
+  err(`${report.unreadable} unreadable verdict(s) → invalid measurement. The judge did not follow the VERDICT: PASS/FAIL format.`);
   process.exit(1);
 }
-ok("Eval terminée — score reproductible (baseline).");
+ok("Eval finished — reproducible score (baseline).");
 process.exit(0);

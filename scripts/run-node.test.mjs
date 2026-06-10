@@ -7,13 +7,13 @@ import { join } from "node:path";
 
 import { buildNodeRunnerSh, minimalPathEnv } from "./lib/rag-launcher.mjs";
 
-// Test comportemental : le lanceur généré doit RÉELLEMENT exécuter node et lui
-// relayer les arguments du hook. Garde-fou contre un wrapper cassé (le plus grave
-// serait un échec silencieux — d'où ce test qui exige une exécution observable).
-// POSIX uniquement (run-node.sh) ; sauté sur Windows (couvert par run-node.cmd).
+// Behavioral test: the generated launcher must REALLY execute node and relay the
+// hook's arguments to it. Guardrail against a broken wrapper (the worst case would
+// be a silent failure — hence this test that requires an observable execution).
+// POSIX only (run-node.sh); skipped on Windows (covered by run-node.cmd).
 test(
-  "run-node.sh : exécute node et relaie les arguments (pas d'échec muet)",
-  { skip: process.platform === "win32" ? "POSIX seulement" : false },
+  "run-node.sh: executes node and relays the arguments (no silent failure)",
+  { skip: process.platform === "win32" ? "POSIX only" : false },
   () => {
     const dir = mkdtempSync(join(tmpdir(), "run-node-"));
     try {
@@ -24,24 +24,24 @@ test(
         [script, "-e", "process.stdout.write('NODE_RAN:'+process.argv.length)"],
         { encoding: "utf8" },
       );
-      assert.match(out, /NODE_RAN:/); // node a bien tourné via le wrapper
+      assert.match(out, /NODE_RAN:/); // node did run via the wrapper
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   },
 );
 
-// Preuve hermétique que la COUVERTURE ÉLARGIE résout réellement node (pas juste que
-// la chaîne forwarde). On fabrique un HOME temporaire avec un faux node placé sous
-// un dossier de gestionnaire EXCLUSIF à ce HOME (~/.volta/bin) imprimant un marqueur
-// unique, puis on lance run-node.sh en PATH APPAUVRI (minimalPathEnv → PATH="").
-// Comme `add` prepend, ~/.volta/bin finit en TÊTE du PATH (après les dossiers
-// système) → c'est CE node-là qui doit tourner. Si le marqueur s'imprime, la prise
-// en charge de Volta est prouvée ; sinon le test échoue (un node système aurait gagné).
-// POSIX uniquement (run-node.sh).
+// Hermetic proof that the BROADENED COVERAGE actually resolves node (not just that
+// the chain forwards). We build a temporary HOME with a fake node placed under a
+// manager directory EXCLUSIVE to this HOME (~/.volta/bin) printing a unique marker,
+// then run run-node.sh in an IMPOVERISHED PATH (minimalPathEnv → PATH="").
+// Since `add` prepends, ~/.volta/bin ends up at the HEAD of PATH (after the system
+// directories) → it's THAT node that must run. If the marker prints, Volta support
+// is proven; otherwise the test fails (a system node would have won).
+// POSIX only (run-node.sh).
 test(
-  "run-node.sh : la couverture élargie (Volta) résout node depuis un HOME hermétique",
-  { skip: process.platform === "win32" ? "POSIX seulement" : false },
+  "run-node.sh: the broadened coverage (Volta) resolves node from a hermetic HOME",
+  { skip: process.platform === "win32" ? "POSIX only" : false },
   () => {
     const home = mkdtempSync(join(tmpdir(), "run-node-home-"));
     try {
@@ -55,9 +55,9 @@ test(
 
       const out = execFileSync("/bin/sh", [script, "-e", "0"], {
         encoding: "utf8",
-        env: minimalPathEnv("darwin", { HOME: home }), // PATH="" → node ne peut venir QUE du self-heal
+        env: minimalPathEnv("darwin", { HOME: home }), // PATH="" → node can come ONLY from the self-heal
       });
-      assert.match(out, /VOLTA_NODE_MARKER/); // c'est bien le node de ~/.volta/bin qui a tourné
+      assert.match(out, /VOLTA_NODE_MARKER/); // it's indeed the node from ~/.volta/bin that ran
     } finally {
       rmSync(home, { recursive: true, force: true });
     }

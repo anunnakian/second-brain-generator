@@ -1,405 +1,398 @@
 # Second Brain Generator
 
-**Pose ta question comme à un assistant personnel — pas besoin d'être dev — et retrouve n'importe quelle décision ou info de ton travail en secondes, toujours avec les sources.**
-*Dans Claude Desktop comme en ligne de commande, au choix.*
+**Ask it like you'd ask a personal assistant — no dev skills required — and pull up any decision or piece of info from your work in seconds, always with the sources.**
+*In Claude Desktop or on the command line, your call.*
 
-**🔒 Privé par défaut, recherche à la carte.** Tes notes sont indexées **sur ta machine par défaut — rien ne sort**. Ou délègue à l'API de ton choix, jusqu'à l'endpoint de ta boîte : **tu choisis qui touche tes données**.
+**🔒 Private by default, search à la carte.** Your notes are indexed **on your machine by default — nothing leaves it**. Or hand the job to the API of your choice, right down to your company's own endpoint: **you decide who touches your data**.
 
-**🛟 Increvable & zéro corvée.** Sauvegarde, fraîcheur, récupération après pépin : **son** boulot, pas le tien. *Toi, tu n'as qu'à parler.*
+**🛟 Bulletproof & zero chores.** Backup, freshness, recovery after a glitch: **its** job, not yours. *You just have to talk.*
 
-> 🧑 *« On en est où sur le projet facturation — qui porte quoi, et qu'est-ce qui a été décidé ? »*
+> 🧑 *"Where are we on the billing project — who owns what, and what's been decided?"*
 >
-> 🧠 *« Au point d'équipe du 15 janvier : la base de données a été tranchée (PostgreSQL plutôt que
-> MongoDB), et Jane Doe — Tech Lead plateforme — pousse pour anticiper la dette technique dès le
-> sprint 1.*
-> *→ décision du 10 janvier · → point d'équipe du 15 janvier »*
+> 🧠 *"At the January 15 team sync: the database was settled (PostgreSQL over MongoDB),
+> and Jane Doe — platform Tech Lead — is pushing to get ahead of technical debt as early
+> as sprint 1.*
+> *→ decision of January 10 · → team sync of January 15"*
 
-> 🧑 *« Que veut dire "MEDDIC", ce truc que l'équipe sales répète en boucle dans leurs réunions ? »*
+> 🧑 *"What does 'MEDDIC' mean — that thing the sales team keeps repeating in their meetings?"*
 >
-> 🧠 *« MEDDIC = la méthode de qualification d'opportunités adoptée par les sales : Metrics, Economic
-> buyer, Decision criteria, Decision process, Identify pain, Champion. Introduite par John Smith (VP
-> Sales) au kickoff commercial du 12 février pour fiabiliser le forecast.*
-> *→ kickoff commercial du 12 février · → playbook sales »*
+> 🧠 *"MEDDIC = the opportunity-qualification method adopted by sales: Metrics, Economic
+> buyer, Decision criteria, Decision process, Identify pain, Champion. Introduced by John Smith (VP
+> Sales) at the sales kickoff on February 12 to make the forecast more reliable.*
+> *→ sales kickoff of February 12 · → sales playbook"*
 
-Au lieu d'aller fouiller toi-même dans Slack, tes mails, Google Drive et tes comptes rendus de
-réunion, tu demandes — et ton **second cerveau** te répond tout de suite, sources à l'appui. Il
-**retrouve par le sens**, donc tu peux questionner en français des notes rédigées en anglais (ou
-l'inverse).
+Instead of digging through Slack, your emails, Google Drive and your meeting notes yourself, you
+just ask — and your **second brain** answers right away, with the sources to back it up. It
+**retrieves by meaning**, so you can ask in French about notes written in English (or the other way
+around).
 
-> ⚠️ Ce repo n'est **pas** un cerveau tout fait : c'est un **générateur** qui te **produit** une
-> **graine** (un squelette) que tu fais pousser pour t'en construire **un à toi**. On explique
-> pourquoi plus bas — et c'est précisément ce qui le rend utile.
+> ⚠️ This repo is **not** a ready-made brain: it's a **generator** that **produces** a **seed** (a
+> skeleton) for you, which you grow into **one of your own**. We explain why below — and that's
+> exactly what makes it useful.
 
 ---
 
-## C'est quoi, un « second cerveau » ?
+## What is a "second brain"?
 
-Une **mémoire externe à toi** : tes notes, tes décisions et tes échanges de travail réunis en un
-seul endroit, que tu interroges en langage naturel et qui te répond **immédiatement, sources à
-l'appui**.
+A **memory external to you**: your notes, your decisions and your work exchanges gathered in one
+place, that you query in natural language and that answers you **instantly, with the sources to back
+it up**.
 
-Trois propriétés le définissent :
+Three properties define it:
 
-- **Il est à toi.** Tout vit dans un dossier de notes (un *vault*) versionné dans **ton repo git
-  privé**. Tu n'es pas locataire d'un service en ligne : tu es propriétaire de tes données.
-- **Il se souvient.** Chaque réponse, chaque info nouvelle est persistée (commit git local). Ton
-  cerveau accumule une trace exploitable — et peut **te suivre d'une machine à l'autre** dès que tu
-  lui branches un dépôt distant (optionnel).
-- **Il cite ses sources.** Pas de réponse en l'air : tu remontes toujours à la note ou au message
-  d'origine, avec sa date.
+- **It's yours.** Everything lives in a folder of notes (a *vault*) versioned in **your private git
+  repo**. You're not renting from an online service: you own your data.
+- **It remembers.** Every answer, every new piece of info is persisted (local git commit). Your
+  brain builds up an actionable record — and can **follow you from one machine to another** as soon
+  as you wire it to a remote repository (optional).
+- **It cites its sources.** No answers out of thin air: you can always trace back to the original
+  note or message, with its date.
 
-> 📂 **Un format ouvert, lisible par un humain.** Le substrat de ton second cerveau, c'est juste un
-> ensemble de fichiers **Markdown (`.md`)** — reliés entre eux par des liens `[[wikilink]]` quand
-> c'est pertinent (une note renvoie à une personne, une décision, un sujet…). Rien de propriétaire,
-> rien d'enfermé. Et comme la structure est **compatible [Obsidian](https://obsidian.md)** : en plus
-> d'interroger ton cerveau via Claude, tu peux **ouvrir le dossier `vault/` dans Obsidian** pour
-> parcourir tes notes, suivre les liens et visualiser le graphe de ton savoir.
+> 📂 **An open, human-readable format.** The substrate of your second brain is just a set of
+> **Markdown (`.md`)** files — linked together with `[[wikilink]]` links where it makes sense (a
+> note points to a person, a decision, a topic…). Nothing proprietary, nothing locked in. And since
+> the structure is **[Obsidian](https://obsidian.md)-compatible**: on top of querying your brain via
+> Claude, you can **open the `vault/` folder in Obsidian** to browse your notes, follow the links and
+> visualize the graph of your knowledge.
 
-## C'est pour qui ?
+## Who is it for?
 
-Pour toute personne qui **croule sous l'information dispersée** et veut la retrouver sans effort —
-quel que soit son niveau technique :
+For anyone who's **drowning in scattered information** and wants to retrieve it effortlessly —
+whatever their technical level:
 
-- **Managers, Head of Engineering** — suivre ses équipes, ses 1-1, ce qu'on attend de soi.
-- **Product managers, product designers** — garder le fil des décisions produit, des arbitrages,
-  du « pourquoi on a tranché comme ça ».
-- **Consultants, chercheurs, freelances** — consolider un domaine métier, ne rien perdre d'un
-  contexte client.
+- **Managers, Heads of Engineering** — keeping track of their teams, their 1-1s, what's expected of
+  them.
+- **Product managers, product designers** — keeping the thread of product decisions, trade-offs, the
+  "why we settled on it this way".
+- **Consultants, researchers, freelancers** — consolidating a business domain, never losing any of a
+  client's context.
 
-👉 **Pas besoin d'être un geek.** Ce cerveau est pensé pour des gens qui **ne maîtrisent pas la
-technique** mais qui travaillent déjà avec **Claude Desktop** (onglet Code). Si tu sais *discuter*
-avec Claude, tu sais t'en servir — et il marche **aussi bien sur Claude Desktop qu'en ligne de
-commande** (CLI), au choix.
+👉 **No need to be a geek.** This brain is designed for people who **aren't technical** but who
+already work with **Claude Desktop** (Code tab). If you can *chat* with Claude, you can use it — and
+it works **just as well on Claude Desktop as on the command line** (CLI), your call.
 
-> ⚠️ L'**usage au quotidien ne demande aucune compétence technique** : tu poses des questions, tu
-> lis des réponses. Seule l'**installation** (une fois, ~15 min) suppose d'avoir git et Node (et,
-> *si* tu choisis l'option clé d'API, une clé) — on te guide pas à pas, et un installateur vérifie
-> tout pour toi.
+> ⚠️ **Day-to-day use requires no technical skill**: you ask questions, you read answers. Only the
+> **installation** (once, ~15 min) assumes you have git and Node (and, *if* you choose the API-key
+> option, a key) — we guide you step by step, and an installer checks everything for you.
 
-## En quoi c'est différent de ChatGPT, Claude, Notion AI ou de la recherche Slack ?
+## How is it different from ChatGPT, Claude, Notion AI or Slack search?
 
-| | Ce qui leur manque | Ce que fait ton second cerveau |
+| | What they're missing | What your second brain does |
 |---|---|---|
-| **ChatGPT / Claude « nu »** | Ne connaît que ce que tu recolles à chaque conversation. Oublie tout ensuite. | Une **mémoire persistante**, qui grossit à chaque question. |
-| **Notion AI, recherche Slack…** | Cloisonné à **un seul outil**. | **Transversal** : Slack + Drive + mails + transcripts + tes notes, au même endroit. |
-| **N'importe quel SaaS** | Tes données chez un tiers, format fermé. | **Chez toi**, en Markdown, dans **ton** repo git privé. |
-| **Outils IA « cloud-only »** | Un **moteur de recherche imposé** : pour t'indexer, tes notes partent chez un tiers — sans alternative. | **Recherche sémantique à la carte** : **locale par défaut** (rien ne sort), ou déléguée à l'API de ton choix — [tu choisis](#comment-choisir-ma-recherche-sémantique-mon-rag-). |
+| **Bare ChatGPT / Claude** | Only knows what you re-paste into each conversation. Forgets it all afterward. | A **persistent memory**, that grows with every question. |
+| **Notion AI, Slack search…** | Walled into **a single tool**. | **Cross-cutting**: Slack + Drive + emails + transcripts + your notes, all in one place. |
+| **Any SaaS** | Your data on a third party, closed format. | **At home**, in Markdown, in **your** private git repo. |
+| **"Cloud-only" AI tools** | A **search engine forced on you**: to index you, your notes go off to a third party — with no alternative. | **Semantic search à la carte**: **local by default** (nothing leaves), or delegated to the API of your choice — [you choose](#how-do-i-choose-my-semantic-search-my-rag). |
 
-Et surtout : ce n'est pas **un** produit unique pour tout le monde. C'est une **méthode** pour te
-fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur et pas un produit fini ?* »).
+And above all: this isn't **one** product for everyone. It's a **method** to build **your own**,
+tuned to *your* uses (see "*Why a generator and not a finished product?*").
 
-## En quoi c'est différent des « LLM wikis » et seconds cerveaux bricolés qu'on voit passer sur les réseaux ?
+## How is it different from the "LLM wikis" and DIY second brains floating around on social media?
 
-🛠️ **« Mais un second cerveau, c'est bien juste un dossier Markdown + un fichier de règles qu'on
-fait lire à Claude, non ? »** Fait à la légère, ça **a l'air** de marcher… puis ça **lâche en
-silence** — le pire des échecs, parce qu'on ne s'en rend même pas compte (rien n'est sauvé, la
-recherche **invente** au lieu de chercher dans tes notes, la session n'est pas branchée au bon
-endroit…). Ici, des **garde-fous packagés et testés** bouchent ces trous : une fois installé, **tu
-n'as plus rien à faire** — sauvegarde, indexation et fraîcheur tournent toutes seules, sans que tu
-aies à penser à les faire. C'est de l'**affordance** : la complexité est **cachée, pas refilée**.
+🛠️ **"But a second brain is really just a Markdown folder + a rules file you feed to Claude,
+right?"** Done carelessly, it **looks** like it works… then it **fails silently** — the worst kind
+of failure, because you don't even notice (nothing's saved, search **makes things up** instead of
+searching your notes, the session isn't wired to the right place…). Here, **packaged and tested
+guardrails** plug those holes: once installed, **there's nothing left for you to do** — backup,
+indexing and freshness all run on their own, without you having to think about them. That's
+**affordance**: the complexity is **hidden, not dumped on you**.
 
-**Concrètement, tout le travail d'ingénierie tourne pour toi — en silence.** Indexation
-incrémentale, sauvegarde versionnée à **chaque** modification, écritures **atomiques**, fraîcheur de
-l'index gérée pour toi, démarrage **non-bloquant** du moteur de recherche, sync multi-machines, et
-des vérifications **déterministes** qui *prouvent* que la réponse vient bien de **tes notes** (et pas
-d'Internet). On l'a **conçu, testé et packagé** pour être **robuste et reproductible** — pas un
-script qui « marche sur ma machine ». L'objectif qu'on s'est fixé : **la seule chose qui te reste à
-faire, c'est parler à ton cerveau en langage naturel.** L'infra, le stockage, la concurrence, les
-garde-fous : c'est **son** boulot — il a été conçu pour ça — **pas le tien**.
+**Concretely, all the engineering work runs for you — silently.** Incremental indexing, versioned
+backup on **every** change, **atomic** writes, index freshness handled for you, **non-blocking**
+startup of the search engine, multi-machine sync, and **deterministic** checks that *prove* the
+answer really comes from **your notes** (and not from the Internet). We **designed, tested and
+packaged** it to be **robust and reproducible** — not a script that "works on my machine". The goal
+we set ourselves: **the only thing left for you to do is talk to your brain in natural language.**
+The infra, the storage, the concurrency, the guardrails: that's **its** job — it was built for that
+— **not yours**.
 
-> 🛟 **Pourquoi un tel soin ?** Parce que faire du logiciel **production-ready** — qui **se rétablit
-> tout seul** quand quelque chose lâche — est une conviction que **Thomas, son créateur, porte depuis
-> toute sa carrière**, nourrie par le **Recovery-Oriented Computing** (ROC — A. Fox & D. Patterson) :
-> on **part du principe que tout finit par casser**, et on conçoit pour que la **récupération** soit
-> rapide, automatique et **sans perte de données**. Un second cerveau, ça doit tenir **des années**
-> — pas juste le temps d'une démo.
+> 🛟 **Why such care?** Because building **production-ready** software — that **recovers on its own**
+> when something breaks — is a conviction **Thomas, its creator, has carried throughout his whole
+> career**, nurtured by **Recovery-Oriented Computing** (ROC — A. Fox & D. Patterson): you **assume
+> everything eventually breaks**, and you design so that **recovery** is fast, automatic and **with
+> no data loss**. A second brain has to last **years** — not just long enough for a demo.
 
-> 📄 Le détail (et le paysage complet, le cerveau, son fonctionnement, l'installation, le **RAG à la
-> carte**) : fiche [**En quoi c'est différent**](EN-QUOI-C-EST-DIFFERENT.md).
+> 📄 The details (and the full picture — the brain, how it works, the installation, the **RAG à la
+> carte**): see the [**How it's different**](EN-QUOI-C-EST-DIFFERENT.md) page.
 
-## Ce que ça change pour toi, concrètement
+## What it changes for you, concretely
 
-- **Réponse immédiate.** En quelques secondes, pas le temps d'aller faire un café.
-- **Toujours sourcé.** Tu vois d'où vient chaque info, et si elle est récente ou pas.
-- **Rien ne se perd.** Chaque modif est **commitée automatiquement en local**. Et si tu branches un
-  **dépôt distant** (optionnel, ~2 min — push *opt-in*), tout est aussi sauvegardé **hors de ta
-  machine** : laptop perdu ou volé, tu reprends ailleurs où tu en étais.
-- **Privé par défaut — et c'est toi qui choisis.** Tes notes sont indexées **sur ta machine** par
-  défaut : rien ne sort. Petit poste ou Mac Intel ? Tu peux déléguer à l'API de ton choix. *(Pour
-  trancher : [« comment choisir ma recherche sémantique »](#comment-choisir-ma-recherche-sémantique-mon-rag-).)*
-- **Zéro effort de ta part.** Tu n'as jamais à lancer une synchro, ni même à savoir que git existe :
-  tu poses ta question, c'est tout.
+- **Immediate answer.** In a few seconds, no time to go grab a coffee.
+- **Always sourced.** You see where each piece of info comes from, and whether it's recent or not.
+- **Nothing gets lost.** Every change is **committed automatically, locally**. And if you wire up a
+  **remote repository** (optional, ~2 min — push *opt-in*), everything is also backed up **off your
+  machine**: laptop lost or stolen, you pick up where you left off elsewhere.
+- **Private by default — and you're the one who chooses.** Your notes are indexed **on your machine**
+  by default: nothing leaves. Small machine or Intel Mac? You can delegate to the API of your choice.
+  *(To decide: ["how do I choose my semantic search"](#how-do-i-choose-my-semantic-search-my-rag).)*
+- **Zero effort on your part.** You never have to kick off a sync, or even know that git exists: you
+  ask your question, that's it.
 
-> 💡 Pour les curieux : ta réponse arrive tout de suite à partir de ce que ton cerveau a déjà en
-> mémoire, et se met à jour discrètement en arrière-plan s'il trouve du nouveau — un peu comme une
-> page web qui s'affiche instantanément puis se rafraîchit toute seule. Le détail est en
-> [« Sous le capot »](#sous-le-capot).
+> 💡 For the curious: your answer arrives right away from what your brain already has in memory, and
+> updates quietly in the background if it finds something new — a bit like a web page that displays
+> instantly then refreshes on its own. The details are in [under the hood](#under-the-hood).
 
 ---
 
-## Prêt à essayer ?
+## Ready to try it?
 
-### Comment choisir ma recherche sémantique (mon RAG) ?
+### How do I choose my semantic search (my RAG)?
 
-C'est **le** choix de confidentialité, et il tient en une question : *qui a le droit de lire tes
-notes pour les indexer ?* Trois réponses — et tu peux **changer d'avis quand tu veux** (on
-ré-indexe en quelques minutes, rien n'est perdu) :
+This is **the** privacy choice, and it boils down to one question: *who's allowed to read your notes
+to index them?* Three answers — and you can **change your mind whenever you want** (we re-index in a
+few minutes, nothing is lost):
 
-| Option | Pour qui | Confidentialité | Coût |
+| Option | For whom | Privacy | Cost |
 |---|---|---|---|
-| 🟢 **Sur ta machine** *(défaut recommandé)* | Machine ≥ 12 Go de RAM, hors Mac Intel | **Rien ne sort** de ton ordinateur | Gratuit |
-| 🟡 **Avec une clé d'API** | Petite config, ou Mac Intel | Tes notes passent par le fournisseur — Gemini, OpenAI, **l'endpoint de ta boîte** | ~0,10 € / 1 000 notes · ~1 € / 10 000 |
-| 🟢 **Ollama, en local** *(avancé)* | À l'aise pour installer une app | **Rien ne sort** non plus | Gratuit |
+| 🟢 **On your machine** *(recommended default)* | Machine with ≥ 12 GB RAM, not an Intel Mac | **Nothing leaves** your computer | Free |
+| 🟡 **With an API key** | Small setup, or Intel Mac | Your notes go through the provider — Gemini, OpenAI, **your company's endpoint** | ~€0.10 / 1,000 notes · ~€1 / 10,000 |
+| 🟢 **Ollama, locally** *(advanced)* | Comfortable installing an app | **Nothing leaves** either | Free |
 
-> 💶 En clé d'API, le palier **gratuit** de Gemini suffit pour démarrer — mais *gratuit ≠ privé* :
-> activer la facturation (quelques centimes par an) sort tes notes du périmètre d'entraînement.
-> Détails : [SETUP §9](SETUP.md).
+> 💶 With an API key, Gemini's **free** tier is enough to get started — but *free ≠ private*: turning
+> on billing (a few cents per year) takes your notes out of the training scope. Details:
+> [SETUP §9](SETUP.md).
 
-À l'installation, Claude te présente les 3 options et **recommande selon ta machine** ; sans
-préférence, le défaut local s'applique tout seul si la machine le permet. *(Le « comment ça
-marche » : [« le RAG à la carte »](#-le-rag-à-la-carte--tu-choisis-qui-vectorise-tes-notes).)*
+At install time, Claude presents the 3 options and **recommends based on your machine**; with no
+preference, the local default applies on its own if the machine can handle it. *(The "how it works":
+["the RAG à la carte"](#-the-rag-à-la-carte--you-choose-who-vectorizes-your-notes).)*
 
-### De quoi tu as besoin
+### What you need
 
-- **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** et
-  **git**. *(L'installateur vérifie tout — s'il en manque un, il te le dit proprement.)*
-- **Pour la recherche sémantique** : rien de plus si tu prends l'option **locale** (le défaut
-  recommandé), ou une **[clé d'API](https://aistudio.google.com/apikey)** si tu choisis cette
-  option — voir [« comment choisir »](#comment-choisir-ma-recherche-sémantique-mon-rag-) ci-dessus.
-- **Tes sources d'information** (Slack, Drive, mails, Notion, transcripts…), à brancher selon
-  *tes* outils. Optionnel au début. *(cf. [SETUP §6](SETUP.md))*
+- **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** and
+  **git**. *(The installer checks everything — if one is missing, it tells you cleanly.)*
+- **For semantic search**: nothing more if you go with the **local** option (the recommended
+  default), or an **[API key](https://aistudio.google.com/apikey)** if you choose that option — see
+  ["how to choose"](#how-do-i-choose-my-semantic-search-my-rag) above.
+- **Your information sources** (Slack, Drive, emails, Notion, transcripts…), to wire up according to
+  *your* tools. Optional to begin with. *(see [SETUP §6](SETUP.md))*
 
-### Installation — Claude installe tout pour toi
+### Installation — Claude installs everything for you
 
-Tu utilises Claude Code et tu as l'URL du générateur ? Laisse **Claude tout installer pour toi** —
-c'est le seul geste à faire. Ouvre Claude Code dans **n'importe quel dossier vide de ton poste** (un
-répertoire de travail temporaire fait l'affaire — c'est juste là que le launcher sera cloné), et
-**copie-colle cette unique instruction** (adapte le nom et l'URL) :
+You use Claude Code and you have the generator's URL? Let **Claude install everything for you** —
+that's the only move you make. Open Claude Code in **any empty folder on your machine** (a temporary
+working directory will do — it's just where the launcher gets cloned), and **copy-paste this single
+instruction** (adapt the name and URL):
 
 ```text
-Installe-moi un second cerveau nommé "second-brain" (nom à confirmer) à partir de ce générateur : https://github.com/tpierrain/second-brain-generator
+Install me a second brain named "second-brain" (name to be confirmed) from this generator: https://github.com/tpierrain/second-brain-generator
 ```
 
-> 📍 **Et mon cerveau, il atterrit où ?** **Pas dans ce dossier courant** : par défaut il est créé
-> dans ton home (`~/<nom>`). Le répertoire d'où tu lances Claude ne sert qu'à accueillir le clone
-> (jetable) du launcher. Pour un autre emplacement, précise-le dans l'instruction (« …dans
-> `~/cerveaux` ») — pas besoin de t'y placer toi-même.
+> 📍 **And my brain, where does it land?** **Not in this current folder**: by default it's created in
+> your home (`~/<name>`). The directory you launch Claude from only serves to host the (disposable)
+> clone of the launcher. For another location, specify it in the instruction ("…in `~/brains`") — no
+> need to put yourself there.
 
-C'est tout : pas besoin de préciser « ne touche pas au launcher » ni « ne demande pas ma clé » —
-**le générateur enforce lui-même la sûreté** (le launcher reste en lecture seule, le cerveau est un
-dossier neuf sans lien distant, clé jamais demandée en chat). Claude clone le **launcher**, te pose
-**en chat** les quelques questions (nom du cerveau, emplacement, ton nom, langue), puis lance
-l'installateur en mode non-interactif — qui **crée le dossier cerveau** et fait **tout** (copie,
-fichiers générés, `git init`, moteur RAG, vérification). L'install ne peut pas **réussir à moitié** :
-soit elle va au bout et **te le prouve** (elle vérifie elle-même que la recherche répond bien depuis
-tes notes), soit elle **s'arrête net en disant pourquoi** — **jamais d'install fantôme** qui a l'air
-ok mais ne marche pas. Il te reste **3 gestes** :
+That's it: no need to say "don't touch the launcher" or "don't ask for my key" — **the generator
+enforces safety itself** (the launcher stays read-only, the brain is a fresh folder with no remote
+link, the key is never asked for in chat). Claude clones the **launcher**, asks you **in chat** the
+few questions (brain name, location, your name, language), then runs the installer in non-interactive
+mode — which **creates the brain folder** and does **everything** (copy, generated files, `git init`,
+RAG engine, verification). The install can't **half-succeed**: either it goes all the way and
+**proves it to you** (it verifies for itself that search really answers from your notes), or it
+**stops dead and tells you why** — **never a ghost install** that looks OK but doesn't work. That
+leaves you **3 moves**:
 
-1. **Une clé à coller — seulement si tu as choisi l'option « clé d'API ».** Avec l'option locale
-   (le défaut), **tu sautes ce geste**, rien à coller. Sinon, Claude te guide pour coller ta clé
-   dans `.env` (jamais dans le chat) — détail [SETUP §1.1](SETUP.md).
-2. **Dépôt distant ?** Claude te demandera si tu veux un dépôt git **distant** (backup +
-   multi-machine). **Dire non est sans risque** : tout reste versionné en local, rien ne se perd,
-   et l'auto-commit **ne pousse nulle part** (push opt-in désactivé par défaut). Tu pourras en
-   ajouter un plus tard.
-3. **Rouvrir Claude Code** dans le **dossier cerveau créé** (ex. `~/second-brain`) — active le moteur
-   de recherche. (Le launcher, lui, peut être réutilisé pour un autre cerveau ou supprimé.)
-   👉 **C'est l'étape la plus souvent ratée sur Claude Desktop — voir juste en dessous.**
+1. **A key to paste — only if you chose the "API key" option.** With the local option (the default),
+   **you skip this move**, nothing to paste. Otherwise, Claude guides you to paste your key into
+   `.env` (never in chat) — details [SETUP §1.1](SETUP.md).
+2. **Remote repository?** Claude will ask whether you want a **remote** git repository (backup +
+   multi-machine). **Saying no is risk-free**: everything stays versioned locally, nothing is lost,
+   and auto-commit **pushes nowhere** (push opt-in disabled by default). You can add one later.
+3. **Reopen Claude Code** in the **brain folder that was created** (e.g. `~/second-brain`) — this
+   activates the search engine. (The launcher itself can be reused for another brain or deleted.)
+   👉 **This is the step most often missed on Claude Desktop — see just below.**
 
-#### 🖱️ Sur Claude Desktop (onglet Code) : ouvrir ton cerveau au BON endroit
+#### 🖱️ On Claude Desktop (Code tab): opening your brain in the RIGHT place
 
-C'est **le** piège n°1, et il n'a rien d'évident. Ton cerveau ne « marche » que si la conversation
-est **bien ouverte dans son dossier**. Lancer une *New session* ne suffit pas : par défaut elle
-repart sur ton dernier dossier (souvent un `tmp`), et Claude **invente alors des réponses** au lieu
-d'aller chercher dans ton vault.
+This is **the** #1 trap, and it's not obvious at all. Your brain only "works" if the conversation is
+**properly opened in its folder**. Starting a *New session* isn't enough: by default it reopens on
+your last folder (often a `tmp`), and Claude then **makes up answers** instead of searching your
+vault.
 
-Le réglage se fait avec **la rangée de petites puces en bas, juste au-dessus du champ de saisie** :
+The setting is made with **the row of little chips at the bottom, just above the input field**:
 
-![La rangée de puces Local · dossier · ➕ en bas de la nouvelle session](docs/img/desktop-folder-chips.png)
+![The row of chips Local · folder · ➕ at the bottom of the new session](docs/img/desktop-folder-chips.png)
 
-1. Ouvre une **New session**.
-2. **Clique sur la PUCE DOSSIER** (celle qui affiche `tmp` ou un autre nom) — ⚠️ **PAS** le bouton
-   `➕` « Add another folder » : lui *ajoute* un dossier **sans remplacer** la racine, et le cerveau
-   ne se charge pas. C'est le piège classique.
-3. Un menu **« Recent »** s'ouvre, avec un **✓ sur le dossier courant**. **Clique sur le nom de ton
-   cerveau** (ex. `second-brain`). S'il n'est pas listé, prends **« Open folder… »** tout en bas.
+1. Open a **New session**.
+2. **Click the FOLDER CHIP** (the one showing `tmp` or some other name) — ⚠️ **NOT** the
+   `➕` "Add another folder" button: that one *adds* a folder **without replacing** the root, and the
+   brain doesn't load. That's the classic trap.
+3. A **"Recent"** menu opens, with a **✓ on the current folder**. **Click your brain's name** (e.g.
+   `second-brain`). If it's not listed, take **"Open folder…"** at the very bottom.
 
-![Le menu Recent : cliquer le nom du cerveau pour que le ✓ s'y déplace](docs/img/desktop-recent-menu.png)
+![The Recent menu: click the brain's name so the ✓ moves to it](docs/img/desktop-recent-menu.png)
 
-4. Le **✓ saute sur ton cerveau**, et la puce du bas affiche son nom (plus de `tmp`). ✅
-5. **Vérifie d'un mot** : tape `pwd` comme tout premier message → ça doit renvoyer le chemin de ton
-   cerveau, **pas** un `…/tmp`.
+4. The **✓ jumps to your brain**, and the bottom chip shows its name (no more `tmp`). ✅
+5. **Double-check in one word**: type `pwd` as your very first message → it should return the path of
+   your brain, **not** a `…/tmp`.
 
-> ⌨️ **En terminal (CLI)**, c'est imparable : `cd ~/second-brain && claude` — la session s'ouvre
-> directement dans le bon dossier, sans ambiguïté.
+> ⌨️ **On the terminal (CLI)**, it's foolproof: `cd ~/second-brain && claude` — the session opens
+> directly in the right folder, no ambiguity.
 
-Une fois installé, essaie par exemple :
+Once installed, try something like:
 
-> *« Dans la boîte qui aide les gens à arrêter de se surmener, quel salarié a été mis à l'honneur pour en avoir fichu le moins de tous — et avec quel pourcentage ? »*
+> *"At the outfit that helps folks quit overworking, which worker got publicly honored for having loafed the most of anyone — and at what percentage?"*
 
-Claude cherche dans ton vault et répond avec les liens vers les notes sources. **Bonne réponse :
-Pélagie de Mollecuisse, lauréate du Trophée de l'Inertie avec un TRF de 98,7 %** — un fait
-**introuvable hors de ton vault** (l'entreprise « Flemmr » est inventée). Si Claude te sort ça, tu as
-la **preuve** qu'il a bien interrogé ton cerveau et non Internet. S'il répond qu'il ne connaît pas
-cette entreprise, c'est que le RAG ne tourne pas.
+Claude searches your vault and answers with links to the source notes. **Correct answer: Pélagie de
+Mollecuisse, winner of the Inertia Trophy with a DNR of 98.7%** — a fact **impossible to find
+outside your vault** (the company "Flemmr" is made up). If Claude gives you that, you have **proof**
+that it really queried your brain and not the Internet. If it answers that it doesn't know this
+company, then the RAG isn't running.
 
-> 💡 Pourquoi cette question marche **toujours** : le sujet est **inventé**, donc Claude n'a aucune
-> réponse en mémoire → il est *obligé* d'interroger le vault (un sujet public comme Star Wars, il y
-> répondrait de tête sans chercher). Et la question **décrit** la situation par synonymes : aucun de
-> ses mots n'est dans les notes → un simple « rechercher dans les fichiers » (grep) échouerait.
-> Si « Mollecuisse » ressort quand même, c'est que la recherche a fait le lien **par le sens**.
+> 💡 Why this question **always** works: the subject is **made up**, so Claude has no answer in memory
+> → it's *forced* to query the vault (for a public topic like Star Wars, it would answer off the top
+> of its head without searching). And the question **describes** the situation through synonyms: none
+> of its words appear in the notes → a plain "search the files" (grep) would fail. If "Mollecuisse"
+> comes out anyway, it means search made the connection **by meaning**.
 
-> 🧪 **Les notes d'exemple.** Le vault est livré avec quelques notes de démo autour d'une **entreprise
-> parodique inventée** (Flemmr, qui « industrialise la procrastination ») — juste assez pour que la
-> première question marche tout de suite, et **impossibles à confondre** avec de vraies notes de
-> travail. Garde-les comme gabarits, ou efface-les quand tu démarres ton vrai vault (supprime les
-> fichiers du dossier `vault/`, ou relance l'installateur en mode interactif qui propose de les vider).
+> 🧪 **The example notes.** The vault ships with a few demo notes around a **made-up parody company**
+> (Flemmr, which "industrializes procrastination") — just enough for the first question to work right
+> away, and **impossible to confuse** with real work notes. Keep them as templates, or wipe them when
+> you start your real vault (delete the files in the `vault/` folder, or rerun the installer in
+> interactive mode, which offers to empty them).
 
-### Le dessous de l'installation — launcher vs cerveau
+### Behind the scenes of the installation — launcher vs brain
 
-*(Pour les curieux — pas besoin de comprendre ça pour t'en servir.)*
+*(For the curious — you don't need to understand this to use it.)*
 
-**Un launcher, un cerveau — deux dossiers.** Tu donnes **une seule instruction** à Claude ; lui se
-charge de récupérer le **launcher** (ce générateur) et de **créer un dossier cerveau séparé** où il
-dépose tout. Le launcher n'est **jamais modifié** : il reste en **lecture seule** et
-**réutilisable** — un même launcher peut générer plusieurs cerveaux.
+**One launcher, one brain — two folders.** You give **one single instruction** to Claude; it takes
+care of fetching the **launcher** (this generator) and **creating a separate brain folder** where it
+puts everything. The launcher is **never modified**: it stays **read-only** and **reusable** — one
+launcher can generate several brains.
 
 ```
-Tu donnes UNE instruction à Claude Code :
-        │   « Installe-moi un second cerveau nommé "second-brain" (nom à confirmer)
-        │     à partir de ce générateur : https://github.com/tpierrain/second-brain-generator »
+You give ONE instruction to Claude Code:
+        │   "Install me a second brain named "second-brain" (name to be confirmed)
+        │     from this generator: https://github.com/tpierrain/second-brain-generator"
         ▼
-    📁 second-brain-generator/   ← le LAUNCHER (Claude le clone) : lecture seule, réutilisable, jamais modifié
+    📁 second-brain-generator/   ← the LAUNCHER (Claude clones it): read-only, reusable, never modified
         │
-        │   Claude y lance l'installateur  →  qui CRÉE un dossier AILLEURS
+        │   Claude runs the installer in it  →  which CREATES a folder ELSEWHERE
         ▼
-    📁 ~/second-brain/            ← TON second cerveau : dossier NEUF (copie des fichiers + git init)
-        ├── CLAUDE.md          (ta constitution — générée à partir de l'amorce)
-        ├── vault/             (tes notes)
-        ├── rag/               (le moteur de recherche)
-        ├── .git/              (dépôt NEUF, 0 remote — aucun lien vers le launcher)
-        └── .mcp.json, .env …  (config générée)
+    📁 ~/second-brain/            ← YOUR second brain: a FRESH folder (files copied + git init)
+        ├── CLAUDE.md          (your constitution — generated from the bootstrap stub)
+        ├── vault/             (your notes)
+        ├── rag/               (the search engine)
+        ├── .git/              (FRESH repo, 0 remote — no link to the launcher)
+        └── .mcp.json, .env …  (generated config)
         │
-        │   tu rouvres Claude Code DANS le cerveau
+        │   you reopen Claude Code INSIDE the brain
         ▼
-    → tu poses tes questions
+    → you ask your questions
         │
-        │   (optionnel, quand tu veux) tu demandes à Claude, DANS ton cerveau :
-        │   « Pousse mon second cerveau sur un dépôt distant GitHub (pour un backup) »
+        │   (optional, whenever you want) you ask Claude, INSIDE your brain:
+        │   "Push my second brain to a remote GitHub repository (for a backup)"
         ▼
-    ☁️  dépôt distant            ← backup + multi-machine (push opt-in, cf. § Sauvegarder)
+    ☁️  remote repository        ← backup + multi-machine (push opt-in, see § Backing up)
 ```
 
-Pour lever les doutes qu'on a tous au début :
+To clear up the doubts we all have at first:
 
-- **Le launcher n'est pas ton cerveau** : c'est l'outil qui le **produit**. Garde-le pour en
-  générer d'autres, ou jette-le — ton cerveau vit dans **son propre dossier**.
-- **Aucun lien vers le launcher**, par construction : l'installeur **copie** les fichiers dans un
-  dossier neuf puis y fait `git init` (0 remote). Rien à « détacher » toi-même.
-- **`--name` = le nom du dossier cerveau créé** ; son emplacement se choisit avec `--dest` (par
-  défaut, ton home → `~/<nom>`). L'installeur **refuse si le dossier existe déjà**.
-- Le cerveau naît **sans dépôt distant** : pour un backup / multi-machine, tu branches TON dépôt
-  plus tard (push opt-in, cf. geste 2 ci-dessus).
+- **The launcher is not your brain**: it's the tool that **produces** it. Keep it to generate
+  others, or throw it away — your brain lives in **its own folder**.
+- **No link to the launcher**, by construction: the installer **copies** the files into a fresh
+  folder then runs `git init` in it (0 remote). Nothing to "detach" yourself.
+- **`--name` = the name of the created brain folder**; its location is chosen with `--dest` (by
+  default, your home → `~/<name>`). The installer **refuses if the folder already exists**.
+- The brain is born **without a remote repository**: for backup / multi-machine, you wire up YOUR
+  repo later (push opt-in, see move 2 above).
 
-### 💾 Sauvegarder ton cerveau & l'utiliser sur plusieurs machines (optionnel)
+### 💾 Backing up your brain & using it on multiple machines (optional)
 
-Par défaut, ton cerveau est **versionné en local** (chaque modif est commitée automatiquement) mais
-**reste sur ta machine** — rien ne part ailleurs. Pour avoir un **backup hors-machine** et/ou t'en
-servir **depuis plusieurs ordinateurs**, branche-lui un **dépôt git distant** : **GitHub**, GitLab,
-Azure DevOps, ou ton propre serveur git.
+By default, your brain is **versioned locally** (every change is committed automatically) but **stays
+on your machine** — nothing goes elsewhere. To have an **off-machine backup** and/or use it **from
+several computers**, wire it to a **remote git repository**: **GitHub**, GitLab, Azure DevOps, or
+your own git server.
 
-- **Pendant l'installation** : Claude te le **propose directement** (geste 2) et configure tout.
-- **Plus tard** : trois commandes (`git remote add` → `git push -u` → activer le push auto), pas à
-  pas dans [SETUP §7](SETUP.md).
+- **During installation**: Claude **offers it directly** (move 2) and configures everything.
+- **Later**: three commands (`git remote add` → `git push -u` → enable auto-push), step by step in
+  [SETUP §7](SETUP.md).
 
-C'est **opt-in** : tant que tu ne l'as pas branché, **rien n'est poussé** (garde-fou anti-fuite par
-défaut). Tu peux le faire tout de suite **ou des semaines plus tard**, sans rien casser. Une fois en
-place, le hook auto-commit **pousse à chaque modif** — backup et bascule entre laptops deviennent
-transparents.
+It's **opt-in**: as long as you haven't wired it up, **nothing is pushed** (anti-leak guardrail by
+default). You can do it right away **or weeks later**, without breaking anything. Once in place, the
+auto-commit hook **pushes on every change** — backup and switching between laptops become seamless.
 
-## Et la confidentialité de mes données ?
+## And the privacy of my data?
 
-Question légitime : ton vault peut être **confidentiel**. Selon l'option de recherche que tu as
-choisie, **un ou deux** services voient ton contenu — et **dans tous les cas, tu peux fermer la
-porte à leur exploitation** (et en tout-local, le moteur d'indexation ne voit **rien**) :
+A fair question: your vault can be **confidential**. Depending on the search option you chose, **one
+or two** services see your content — and **in every case, you can shut the door on them exploiting
+it** (and in fully-local mode, the indexing engine sees **nothing**):
 
-- **Claude** (qui raisonne et répond) lit ton vault. En **API / Team / Enterprise**, tes données
-  ne servent **pas** à l'entraînement. Sur le **grand public** (claude.ai Free/Pro/Max), va dans
-  **Réglages → Confidentialité** et **décoche** l'usage de tes conversations pour l'amélioration
-  des modèles.
-- **Le moteur d'indexation** reçoit le **texte de tes notes** — *uniquement* si tu as
-  choisi l'option **clé d'API** (Gemini, OpenAI, endpoint entreprise). Avec l'option **locale** ou
-  **Ollama**, **rien ne sort** : tes notes ne quittent jamais ta machine. ⚠️ Et si tu passes par
-  **Gemini en palier gratuit**, Google **peut exploiter** ces contenus (relecture humaine possible) :
-  **activer la facturation = le geste qui protège** (Google s'engage alors à **ne pas** s'en servir
-  pour l'entraînement).
+- **Claude** (which reasons and answers) reads your vault. On **API / Team / Enterprise**, your data
+  is **not** used for training. On the **consumer** plan (claude.ai Free/Pro/Max), go to
+  **Settings → Privacy** and **uncheck** the use of your conversations for model improvement.
+- **The indexing engine** receives the **text of your notes** — *only* if you chose the **API key**
+  option (Gemini, OpenAI, company endpoint). With the **local** or **Ollama** option, **nothing
+  leaves**: your notes never leave your machine. ⚠️ And if you go through **Gemini on the free tier**,
+  Google **may exploit** that content (human review possible): **turning on billing = the move that
+  protects you** (Google then commits to **not** using it for training).
 
-**Le plus privé est aussi le défaut recommandé** (tout-local) ; et même en option clé, pour le prix
-d'un café à l'année tes données sortent du périmètre d'entraînement. Détails et abaque :
-[SETUP §9](SETUP.md). *(Les conditions des fournisseurs évoluent : vérifie-les.)*
+**The most private is also the recommended default** (fully-local); and even with the key option, for
+the price of a coffee a year your data leaves the training scope. Details and pricing chart:
+[SETUP §9](SETUP.md). *(Providers' terms change: check them.)*
 
 ---
 
-## Pourquoi un *générateur*, et pas un produit fini ?
+## Why a *generator*, and not a finished product?
 
-Parce qu'un second cerveau est **personnel**. Ce qui sert un Head of Engineering, un commercial ou
-un chercheur n'a **rien à voir**. Un outil unique pour tous serait fade pour chacun.
+Because a second brain is **personal**. What serves a Head of Engineering, a salesperson or a
+researcher has **nothing in common**. A single tool for everyone would be bland for each of them.
 
-Alors ce repo te livre **la mécanique prête à l'emploi** (le moteur de recherche) et **une
-méthode** — l'approche *use case driven* de **Thomas Pierrain** ([sa série d'articles](#la-série-darticles)) —
-pour faire **émerger tes propres usages** au fil de tes questions. Tu pars d'une graine ; tu la
-fais pousser en t'en servant.
+So this repo gives you **the ready-to-use machinery** (the search engine) and **a method** — the
+*use case driven* approach of **Thomas Pierrain** ([his article series](#the-article-series)) — to
+let **your own uses emerge** as you ask questions. You start from a seed; you grow it by using it.
 
-**Chacun a son instance.** Un collègue qui veut le sien **repart du même launcher** et se **génère**
-son propre cerveau. On ne partage pas un second cerveau à plusieurs — on partage le générateur.
+**Everyone has their own instance.** A colleague who wants theirs **starts from the same launcher**
+and **generates** their own brain. You don't share one second brain between several people — you
+share the generator.
 
-C'est aussi pour ça que le `CLAUDE.md` (les règles que Claude suit) est **ta constitution**,
-propre à *tes* usages : l'installateur le **génère** sur mesure pour toi. Le launcher ne contient
-qu'une **amorce** qui signale à Claude qu'il est encore un générateur (et te guide vers
-l'installateur) ; l'installeur **génère ta vraie constitution dans le dossier cerveau** — et ne
-touche **jamais** à l'amorce du launcher (qui reste réutilisable).
+That's also why the `CLAUDE.md` (the rules Claude follows) is **your constitution**, specific to
+*your* uses: the installer **generates** it custom for you. The launcher only contains a **bootstrap
+stub** that signals to Claude that it's still a generator (and guides you to the installer); the
+installer **generates your real constitution in the brain folder** — and **never** touches the
+launcher's bootstrap stub (which stays reusable).
 
-## Sûr par construction : il observe, il répond
+## Safe by construction: it observes, it answers
 
-Ton second cerveau **ne prend aucune action** sur tes outils. Il **lit et il répond**, point. Aucune
-surprise, rien qui parte en ton nom : c'est un choix de conception, et c'est ce qui le rend
-tranquille à adopter.
+Your second brain **takes no action** on your tools. It **reads and it answers**, period. No
+surprises, nothing going out in your name: it's a design choice, and it's what makes it easy to adopt
+with peace of mind.
 
-> Et si un jour tu le veux : en le faisant grandir, on peut lui ajouter des **capacités d'action**
-> (brouillon de mail, page Notion, message Slack à valider…), **délibérément et sous ton contrôle**.
-> Jamais par défaut, jamais dans ton dos.
+> And if one day you want it to: as you grow it, we can add **action capabilities** (a draft email, a
+> Notion page, a Slack message to approve…), **deliberately and under your control**. Never by
+> default, never behind your back.
 
-## Adapte-le à tes cas d'usage
+## Tailor it to your use cases
 
-Un second cerveau ne vaut que **calé sur ton activité** : tes besoins, le type de questions que tu
-poses, le type d'échange que tu veux avoir avec lui. C'est *toi* qui définis ça.
+A second brain is only worth anything **tuned to your activity**: your needs, the kind of questions
+you ask, the kind of exchange you want to have with it. *You're* the one who defines that.
 
-Il **arrive déjà équipé** de quelques **skills prêtes à l'emploi** — par exemple un **coach
-« vénère »** dans l'esprit *Radical Candor* (brutalement honnête **et** bienveillant), qui te
-challenge quand tu as la tête dans le guidon. Mais ce ne sont que des **points de départ** : tout
-l'intérêt, c'est qu'il reste **souple**. Notes en **Markdown ouvert**, skills, constitution
-`CLAUDE.md` — **toute sa structure a été pensée et rangée pour être remodelée** à *tes* usages : tu
-ajoutes, modifies ou retires des skills, tu affines ses règles, au fil de l'eau. Il **grandit avec
-toi** ; il ne te force pas dans un moule.
+It **arrives already equipped** with a few **ready-to-use skills** — for instance an **"in-your-face"
+coach** in the spirit of *Radical Candor* (brutally honest **and** caring), who challenges you when
+you've got your head down in the weeds. But these are only **starting points**: the whole point is
+that it stays **flexible**. Notes in **open Markdown**, skills, the `CLAUDE.md` constitution — **its
+entire structure has been thought out and arranged to be reshaped** to *your* uses: you add, modify or
+remove skills, you refine its rules, as you go. It **grows with you**; it doesn't force you into a
+mold.
 
-**Exemple — pour Thomas Pierrain, *Head of Engineering*** — son second cerveau l'aide à :
+**Example — for Thomas Pierrain, *Head of Engineering*** — his second brain helps him to:
 
-- **suivre ses collaborateurs**, celles et ceux qu'il coache et mentore ;
-- **se faire challenger** quand il a la tête dans le guidon, sur un poste où l'on se sent parfois
-  seul ;
-- **consolider des concepts métier client avancés** (ici comptabilité et fiscalité) ;
-- **distinguer les acronymes** métier des acronymes applicatifs — récupérer vite le sens en pleine
-  réunion, sans interrompre tout le monde ;
-- **cartographier les équipes** : qui porte quel sujet, à tout moment ;
-- **savoir en permanence ce qu'on attend de lui, et ce qu'il attend des autres**.
+- **keep track of his collaborators**, the people he coaches and mentors;
+- **get himself challenged** when he's got his head down in the weeds, in a role where you can
+  sometimes feel alone;
+- **consolidate advanced client business concepts** (here accounting and taxation);
+- **tell business acronyms apart from application acronyms** — quickly recover the meaning mid-meeting,
+  without interrupting everyone;
+- **map out the teams**: who owns which topic, at any moment;
+- **always know what's expected of him, and what he expects from others**.
 
-Rien de tout cela n'est livré : ce sont **ses** spécificités. Le générateur ne cherche pas à les
-répliquer — il te donne le moteur et la méthode pour faire émerger **les tiennes**.
+None of that is shipped: those are **his** specifics. The generator doesn't try to replicate them —
+it gives you the engine and the method to let **your own** emerge.
 
-## La série d'articles
+## The article series
 
-Le « pourquoi » derrière ce repo — à lire dans l'ordre, chaque épisode raconte une étape (et ses
-ratés assumés) :
+The "why" behind this repo — to be read in order, each episode tells one step (and its owned-up
+missteps):
 
 1. [Mon second cerveau a pivoté 2 fois en 3 jours](https://medium.com/@tpierrain/mon-second-cerveau-a-pivot%C3%A9-2-fois-en-3-jours-d846b7b2cbb5)
 2. [J'ai mis un coach vénère dans mon second cerveau](https://medium.com/@tpierrain/jai-mis-un-coach-v%C3%A9n%C3%A9re-dans-mon-second-cerveau-c5593bbfd7d7)
@@ -407,177 +400,175 @@ ratés assumés) :
 
 ---
 
-## Sous le capot
+## Under the hood
 
-*Cette section est pour les curieux et les profils techniques. Tu n'as pas besoin de la lire pour
-utiliser ton second cerveau.*
+*This section is for the curious and the technical. You don't need to read it to use your second
+brain.*
 
-### Le parti-pris : répondre tout de suite, vérifier ensuite
+### The design stance: answer right away, verify afterward
 
-Tout est pensé **expérience d'abord** : tu veux une réponse en quelques secondes à *chaque*
-question — pas attendre qu'un agent ait fini de re-fouiller tous tes outils.
+Everything is designed **experience first**: you want an answer in a few seconds to *every* question
+— not to wait for an agent to finish re-digging through all your tools.
 
-Donc le second cerveau **répond immédiatement** à partir de ce qu'il a déjà en mémoire (le vault),
-par **recherche sémantique** (il retrouve une note même formulée autrement, pas par mots-clés
-exacts). Pendant que tu lis, des agents **re-vérifient en arrière-plan** les sources externes et
-n'**amendent** la réponse que s'il y a du nouveau. C'est le pattern *stale-while-revalidate* du web
-appliqué à ta mémoire : la rapidité prime, la fraîcheur suit.
+So the second brain **answers immediately** from what it already has in memory (the vault), via
+**semantic search** (it finds a note even when phrased differently, not by exact keywords). While
+you're reading, agents **re-verify in the background** the external sources and only **amend** the
+answer if there's something new. It's the *stale-while-revalidate* pattern from the web applied to
+your memory: speed comes first, freshness follows.
 
-À chaque question, le cerveau **se rattrape** : il aspire ce qui s'est passé de nouveau depuis la
-dernière fois (en **mode delta** — uniquement les nouveautés) et persiste tout dans le vault
-Markdown, versionné par git.
+On every question, the brain **catches up**: it pulls in what's happened anew since last time (in
+**delta mode** — only the new bits) and persists everything in the Markdown vault, versioned by git.
 
-### Le flux en 4 phases
+### The 4-phase flow
 
 ```
 Question
    │
-   ▼  PHASE 1 — Réponse immédiate depuis le vault (recherche sémantique)
+   ▼  PHASE 1 — Immediate answer from the vault (semantic search)
    │
-   ├──▶ PHASE 2 — (optionnel) Sync des sources externes en arrière-plan
+   ├──▶ PHASE 2 — (optional) Sync external sources in the background
    │
-   ▼  PHASE 3 — Amender la réponse si du nouveau est trouvé
+   ▼  PHASE 3 — Amend the answer if something new is found
    │
-   ▼  PHASE 4 — Persistance : tout est sauvé dans le vault + commit auto
+   ▼  PHASE 4 — Persistence: everything is saved in the vault + auto-commit
 ```
 
-Le **moteur RAG** découpe chaque note en *chunks* (un par section), les transforme en vecteurs
-(*embeddings*) et retrouve les passages les plus proches du **sens** de ta question. L'index
-se reconstruit seul, incrémentalement ; un hook git **committe** à chaque modification (et **pousse**
-seulement si tu as branché un dépôt distant — *opt-in*).
+The **RAG engine** splits each note into *chunks* (one per section), turns them into vectors
+(*embeddings*) and retrieves the passages closest to the **meaning** of your question. The index
+rebuilds itself, incrementally; a git hook **commits** on every change (and **pushes** only if you've
+wired up a remote repository — *opt-in*).
 
-#### 🍽️ Le RAG à la carte — tu choisis qui vectorise tes notes
+#### 🍽️ The RAG à la carte — you choose who vectorizes your notes
 
-La vectorisation (l'*embedding*) est **le seul moment** où le texte de tes notes peut sortir de ta
-machine — alors on en fait **un choix conscient**, pas un défaut subi. Le **moteur d'embedding**
-(l'*embedder*) est interchangeable : un petit modèle **local** (par défaut), une **clé d'API**
-(Gemini, OpenAI, ou un endpoint compatible — y compris celui de ton entreprise), ou **Ollama** en
-local. Le tableau de décision est plus haut, dans
-[« comment choisir ma recherche sémantique »](#comment-choisir-ma-recherche-sémantique-mon-rag-).
+Vectorization (the *embedding*) is **the only moment** when the text of your notes can leave your
+machine — so we make it **a conscious choice**, not a default you're stuck with. The **embedding
+engine** (the *embedder*) is interchangeable: a small **local** model (by default), an **API key**
+(Gemini, OpenAI, or a compatible endpoint — including your company's), or **Ollama** locally. The
+decision table is higher up, in
+["how do I choose my semantic search"](#how-do-i-choose-my-semantic-search-my-rag).
 
-> 🧠 L'embedder n'est **pas** « ChatGPT chez toi » : c'est juste le bibliothécaire qui range tes
-> notes par sens. **Le cerveau qui raisonne et te répond reste Claude**, quel que soit ton choix.
+> 🧠 The embedder is **not** "ChatGPT at home": it's just the librarian that files your notes by
+> meaning. **The brain that reasons and answers you stays Claude**, whatever your choice.
 
-### Ce qu'il y a dans la boîte
+### What's in the box
 
-| Élément | Rôle | Statut |
+| Element | Role | Status |
 |---|---|---|
-| **`rag/`** | Moteur RAG (serveur MCP TypeScript) : chunking, embeddings **à la carte** (local / clé d'API / Ollama), recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
-| **`vault/`** | Ton contenu Markdown (notes d'exemple fournies) | 🔧 à remplir |
-| **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🌱 amorce dans le launcher → l'installeur en **génère** une version perso **dans le cerveau**, puis à adapter |
-| **`.claude/skills/`** | Skills livrées (voir ci-dessous) + idées d'autres skills | 🔧 à étoffer |
-| **`.claude/settings.json`** | Hooks (auto-commit, statut au démarrage) + permissions | ✅ généré |
-| **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage, commit auto | ✅ prêt |
-| **`installer.mjs`** | Installateur : **crée le dossier cerveau** à partir du launcher (macOS / Linux / Windows) | ✅ |
+| **`rag/`** | RAG engine (TypeScript MCP server): chunking, embeddings **à la carte** (local / API key / Ollama), semantic search, quota guardrails | ✅ ready to use |
+| **`vault/`** | Your Markdown content (example notes included) | 🔧 to fill in |
+| **`CLAUDE.md`** | The rules Claude follows (4-phase flow, conventions, posture) | 🌱 bootstrap stub in the launcher → the installer **generates** a personalized version **in the brain**, then to be tailored |
+| **`.claude/skills/`** | Shipped skills (see below) + ideas for other skills | 🔧 to flesh out |
+| **`.claude/settings.json`** | Hooks (auto-commit, startup status) + permissions | ✅ generated |
+| **`scripts/*.mjs`** | Cross-OS Node hooks: repo + RAG state at startup, auto-commit | ✅ ready |
+| **`installer.mjs`** | Installer: **creates the brain folder** from the launcher (macOS / Linux / Windows) | ✅ |
 
-### Les skills que tu appelles
+### The skills you call
 
-Le générateur reste volontairement **frugal**. Celles que tu invoques au quotidien :
+The generator stays deliberately **frugal**. The ones you invoke day to day:
 
-| Skill | Ce qu'elle fait |
+| Skill | What it does |
 |---|---|
-| **`/coach`** | **Coach « vénère »**, sparring partner branché sur ton vault, esprit *Radical Candor* (bienveillant ET brutalement honnête) : il challenge tes décisions, nomme tes angles morts. *Coaching de soi uniquement.* |
-| **`/prepare-1-1`** | Prépare un 1-1 **dans les deux sens** : avec **ton manager** ou avec quelqu'un que **tu manages** (suivi des engagements, revue de KPI). Croise fiche personne + dernier 1-1 + signaux récents. |
-| **`/improve`** | Fait évoluer ton harnais : lit les frictions, propose et applique les améliorations utiles. |
-| **`/sync`** | Synchronise ton repo entre machines — utile surtout si tu as **plusieurs laptops**. Rarement nécessaire au quotidien. |
+| **`/coach`** | **"In-your-face" coach**, a sparring partner wired to your vault, *Radical Candor* spirit (caring AND brutally honest): it challenges your decisions, names your blind spots. *Self-coaching only.* |
+| **`/prepare-1-1`** | Prepares a 1-1 **both ways**: with **your manager** or with someone **you manage** (tracking commitments, KPI review). Cross-references the person's profile + last 1-1 + recent signals. |
+| **`/improve`** | Evolves your harness: reads the frictions, proposes and applies the useful improvements. |
+| **`/sync`** | Syncs your repo between machines — useful mostly if you have **several laptops**. Rarely needed day to day. |
 
-### L'outillage interne (tu ne l'appelles pas)
+### The internal tooling (you don't call it)
 
-Ces éléments font partie de la mécanique : tu n'as pas à les connaître. C'est juste bon de savoir
-qu'ils existent.
+These elements are part of the machinery: you don't have to know them. It's just good to know they
+exist.
 
-| Élément | Rôle | Qui le déclenche |
+| Element | Role | What triggers it |
 |---|---|---|
-| **`sync-sources`** | Aspire le **delta** des sources externes en sous-agents parallèles **lecture seule** — le moteur de la Phase 2. 🔧 à câbler sur tes connecteurs. | **tes questions** (jamais toi) |
-| **hook auto-commit** | **Committe** ton vault à chaque modification (et le **pousse** si tu as activé un dépôt distant — *opt-in*, off par défaut). C'est ce qui fait qu'un profil **non-technique n'a jamais à connaître git** — tout est versionné tout seul en local, rien ne se perd ; branche un dépôt distant et tu changes de laptop sans y penser. | automatique |
-| **`tdd-discipline`** | Discipline TDD vendorée — sert à développer *le harnais lui-même*. | Claude, quand on modifie le harnais |
+| **`sync-sources`** | Pulls the **delta** of external sources in parallel **read-only** sub-agents — the engine behind Phase 2. 🔧 to wire to your connectors. | **your questions** (never you) |
+| **auto-commit hook** | **Commits** your vault on every change (and **pushes** it if you've enabled a remote repository — *opt-in*, off by default). This is what means a **non-technical** profile **never has to know git** — everything is versioned on its own, locally, nothing gets lost; wire up a remote repository and you switch laptops without a thought. | automatic |
+| **`tdd-discipline`** | Vendored TDD discipline — used to develop *the harness itself*. | Claude, when modifying the harness |
 
-Le reste n'est **pas livré** : ce sont des **idées de skills** à faire émerger selon tes besoins,
-détaillées dans [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). Par exemple :
-`briefing-journee` (briefing du matin), `briefing` (synthèse après une absence), `prepare-meeting`,
-`rapport-etonnement`, `weekly-review`.
+The rest is **not shipped**: those are **skill ideas** to let emerge as you need them, detailed in
+[`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). For example: `briefing-journee` (morning
+briefing), `briefing` (recap after an absence), `prepare-meeting`, `rapport-etonnement`,
+`weekly-review`.
 
-> **Skill ≠ connecteur.** Slack, Drive, Notion, Calendar sont des **connecteurs** (sources de
-> données), pas des skills. Tu les branches à l'installeur ([SETUP §6](SETUP.md)). Une *skill* est
-> une procédure qui exploite ces sources — à toi de l'écrire.
+> **Skill ≠ connector.** Slack, Drive, Notion, Calendar are **connectors** (data sources), not
+> skills. You wire them up in the installer ([SETUP §6](SETUP.md)). A *skill* is a procedure that
+> leverages these sources — it's up to you to write it.
 
-### Le vocabulaire en 30 secondes
+### The vocabulary in 30 seconds
 
 <details>
-<summary>Déplier le mini-glossaire</summary>
+<summary>Unfold the mini-glossary</summary>
 
-- **Vault** — le dossier où vivent tes notes (en Markdown).
-- **RAG / recherche sémantique** — la techno qui retrouve une note par le *sens* de ta question,
-  pas par mots-clés exacts.
-- **Embeddings** — la traduction d'un texte en chiffres, pour comparer les *sens* entre eux.
-- **Skill** — une procédure que tu déclenches (ex. « prépare mon 1-1 »).
-- **Connecteur** — un branchement vers une de tes sources (Slack, Drive, Notion…). Deux formes :
-  **natif** (activé dans les réglages de ton compte Claude) ou **MCP** (un serveur déclaré dans `.mcp.json`).
-- **Harnais** — l'ensemble des règles (`CLAUDE.md`) + skills que tu personnalises.
-- **Hook** — une action automatique déclenchée par un événement (ex. sauvegarder à chaque modif).
-- **Installeur** — le programme qui prépare tout pour toi.
-- **Repo / git** — l'endroit versionné où tout est stocké et sauvegardé.
+- **Vault** — the folder where your notes live (in Markdown).
+- **RAG / semantic search** — the tech that finds a note by the *meaning* of your question, not by
+  exact keywords.
+- **Embeddings** — the translation of a text into numbers, to compare *meanings* with each other.
+- **Skill** — a procedure you trigger (e.g. "prepare my 1-1").
+- **Connector** — a hookup to one of your sources (Slack, Drive, Notion…). Two forms: **native**
+  (enabled in your Claude account settings) or **MCP** (a server declared in `.mcp.json`).
+- **Harness** — the set of rules (`CLAUDE.md`) + skills that you personalize.
+- **Hook** — an automatic action triggered by an event (e.g. save on every change).
+- **Installer** — the program that sets everything up for you.
+- **Repo / git** — the versioned place where everything is stored and backed up.
 
 </details>
 
 ---
 
-## Brancher tes sources (connecteurs)
+## Wiring up your sources (connectors)
 
-Le moteur RAG répond depuis **tes notes**. Pour qu'il puisse aussi aller chercher dans tes **autres
-sources** (mail, agenda, Notion, fichiers, chat…), tu branches des **connecteurs**.
+The RAG engine answers from **your notes**. For it to also be able to search your **other sources**
+(email, calendar, Notion, files, chat…), you wire up **connectors**.
 
-**Deux façons de brancher une source — c'est ce que veut dire « natif » vs « MCP » :**
+**Two ways to wire up a source — that's what "native" vs "MCP" means:**
 
-- **Connecteur _natif_ (claude.ai)** — une intégration **fournie et hébergée par Claude**, que tu
-  actives en quelques clics dans **les réglages de ton compte Claude** (*Settings → Connectors*).
-  **Rien à installer ni configurer** dans ton cerveau. Le plus simple — c'est le cas de Gmail,
-  Google Calendar, Slack, Google Drive, Notion.
-- **Serveur _MCP_ (communautaire)** — un petit programme (souvent un paquet `npm`) que **tu déclares
-  toi-même** dans le fichier `.mcp.json` de ton cerveau, avec tes identifiants. Plus de choix et de
-  contrôle, mais un peu plus de configuration. Le wizard de l'installeur peut l'ajouter pour toi.
+- **_Native_ connector (claude.ai)** — an integration **provided and hosted by Claude**, that you
+  enable in a few clicks in **your Claude account settings** (*Settings → Connectors*). **Nothing to
+  install or configure** in your brain. The simplest — that's the case for Gmail, Google Calendar,
+  Slack, Google Drive, Notion.
+- **_MCP_ server (community)** — a small program (often an `npm` package) that **you declare
+  yourself** in your brain's `.mcp.json` file, with your credentials. More choice and control, but a
+  bit more configuration. The installer's wizard can add it for you.
 
-> 👉 Quand une source existe **dans les deux formes** (Notion, Drive…), commence par le **natif** :
-> moins de friction. Passe au **MCP** si tu veux une variante précise ou un outil sans connecteur natif.
+> 👉 When a source exists in **both forms** (Notion, Drive…), start with the **native** one: less
+> friction. Move to **MCP** if you want a specific variant or a tool with no native connector.
 
-Quelques idées pour démarrer — *à toi de choisir selon tes outils* :
+A few ideas to get started — *up to you to choose according to your tools*:
 
-| Tu veux interroger… | Tu peux par exemple brancher… | Type |
+| You want to query… | You could for example wire up… | Type |
 |---|---|---|
-| Tes **notes / wikis** Notion | le serveur MCP Notion `@notionhq/notion-mcp-server`, ou le connecteur Notion **natif** | natif **ou** MCP |
-| Tes **mails** | le connecteur **Gmail** **natif** | natif (claude.ai) |
-| Ton **agenda** | le connecteur **Google Calendar** **natif** | natif (claude.ai) |
-| Tes **fichiers / documents** | un serveur MCP Google Drive (`@modelcontextprotocol/server-gdrive`, `@isaacphi/mcp-gdrive`…), ou le connecteur Drive **natif** | natif **ou** MCP |
-| Ton **chat d'équipe** | le connecteur **Slack** **natif** | natif (claude.ai) |
-| Les **transcripts de tes réunions** (Meet) | le **Calendar** *et* le **Drive** — voir ci-dessous | natif + MCP |
+| Your Notion **notes / wikis** | the Notion MCP server `@notionhq/notion-mcp-server`, or the **native** Notion connector | native **or** MCP |
+| Your **emails** | the **native** **Gmail** connector | native (claude.ai) |
+| Your **calendar** | the **native** **Google Calendar** connector | native (claude.ai) |
+| Your **files / documents** | a Google Drive MCP server (`@modelcontextprotocol/server-gdrive`, `@isaacphi/mcp-gdrive`…), or the **native** Drive connector | native **or** MCP |
+| Your **team chat** | the **native** **Slack** connector | native (claude.ai) |
+| Your **meeting transcripts** (Meet) | the **Calendar** *and* the **Drive** — see below | native + MCP |
 
-> 🎙️ **Les transcripts de réunion ne sont pas un connecteur à part.** Quand tu enregistres une
-> visio (Google Meet / Gemini), le lien de la transcription se retrouve souvent dans
-> l'**invitation de l'événement** (→ via le **Calendar**) et le document de transcription atterrit
-> sur ton **Google Drive** (→ via le **Drive**). Tu les attrapes donc en branchant **ces deux
-> connecteurs**, pas un outil de meeting-bot tiers.
+> 🎙️ **Meeting transcripts aren't a separate connector.** When you record a video call (Google Meet /
+> Gemini), the transcription link often ends up in the **event invitation** (→ via the **Calendar**)
+> and the transcription document lands on your **Google Drive** (→ via the **Drive**). So you catch
+> them by wiring up **those two connectors**, not a third-party meeting-bot tool.
 
-Le **wizard de l'installeur** (étape 5/9) te propose de brancher tout ça en te montrant, pour chaque
-source, *à quoi elle sert*. Le menu complet et le détail des credentials sont dans
-[**CONNECTORS.md**](CONNECTORS.md) et [SETUP §6](SETUP.md).
+The **installer's wizard** (step 5/9) offers to wire all this up by showing you, for each source,
+*what it's for*. The full menu and the credential details are in [**CONNECTORS.md**](CONNECTORS.md)
+and [SETUP §6](SETUP.md).
 
-## Et après ?
+## What's next?
 
-La graine te donne le **moteur** et un **squelette de harnais** ; *ton* second cerveau, tu le fais
-pousser en l'utilisant — tes notes, tes règles, tes skills. Pour aller plus loin :
-[`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md) (idées de skills) et
-[SETUP.md](SETUP.md) (connecteurs, troubleshooting, détails du RAG).
+The seed gives you the **engine** and a **harness skeleton**; *your* second brain, you grow it by
+using it — your notes, your rules, your skills. To go further:
+[`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md) (skill ideas) and
+[SETUP.md](SETUP.md) (connectors, troubleshooting, RAG details).
 
-## À propos
+## About
 
-Par **Thomas Pierrain** — retrouve la série « second cerveau » et ses autres écrits sur
+By **Thomas Pierrain** — find the "second brain" series and his other writings on
 [medium.com/@tpierrain](https://medium.com/@tpierrain).
 
-## Licence
+## License
 
 [Apache License 2.0](LICENSE) — Copyright 2026 Thomas Pierrain.
 
-Tu peux l'utiliser, le modifier et le redistribuer librement, **y compris à titre commercial**, à
-condition de **conserver l'attribution** : garde la mention de copyright, le fichier [`LICENSE`](LICENSE)
-et le contenu du fichier [`NOTICE`](NOTICE) dans toute copie ou œuvre dérivée, et signale les
-fichiers que tu as modifiés. La licence inclut aussi une concession de brevets.
+You can use, modify and redistribute it freely, **including commercially**, provided you **keep the
+attribution**: keep the copyright notice, the [`LICENSE`](LICENSE) file and the contents of the
+[`NOTICE`](NOTICE) file in any copy or derivative work, and flag the files you've modified. The
+license also includes a grant of patents.

@@ -2,29 +2,29 @@ import { watch, type FSWatcher } from "chokidar";
 import { VAULT_DIR } from "./config.js";
 
 export interface VaultWatcherOptions {
-  /** Appelé à chaque écriture détectée, avec le chemin du fichier concerné. */
+  /** Called on every detected write, with the path of the affected file. */
   onChange: (path: string) => void;
-  /** Répertoire surveillé (défaut : VAULT_DIR). */
+  /** Watched directory (default: VAULT_DIR). */
   vaultDir?: string;
 }
 
 /**
- * Segments jamais surveillés. `vault/` ne contient ni `.git`, ni `node_modules`,
- * ni `.cache` (le cache RAG vit dans `rag/.cache`, hors vault) → la garde
- * anti-boucle est déjà acquise par le périmètre, mais on l'explicite par sécurité.
+ * Segments never watched. `vault/` contains neither `.git`, nor `node_modules`,
+ * nor `.cache` (the RAG cache lives in `rag/.cache`, outside the vault) → the
+ * anti-loop guard is already ensured by the scope, but we make it explicit for safety.
  */
 const IGNORED_SEGMENTS = [".cache", ".git", "node_modules"];
 
 /**
- * Fine couche d'I/O : un watcher filesystem (chokidar) sur le vault qui notifie à
- * chaque écriture. Toute la logique de debounce/coalescing vit dans
- * `ReindexScheduler` (testée à part) — ici on se contente de relayer l'évènement.
- * Non testé unitairement : pur glue d'I/O au-dessus de chokidar.
+ * Thin I/O layer: a filesystem watcher (chokidar) on the vault that notifies on
+ * every write. All the debounce/coalescing logic lives in `ReindexScheduler`
+ * (tested separately) — here we just relay the event. Not unit-tested: pure I/O
+ * glue on top of chokidar.
  */
 export function startVaultWatcher(opts: VaultWatcherOptions): FSWatcher {
   const dir = opts.vaultDir ?? VAULT_DIR;
   const watcher = watch(dir, {
-    // Le reindex de démarrage couvre déjà l'existant → on ne réagit qu'aux écritures.
+    // The startup reindex already covers existing files → we only react to writes.
     ignoreInitial: true,
     ignored: (p: string) =>
       IGNORED_SEGMENTS.some(

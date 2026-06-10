@@ -1,143 +1,143 @@
-# DEVELOPING — contexte pour bosser sur le générateur lui-même
+# DEVELOPING — context for working on the generator itself
 
-> Ce fichier s'adresse à **celui qui développe le template** (toi + Claude), pas à
-> l'utilisateur final. Lis-le en début de session de dev pour avoir le contexte.
+> This file is for **whoever develops the template** (you + Claude), not the end
+> user. Read it at the start of a dev session to get the context.
 
-## Objectif du projet
+## Project goal
 
-`second-brain-generator` est un **template installable** d'un second cerveau : un vault
-Markdown versionné qu'un agent Claude Code interroge en langage naturel via un moteur RAG.
-Extrait d'un second cerveau personnel pour être réutilisable par n'importe qui.
+`second-brain-generator` is an **installable template** for a second brain: a versioned
+Markdown vault that a Claude Code agent queries in natural language via a RAG engine.
+Extracted from a personal second brain to be reusable by anyone.
 
-**Principe directeur** : livrer un *générateur*, pas un cerveau tout fait. Le moteur est prêt ;
-le harnais est un template que l'utilisateur adapte. Rester **générique et neutre** — aucune
-donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
+**Guiding principle**: ship a *generator*, not a ready-made brain. The engine is ready;
+the harness is a template the user adapts. Stay **generic and neutral** — no personal
+data, no company name, no real person's name.
 
-## Architecture en 3 couches
+## 3-layer architecture
 
-- 🟢 **Moteur** (`rag/`) — MCP server TypeScript : chunking, embeddings **à la carte** (in-process / clé / Ollama), recherche
-  sémantique, garde-fous quota, lock single-writer. Générique. Tests : `cd rag && npm test`
-  (doit rester vert), typecheck : `cd rag && npx tsc --noEmit`.
-- 🟡 **Harnais** — fichiers `*.template` (`CLAUDE.md.template`, `.mcp.json.template`,
-  `.claude/settings.json.template`) + skills génériques (`sync`, `improve`) +
-  `.claude/skills/EXAMPLES.md`. L'installeur génère les fichiers réels à partir des templates.
-- 🟢 **Onboarding** — `installer.mjs` (installateur foolproof, Node pur → multi-OS), `vault/`
-  d'exemple, `README.md`, `SETUP.md`. Les hooks (`scripts/session-status.mjs`,
-  `scripts/auto-commit.mjs`) sont aussi en Node → pas de dépendance bash/jq/sqlite3, marche sur
+- 🟢 **Engine** (`rag/`) — TypeScript MCP server: chunking, **à la carte** embeddings (in-process / key / Ollama), semantic
+  search, quota guardrails, single-writer lock. Generic. Tests: `cd rag && npm test`
+  (must stay green), typecheck: `cd rag && npx tsc --noEmit`.
+- 🟡 **Harness** — `*.template` files (`CLAUDE.md.template`, `.mcp.json.template`,
+  `.claude/settings.json.template`) + generic skills (`sync`, `improve`) +
+  `.claude/skills/EXAMPLES.md`. The installer generates the real files from the templates.
+- 🟢 **Onboarding** — `installer.mjs` (foolproof installer, pure Node → multi-OS), example
+  `vault/`, `README.md`, `SETUP.md`. The hooks (`scripts/session-status.mjs`,
+  `scripts/auto-commit.mjs`) are also in Node → no bash/jq/sqlite3 dependency, works on
   macOS / Linux / Windows.
 
-> 📁 **`maintainers/`** — contexte de dev versionné (décisions/ADR, plans), **synchronisé entre
-> les machines du mainteneur** mais **jamais livré** à l'utilisateur (exclu de la copie d'install
-> via `filterCopyable`, non auto-chargé par Claude). Voir [`maintainers/README.md`](maintainers/README.md).
-> C'est là que vit l'historique de décision — ce dossier remplace l'ancienne « mémoire » Claude,
-> qui n'était pas portable entre laptops.
+> 📁 **`maintainers/`** — versioned dev context (decisions/ADRs, plans), **synced across
+> the maintainer's machines** but **never shipped** to the user (excluded from the install copy
+> via `filterCopyable`, not auto-loaded by Claude). See [`maintainers/README.md`](maintainers/README.md).
+> This is where the decision history lives — this folder replaces the old Claude "memory",
+> which wasn't portable between laptops.
 
-### Note de design — onboarding piloté par Claude
+### Design note — Claude-driven onboarding
 
-Deux chemins d'install coexistent (README « Option A / B ») : **manuel** (`node installer.mjs`
-interactif) et **assisté par Claude** (une instruction en langage naturel). Le principe directeur
-du chemin assisté est le **déterminisme** : tout ce qui est mécanique + critique + répétable reste
-**dans le script** (génération, `git init`, install RAG, smoke-test auto-jugé) ; **Claude n'est
-qu'un emballage conversationnel** — il récolte les réponses en chat, appelle **une seule commande**
-`--non-interactive`, relaie le verdict du script, puis gère les 3 consignes finales (clé `.env`,
-dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à Claude. L'amorce
-`CLAUDE.md` (marqueur `installer-stub`) porte ce runbook ; `scripts/lib/installer-args.mjs`
-(`parseAnswers`, `resolveTargetDir`) et `scripts/lib/tracked-files.mjs` (`parseLsFilesZ`,
-`filterCopyable`) en sont les briques pures testées.
+Two install paths coexist (README "Option A / B"): **manual** (`node installer.mjs`
+interactive) and **Claude-assisted** (a single natural-language instruction). The guiding
+principle of the assisted path is **determinism**: everything mechanical + critical + repeatable stays
+**in the script** (generation, `git init`, RAG install, self-judged smoke test); **Claude is
+just a conversational wrapper** — it gathers the answers in chat, calls **a single command**
+`--non-interactive`, relays the script's verdict, then handles the 3 final instructions (`.env` key,
+remote repo, restart). We do **not** hand off the install sequence to Claude. The `CLAUDE.md`
+bootstrap stub (marker `installer-stub`) carries that runbook; `scripts/lib/installer-args.mjs`
+(`parseAnswers`, `resolveTargetDir`) and `scripts/lib/tracked-files.mjs` (`parseLsFilesZ`,
+`filterCopyable`) are its pure, tested building blocks.
 
-### Note de design — hooks via `run-node.*` (PATH minimal de l'app desktop)
+### Design note — hooks via `run-node.*` (the desktop app's minimal PATH)
 
-L'onglet Code de Claude Desktop lance les **hooks** (et les serveurs MCP) dans un shell
-**non-interactif à PATH minimal** — mesuré sur un Mac nu : `PATH=/usr/local/bin`, sans les shims
-`nvm`/`asdf` ni `/opt/homebrew/bin`. Si `node` a été installé via **nvm** ou Homebrew, il est alors
-**introuvable** : un hook qui appelle `node …` en direct **échoue EN SILENCE**. Le plus grave —
-l'**auto-commit** ne tourne jamais → les notes s'écrivent sur disque mais ne sont jamais versionnées
-(la promesse centrale, cassée sans bruit). C'est l'anti-pattern « échec silencieux » que le projet
-combat.
+Claude Desktop's Code tab launches the **hooks** (and MCP servers) in a
+**non-interactive, minimal-PATH shell** — measured on a bare Mac: `PATH=/usr/local/bin`, without the
+`nvm`/`asdf` shims or `/opt/homebrew/bin`. If `node` was installed via **nvm** or Homebrew, it is then
+**unreachable**: a hook that calls `node …` directly **fails SILENTLY**. The worst part —
+the **auto-commit** never runs → notes get written to disk but are never versioned
+(the central promise, broken without a sound). This is the "silent failure" anti-pattern the project
+fights.
 
-**Fix.** Les 3 commandes de hook de `.claude/settings.json.template` passent par `{{NODE}}` (résolu
-par l'installeur selon l'OS) au lieu de `node` en direct → un lanceur **self-heal** `scripts/run-node.*`
-qui rejoue le même prepend PATH éprouvé que le serveur RAG (`scripts/lib/rag-launcher.mjs`,
-`buildNodeRunnerSh/Cmd`), puis `exec node "$@"`. Portable, **aucun chemin machine baké** (on ne
-prepende que les dossiers existants, glob nvm inclus). L'installeur **smoke-teste** `run-node` à
-l'install (`-e "process.exit(0)"`) : un échec = **install bruyante** (sortie non-zéro), pas un warning.
-En complément, `scripts/session-status.mjs` **crie au démarrage** (via `scripts/lib/repo-status.mjs`)
-si des notes du vault sont restées **non committées** — transformant un futur échec d'auto-commit en
-alerte visible plutôt qu'en silence.
+**Fix.** The 3 hook commands in `.claude/settings.json.template` go through `{{NODE}}` (resolved
+by the installer per OS) instead of `node` directly → a **self-heal** launcher `scripts/run-node.*`
+that replays the same proven PATH prepend as the RAG server (`scripts/lib/rag-launcher.mjs`,
+`buildNodeRunnerSh/Cmd`), then `exec node "$@"`. Portable, **no machine path baked in** (we only
+prepend the existing folders, nvm glob included). The installer **smoke-tests** `run-node` at
+install time (`-e "process.exit(0)"`): a failure = **loud install** (non-zero exit), not a warning.
+On top of that, `scripts/session-status.mjs` **shouts at startup** (via `scripts/lib/repo-status.mjs`)
+if any vault notes were left **uncommitted** — turning a future auto-commit failure into a visible
+alert rather than silence.
 
-**Smoke-test en PATH appauvri (preuve réelle, pas faux positif).** Le smoke-test ne lance plus
-`run-node` avec le PATH riche du shell d'install (où `node` est toujours trouvable → il ne testait
-en fait que « node existe quelque part ? »). Il passe désormais par `minimalPathEnv(platform, env)`
-(`scripts/lib/rag-launcher.mjs`) qui **neutralise le PATH** (posix : `""` ; Windows : juste
-`System32` pour garder `cmd.exe`) tout en préservant `HOME`/`LOCALAPPDATA`/etc. dont le self-heal a
-besoin. On prouve ainsi, **à l'install et en conditions réelles d'app desktop**, que le wrapper SEUL
-retrouve node — et un gestionnaire **non couvert** échoue **bruyamment et tôt** (message actionnable
-listant les emplacements pris en charge) plutôt qu'en silence au runtime. La **couverture** du
-self-heal est une **liste curée** (POSIX : `/usr/bin`, `/usr/local/bin`, `/opt/homebrew/bin`, asdf,
-nvm, volta, nodenv, fnm Linux+macOS ; Windows : nodejs, npm, Volta, `NVM_SYMLINK`) — pas une
-énumération exhaustive : le smoke-test appauvri est le **filet** pour tout le reste.
+**Smoke test under an impoverished PATH (real proof, not a false positive).** The smoke test no longer runs
+`run-node` with the install shell's rich PATH (where `node` is always reachable → it was in fact
+only testing "does node exist somewhere?"). It now goes through `minimalPathEnv(platform, env)`
+(`scripts/lib/rag-launcher.mjs`), which **neutralizes the PATH** (posix: `""`; Windows: just
+`System32` to keep `cmd.exe`) while preserving `HOME`/`LOCALAPPDATA`/etc. that the self-heal
+needs. We thus prove, **at install time and under real desktop-app conditions**, that the wrapper ALONE
+finds node — and an **uncovered** manager fails **loudly and early** (an actionable message
+listing the supported locations) rather than silently at runtime. The self-heal's **coverage**
+is a **curated list** (POSIX: `/usr/bin`, `/usr/local/bin`, `/opt/homebrew/bin`, asdf,
+nvm, volta, nodenv, fnm Linux+macOS; Windows: nodejs, npm, Volta, `NVM_SYMLINK`) — not an
+exhaustive enumeration: the impoverished smoke test is the **safety net** for everything else.
 
-## Règles de dev
+## Dev rules
 
-1. **Commits manuels.** Pas de hook auto-commit dans ce repo (il n'existe que dans
-   `.claude/settings.json.template`, généré côté utilisateur). Après une avancée :
+1. **Manual commits.** No auto-commit hook in this repo (it only exists in
+   `.claude/settings.json.template`, generated on the user's side). After progress:
    `git add -A && git commit -m "..." && git push`.
-2. **Neutralité.** Avant tout commit, vérifier l'absence de fuite :
-   `grep -rniE "<noms/entreprises à exclure>" .` doit sortir vide. Pas de chemin absolu en dur
-   (sauf placeholders `{{PROJECT_ROOT}}` dans les templates).
-   **Exception assumée — Thomas Pierrain (`tpierrain`) lui-même.** La règle interdit les noms de
-   **tiers** (collègues, clients, employeurs), mais **pas** le propriétaire du repo et auteur de
-   la méthode : ce repo public sert aussi de **personal branding**. Citer « Thomas Pierrain » /
-   `@tpierrain` et ses articles Medium (série « second cerveau ») est **voulu**, pas une fuite —
-   ne pas les générifier ni les retirer (README en particulier).
-3. **Fichiers générés non versionnés.** `.mcp.json`, `.claude/settings.json`, `.env`,
-   `rag/.cache/`, `node_modules/` sont gitignorés. Ne pas les committer.
-   **Exception — le `CLAUDE.md` « amorce ».** Un `CLAUDE.md` **est** livré à la racine, mais c'est
-   une **amorce de pré-installation** : elle porte le marqueur `<!-- second-brain-generator:installer-stub -->`
-   et signale à Claude que le repo n'est pas encore installé (→ guide l'utilisateur vers
-   `node installer.mjs`). L'installeur la **remplace** par le vrai `CLAUDE.md` personnalisé : la
-   détection est dans `scripts/lib/claude-md.mjs` (`isInstallerStub`), branchée sur `gen()` dans
-   `installer.mjs`. Un `CLAUDE.md` **sans** ce marqueur (= vraie constitution utilisateur) est
-   toujours **préservé**. Donc : **ne supprime pas** cette amorce, et n'y touche que via le marqueur.
-4. **Tester l'installeur dans une copie jetable** (jamais en place), pour ne pas polluer le
-   template avec des fichiers générés / `node_modules` :
+2. **Neutrality.** Before any commit, check for leaks:
+   `grep -rniE "<names/companies to exclude>" .` must come up empty. No hardcoded absolute path
+   (except `{{PROJECT_ROOT}}` placeholders in the templates).
+   **Deliberate exception — Thomas Pierrain (`tpierrain`) himself.** The rule forbids
+   **third-party** names (colleagues, clients, employers), but **not** the repo owner and author of
+   the method: this public repo also serves as **personal branding**. Citing "Thomas Pierrain" /
+   `@tpierrain` and his Medium articles ("second brain" series) is **intended**, not a leak —
+   do not genericize or remove them (the README in particular).
+3. **Generated files not versioned.** `.mcp.json`, `.claude/settings.json`, `.env`,
+   `rag/.cache/`, `node_modules/` are gitignored. Do not commit them.
+   **Exception — the "bootstrap stub" `CLAUDE.md`.** A `CLAUDE.md` **is** shipped at the root, but it's
+   a **pre-install bootstrap stub**: it carries the marker `<!-- second-brain-generator:installer-stub -->`
+   and signals to Claude that the repo isn't installed yet (→ guides the user toward
+   `node installer.mjs`). The installer **replaces** it with the real personalized `CLAUDE.md`: the
+   detection is in `scripts/lib/claude-md.mjs` (`isInstallerStub`), wired into `gen()` in
+   `installer.mjs`. A `CLAUDE.md` **without** that marker (= a real user constitution) is
+   always **preserved**. So: **do not delete** this stub, and only touch it via the marker.
+4. **Test the installer in a throwaway copy** (never in place), so as not to pollute the
+   template with generated files / `node_modules`:
    ```bash
-   # stdin non-TTY → l'installeur part en mode non-interactif (valeurs par défaut)
+   # non-TTY stdin → the installer goes into non-interactive mode (default values)
    cp -R . /tmp/sbg-test && cd /tmp/sbg-test && node installer.mjs < /dev/null
    ```
-5. **Garder le moteur synchronisable** avec le second cerveau source : `rag/` est resté quasi
-   identique à l'original → les correctifs peuvent être rapatriés dans un sens ou l'autre.
-6. **TDD strict sur tout le code — moteur ET harnais.** Discipline détaillée et actionnable
-   dans la skill **`tdd-discipline`** (`.claude/skills/tdd-discipline/`, chargée dès qu'on écrit
-   du code) : baby-steps, fail-first, triangulation, refactor obligatoire. Elle s'applique à
-   **toute la logique du repo**, pas seulement au moteur :
-   - **Moteur RAG** (`rag/`) : tests `rag/src/lib/*.test.ts`, suite verte `cd rag && npm test`
+5. **Keep the engine syncable** with the source second brain: `rag/` has stayed nearly
+   identical to the original → fixes can be ported back and forth either way.
+6. **Strict TDD on all code — engine AND harness.** Detailed, actionable discipline
+   in the **`tdd-discipline`** skill (`.claude/skills/tdd-discipline/`, loaded as soon as you write
+   code): baby-steps, fail-first, triangulation, mandatory refactor. It applies to
+   **all the repo's logic**, not just the engine:
+   - **RAG engine** (`rag/`): tests `rag/src/lib/*.test.ts`, green suite `cd rag && npm test`
      + typecheck `cd rag && npx tsc --noEmit`.
-   - **Harnais / installeur** (`installer.mjs`, `scripts/lib/*.mjs`) : tests
-     `scripts/lib/*.test.mjs`, suite verte `node --test scripts/lib/*.test.mjs`.
+   - **Harness / installer** (`installer.mjs`, `scripts/lib/*.mjs`): tests
+     `scripts/lib/*.test.mjs`, green suite `node --test scripts/lib/*.test.mjs`.
 
-   Chaque évolution se fait en **red → green → refactor** : écrire d'abord le test qui échoue,
-   le voir rouge pour la bonne raison, puis le minimum de code pour le verdir, puis refactor à
-   vert. Exception assumée et **signalée explicitement** : le purement mécanique/non testable
-   unitairement (renommage, message, config triviale, intégration réseau Gemini) — pas de test
-   artificiel juste pour la forme.
+   Every change goes **red → green → refactor**: write the failing test first,
+   see it red for the right reason, then the minimum code to make it green, then refactor while
+   green. Deliberate and **explicitly flagged** exception: the purely mechanical / not unit-testable
+   (renaming, a message, trivial config, the Gemini network integration) — no artificial test
+   just for form's sake.
 
-## Pistes d'amélioration (backlog informel)
+## Improvement ideas (informal backlog)
 
-- ~~Connecteurs externes optionnels (Slack/Drive/Notion)~~ ✅ livré : wizard guidé à l'étape
-  5/8 de l'installeur (catalogue `scripts/lib/connectors-catalog.mjs` + merge idempotent
-  `connectors-merge.mjs`/`connectors-apply.mjs`), doc `SETUP.md §6`. Suite : enrichir le
-  catalogue (plus de connecteurs MCP communautaires) au fil des besoins.
-- ~~Embedder local (mode 100 % privé)~~ ✅ livré (D1, ADR 0007) : choix d'embedder à l'install
-  (tout-local in-process **EmbeddingGemma** / clé d'API / Ollama) via `EMBEDDING_PROVIDER`
-  (`rag/src/lib/config.ts` + adaptateurs `in-process-embedder.ts` / `openai-compatible-embedder.ts`),
-  reco adaptative selon la machine (`scripts/lib/embedder-choice.mjs`, seuil 12 Go). Rien ne sort en
-  tout-local/Ollama. Suite **non livrée** : profil « grosse machine » (reranker, GraphRAG — ADR 0008).
-- ~~Installeur : option `--non-interactive`~~ ✅ livré : `parseAnswers` (`scripts/lib/installer-args.mjs`)
-  → flags `--name/--owner/--lang` (+ env `SB_*`, précédence flag > env > défaut),
-  `--non-interactive`/`--yes`/`--no-input` ; **jamais la clé Gemini** (différée en `.env`).
-  L'installeur CRÉE le dossier cerveau (TARGET, cf. `resolveTargetDir`/`--dest`) et y fait un `git init`
-  trivial (dossier neuf, 0 remote). Doc : `SETUP.md §2`. Suite : variante avec fichier de réponses
-  si besoin CI / re-provisioning.
-- Internationalisation : les templates sont en français. Prévoir une variante EN ?
-- Skills d'exemple réellement fonctionnels (un `prepare-meeting` générique branché Calendar).
+- ~~Optional external connectors (Slack/Drive/Notion)~~ ✅ shipped: guided wizard at step
+  5/8 of the installer (catalog `scripts/lib/connectors-catalog.mjs` + idempotent merge
+  `connectors-merge.mjs`/`connectors-apply.mjs`), docs `SETUP.md §6`. Next: enrich the
+  catalog (more community MCP connectors) as needed.
+- ~~Local embedder (100% private mode)~~ ✅ shipped (D1, ADR 0007): embedder choice at install
+  (fully-local in-process **EmbeddingGemma** / API key / Ollama) via `EMBEDDING_PROVIDER`
+  (`rag/src/lib/config.ts` + adapters `in-process-embedder.ts` / `openai-compatible-embedder.ts`),
+  adaptive recommendation based on the machine (`scripts/lib/embedder-choice.mjs`, 12 GB threshold). Nothing leaves in
+  fully-local/Ollama mode. **Not yet shipped** next step: a "big machine" profile (reranker, GraphRAG — ADR 0008).
+- ~~Installer: `--non-interactive` option~~ ✅ shipped: `parseAnswers` (`scripts/lib/installer-args.mjs`)
+  → flags `--name/--owner/--lang` (+ env `SB_*`, precedence flag > env > default),
+  `--non-interactive`/`--yes`/`--no-input`; **never the Gemini key** (deferred to `.env`).
+  The installer CREATES the brain folder (TARGET, cf. `resolveTargetDir`/`--dest`) and does a trivial `git init`
+  in it (fresh folder, 0 remotes). Docs: `SETUP.md §2`. Next: a variant with an answers file
+  if needed for CI / re-provisioning.
+- Internationalization: the templates are in French. Plan an EN variant?
+- Actually functional example skills (a generic `prepare-meeting` wired to Calendar).

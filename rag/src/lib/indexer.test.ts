@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { indexPreparedDocs, type PreparedDoc, type IndexPorts } from "./indexer.js";
 
-// Fabrique un doc préparé minimal avec n chunks.
+// Builds a minimal prepared doc with n chunks.
 function doc(path: string, nChunks: number): PreparedDoc {
   return {
     relativePath: path,
@@ -18,10 +18,10 @@ function doc(path: string, nChunks: number): PreparedDoc {
   };
 }
 
-// Port d'embedding factice : renvoie un vecteur trivial par chunk.
+// Fake embedding port: returns a trivial vector per chunk.
 const fakeEmbed = async (texts: string[]) => texts.map(() => [0.1, 0.2]);
 
-// Port de persistance factice : enregistre l'ordre des docs persistés.
+// Fake persistence port: records the order of persisted docs.
 function recordingPersist() {
   const persisted: string[] = [];
   const persist: IndexPorts["persist"] = (d) => {
@@ -30,7 +30,7 @@ function recordingPersist() {
   return { persisted, persist };
 }
 
-test("indexe tous les docs quand l'embedding réussit", async () => {
+test("indexes all docs when embedding succeeds", async () => {
   const { persisted, persist } = recordingPersist();
   const result = await indexPreparedDocs(
     [doc("a.md", 2), doc("b.md", 3)],
@@ -42,13 +42,13 @@ test("indexe tous les docs quand l'embedding réussit", async () => {
   assert.equal(result.errors.length, 0);
 });
 
-test("s'arrête au doc en échec et préserve les docs déjà persistés", async () => {
+test("stops at the failing doc and preserves the docs already persisted", async () => {
   const { persisted, persist } = recordingPersist();
-  // L'embedding échoue (mur quota) au 3ᵉ doc.
+  // Embedding fails (quota wall) on the 3rd doc.
   let calls = 0;
   const embedFailingOnThird: IndexPorts["embed"] = async (texts) => {
     calls++;
-    if (calls === 3) throw new Error("DailyCapExceededError simulé");
+    if (calls === 3) throw new Error("DailyCapExceededError simulated");
     return texts.map(() => [0.1, 0.2]);
   };
 
@@ -58,14 +58,14 @@ test("s'arrête au doc en échec et préserve les docs déjà persistés", async
   );
 
   assert.equal(result.indexed, 2); // a + b
-  assert.deepEqual(persisted, ["a.md", "b.md"]); // c jamais persisté, d jamais tenté
+  assert.deepEqual(persisted, ["a.md", "b.md"]); // c never persisted, d never attempted
   assert.equal(result.errors.length, 1);
   assert.match(result.errors[0], /c\.md/);
 });
 
-test("saute un doc dont la persistance échoue et continue les suivants", async () => {
-  // Un doc empoisonné (ex. contrainte SQLite FK) ne doit pas geler tout le
-  // rattrapage : on le saute et on continue, contrairement au mur quota.
+test("skips a doc whose persistence fails and continues with the following ones", async () => {
+  // A poisoned doc (e.g. SQLite FK constraint) must not freeze the entire
+  // catch-up: we skip it and continue, unlike the quota wall.
   const persisted: string[] = [];
   const persist: IndexPorts["persist"] = (d) => {
     if (d.relativePath === "b.md") {
@@ -80,12 +80,12 @@ test("saute un doc dont la persistance échoue et continue les suivants", async 
   );
 
   assert.equal(result.indexed, 2); // a + c
-  assert.deepEqual(persisted, ["a.md", "c.md"]); // b sauté, c quand même tenté
+  assert.deepEqual(persisted, ["a.md", "c.md"]); // b skipped, c still attempted
   assert.equal(result.errors.length, 1);
   assert.match(result.errors[0], /b\.md/);
 });
 
-test("appelle onProgress après chaque doc persisté, avec son nombre de chunks", async () => {
+test("calls onProgress after each persisted doc, with its chunk count", async () => {
   const { persist } = recordingPersist();
   const progress: number[] = [];
   const result = await indexPreparedDocs(
@@ -98,13 +98,13 @@ test("appelle onProgress après chaque doc persisté, avec son nombre de chunks"
   assert.deepEqual(progress, [2, 3]);
 });
 
-test("ignore les docs sans chunks (ni persistés ni comptés)", async () => {
+test("ignores docs with no chunks (neither persisted nor counted)", async () => {
   const { persisted, persist } = recordingPersist();
   const result = await indexPreparedDocs(
-    [doc("vide.md", 0), doc("plein.md", 2)],
+    [doc("empty.md", 0), doc("full.md", 2)],
     { embed: fakeEmbed, persist }
   );
 
   assert.equal(result.indexed, 1);
-  assert.deepEqual(persisted, ["plein.md"]);
+  assert.deepEqual(persisted, ["full.md"]);
 });

@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// connectors-merge.mjs — fusions pures et idempotentes pour brancher un connecteur.
-// addServerToMcpJson : injecte un bloc serveur dans .mcp.json.
-// addPermissions     : ajoute des permissions à settings.json sans doublon.
-// Les deux ne mutent PAS leur entrée : elles renvoient une copie.
+// connectors-merge.mjs — pure, idempotent merges for wiring a connector.
+// addServerToMcpJson : injects a server block into .mcp.json.
+// addPermissions     : adds permissions to settings.json without duplicates.
+// Neither MUTATES its input: they return a copy.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function addServerToMcpJson(mcpObj, connector) {

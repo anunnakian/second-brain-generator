@@ -23,9 +23,9 @@ function sha256(content: string): string {
 }
 
 /**
- * Détermine quel mur a coupé l'indexation à partir des messages d'erreur (null = aucun).
- * Le garde-fou LOCAL est prioritaire : il lève AVANT l'appel réseau, donc s'il a tiré,
- * c'est lui qui a coupé en premier (même si un 429 traîne dans une erreur antérieure).
+ * Determines which wall cut off indexing from the error messages (null = none).
+ * The LOCAL guardrail takes priority: it throws BEFORE the network call, so if it fired,
+ * it is the one that cut off first (even if a 429 lingers in an earlier error).
  */
 function classifyWall(errors: string[]): WallReason {
   if (errors.some((e) => e.includes("DailyCapExceededError"))) return "local-cap";
@@ -39,16 +39,16 @@ export interface IndexResult {
   skipped: number;
   removed: number;
   errors: string[];
-  /** true si un autre process tenait déjà le lock → reindex sauté (no-op). */
+  /** true if another process already held the lock → reindex skipped (no-op). */
   skippedLocked?: boolean;
 }
 
 export interface ReindexOptions {
-  /** Verrou single-writer (défaut : lock fichier dans CACHE_DIR). */
+  /** Single-writer lock (default: file lock in CACHE_DIR). */
   lock?: ReindexLock;
-  /** Embedder (port SPI) — injectable pour les tests ; défaut createEmbedder(). */
+  /** Embedder (SPI port) — injectable for tests; default createEmbedder(). */
   embedder?: Embedder;
-  /** Reporter d'avancement (défaut : persistance fichier dans CACHE_DIR). */
+  /** Progress reporter (default: file persistence in CACHE_DIR). */
   reporter?: ReindexReporter;
 }
 
@@ -60,8 +60,8 @@ export async function reindex(
   const embedder = opts.embedder ?? createEmbedder();
   const reporter = opts.reporter ?? new ReindexReporter();
 
-  // Single-writer : si un autre process indexe déjà, on s'efface (no-op) pour ne
-  // pas doubler la consommation de quota. Acquis en tête → ni scan ni DB inutiles.
+  // Single-writer: if another process is already indexing, we step aside (no-op) so as
+  // not to double the quota consumption. Acquired up front → no pointless scan or DB.
   if (!lock.acquire()) {
     return {
       scanned: 0,
@@ -97,8 +97,8 @@ async function runReindex(
   const existingPaths = new Set(files.map((f) => f.relativePath));
   result.removed = removeDeletedDocs(existingPaths);
 
-  // Phase 1 — scan + diff incrémental + chunking (sans réseau). On prépare les
-  // docs à (ré)indexer ; les inchangés (hash identique) sont sautés.
+  // Phase 1 — scan + incremental diff + chunking (no network). We prepare the
+  // docs to (re)index; unchanged ones (identical hash) are skipped.
   const toIndex: PreparedDoc[] = [];
   for (const file of files) {
     try {
@@ -130,15 +130,15 @@ async function runReindex(
     }
   }
 
-  // Phase 2 — embedding + persistance AU FIL DE L'EAU, un doc à la fois.
-  // Chaque doc terminé est sauvé atomiquement ; au mur quota on s'arrête et
-  // tout ce qui est fait est conservé (reprise gratuite au run suivant).
-  // Instrumentée par le reporter (start/tick/finish) pour l'observabilité.
-  // Estampille d'identité : on (ré)pose l'identité de l'embedder courant SEULEMENT
-  // quand l'index la reflète vraiment (force, ou index vierge) — cf. shouldStamp.
-  // En incrémental sur index déjà estampillé, on n'y touche pas (on ne maquille
-  // jamais un index mixte en « frais »). Posé AVANT la phase : même un run coupé
-  // par le mur quota laisse un index cohérent en identité (tout = embedder courant).
+  // Phase 2 — embedding + persistence ON THE FLY, one doc at a time.
+  // Each completed doc is saved atomically; at the quota wall we stop and
+  // everything done so far is kept (free resume on the next run).
+  // Instrumented by the reporter (start/tick/finish) for observability.
+  // Identity stamp: we (re)stamp the current embedder's identity ONLY
+  // when the index truly reflects it (force, or a pristine index) — cf. shouldStamp.
+  // Incrementally on an already-stamped index, we don't touch it (we never
+  // dress up a mixed index as "fresh"). Stamped BEFORE the phase: even a run cut off
+  // by the quota wall leaves an index consistent in identity (everything = current embedder).
   if (shouldStamp(force, currentIndexIdentity())) {
     stampIndexIdentity(embedder.identity);
   }
@@ -173,8 +173,8 @@ async function runReindex(
 }
 
 /**
- * Phase 2 instrumentée : prépare le reporter (start), tick à chaque doc persisté,
- * puis finish (counts + hitCap). Isolée de scan/DB pour être testable.
+ * Instrumented Phase 2: primes the reporter (start), ticks on each persisted doc,
+ * then finishes (counts + hitCap). Isolated from scan/DB to be testable.
  */
 export async function runIndexingPhase(
   toIndex: PreparedDoc[],
@@ -187,10 +187,10 @@ export async function runIndexingPhase(
 
   const result = await indexPreparedDocs(toIndex, ports, (chunks) => reporter.tick(chunks));
 
-  // Un run est « incomplet à reprendre » dès qu'un mur a coupé l'indexation —
-  // peu importe lequel : notre garde-fou LOCAL (DailyCapExceededError) ou le mur
-  // distant GOOGLE (429 RESOURCE_EXHAUSTED). Symétrique → robuste quel que soit
-  // celui des deux qui est le plus bas.
+  // A run is "incomplete, to be resumed" as soon as a wall has cut off indexing —
+  // no matter which one: our LOCAL guardrail (DailyCapExceededError) or the remote
+  // GOOGLE wall (429 RESOURCE_EXHAUSTED). Symmetric → robust regardless of
+  // whichever of the two is the lower.
   const wallReason = classifyWall(result.errors);
   reporter.finish({
     indexed: result.indexed,

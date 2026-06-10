@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// status-line.mjs — produit UNE ligne de statut pour la `statusLine` de Claude
-// Code (cf. .claude/settings.json). Affichage DÉTERMINISTE et PERSISTANT, rendu
-// nativement sur les deux surfaces (terminal CLI ET onglet Code de Claude Desktop)
-// — contrairement au `systemMessage` du hook SessionStart, ignoré par Desktop.
+// status-line.mjs — produces ONE status line for Claude Code's `statusLine`
+// (cf. .claude/settings.json). DETERMINISTIC and PERSISTENT display, rendered
+// natively on both surfaces (CLI terminal AND Claude Desktop's Code tab) —
+// unlike the SessionStart hook's `systemMessage`, ignored by Desktop.
 //
-// Contrat statusLine : lit un JSON de session sur stdin (ignoré ici), écrit UNE
-// ligne sur stdout. Réexécuté en continu → doit rester RAPIDE, LECTURE SEULE et
-// IDEMPOTENT : jamais de `git pull`, jamais d'écriture (ça, c'est le rôle du hook
-// SessionStart, lancé une seule fois au démarrage).
+// statusLine contract: reads a session JSON on stdin (ignored here), writes ONE
+// line to stdout. Re-run continuously → must stay FAST, READ-ONLY and
+// IDEMPOTENT: never a `git pull`, never a write (that's the role of the
+// SessionStart hook, run once at startup).
 //
-// Multi-OS : pur Node, aucune dépendance bash/jq/sqlite3-CLI.
-//   - git via child_process (lecture seule : branche, short SHA, propreté)
-//   - comptage des .md via fs
-//   - lecture de la DB RAG via better-sqlite3 (dans rag/node_modules) ; dégrade
-//     proprement si le module/DB n'est pas chargeable.
+// Cross-OS: pure Node, no bash/jq/sqlite3-CLI dependency.
+//   - git via child_process (read-only: branch, short SHA, cleanliness)
+//   - .md counting via fs
+//   - RAG DB reading via better-sqlite3 (in rag/node_modules); degrades
+//     gracefully if the module/DB is not loadable.
 // ─────────────────────────────────────────────────────────────────────────────
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -29,7 +29,7 @@ const VAULT = join(REPO, "vault");
 const DB_PATH = join(REPO, "rag", ".cache", "vault.db");
 const ENV_PATH = join(REPO, ".env");
 
-// Exécute git en lecture seule et renvoie la sortie (chaîne vide si échec).
+// Runs git read-only and returns the output (empty string on failure).
 function git(args) {
   try {
     return execFileSync("git", args, {
@@ -42,13 +42,13 @@ function git(args) {
   }
 }
 
-// ─── Segment git : branche + short SHA + marqueur « modifs non commitées » ────
+// ─── Git segment: branch + short SHA + "uncommitted changes" marker ──────────
 const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]) || "?";
 const short = git(["rev-parse", "--short", "HEAD"]) || "?";
 const dirty = git(["status", "--porcelain"]).length > 0 ? "*" : "";
 const gitSeg = `⎇ ${branch} ${short}${dirty}`;
 
-// ─── Segment RAG : docCount (db) vs fichiers .md sur disque ───────────────────
+// ─── RAG segment: docCount (db) vs .md files on disk ─────────────────────────
 function countMarkdown(dir) {
   let n = 0;
   let entries;
@@ -75,13 +75,13 @@ if (existsSync(DB_PATH)) {
     docs = db.prepare("SELECT COUNT(*) AS n FROM documents").get().n;
     db.close();
   } catch {
-    docs = null; // dégrade : module absent, DB en cours d'écriture, etc.
+    docs = null; // degrades: module absent, DB being written, etc.
   }
 }
 
 let ragSeg;
 if (scanned === 0) {
-  ragSeg = "🧠 RAG vide";
+  ragSeg = "🧠 RAG empty";
 } else if (docs === null) {
   ragSeg = "🧠 RAG ?";
 } else {
@@ -89,9 +89,9 @@ if (scanned === 0) {
   ragSeg = remaining <= 0 ? `🧠 RAG ${docs}/${scanned}` : `🧠 RAG ${docs}/${scanned} (${remaining}⏳)`;
 }
 
-// ─── Segment clé : balise FORT si la clé Gemini manque (RAG inopérant) ────────
+// ─── Key segment: STRONG flag if the Gemini key is missing (RAG inoperative) ──
 const envContent = existsSync(ENV_PATH) ? readFileSync(ENV_PATH, "utf8") : null;
-const keySeg = hasGeminiKey(envContent) ? null : "⚠️ clé Gemini absente";
+const keySeg = hasGeminiKey(envContent) ? null : "⚠️ Gemini key missing";
 
-// ─── Une seule ligne, segments séparés par « · » ─────────────────────────────
+// ─── A single line, segments separated by "·" ────────────────────────────────
 process.stdout.write([gitSeg, ragSeg, keySeg].filter(Boolean).join(" · "));

@@ -5,26 +5,26 @@ import { SEARCH_DEFAULT_LIMIT } from "../lib/config.js";
 export const searchVaultTool = {
   name: "search_vault",
   description:
-    "Recherche sémantique dans le vault. Pose ta question en langage naturel, le moteur trouve les passages les plus pertinents par similarité de sens (pas juste des mots-clés).",
+    "Semantic search in the vault. Ask your question in natural language; the engine finds the most relevant passages by meaning similarity (not just keywords).",
   inputSchema: {
     type: "object" as const,
     properties: {
       query: {
         type: "string",
-        description: "Question en langage naturel (FR recommandé)",
+        description: "Question in natural language",
       },
       type: {
         type: "string",
         description:
-          "Filtrer par type : daily, person, topic, decision, meeting, prep-1-1, prep-day, backlog, coaching, initiative, raw-source, briefing, domain, draft, article",
+          "Filter by type: daily, person, topic, decision, meeting, prep-1-1, prep-day, backlog, coaching, initiative, raw-source, briefing, domain, draft, article",
       },
       tags: {
         type: "string",
-        description: "Filtrer par tag (match partiel)",
+        description: "Filter by tag (partial match)",
       },
       limit: {
         type: "number",
-        description: `Nombre max de résultats (défaut : ${SEARCH_DEFAULT_LIMIT})`,
+        description: `Max number of results (default: ${SEARCH_DEFAULT_LIMIT})`,
       },
     },
     required: ["query"],
@@ -44,7 +44,7 @@ export const searchVaultTool = {
     );
 
     if (results.length === 0) {
-      return { content: [{ type: "text", text: "Aucun résultat trouvé dans le vault." }] };
+      return { content: [{ type: "text", text: "No results found in the vault." }] };
     }
 
     const text = results

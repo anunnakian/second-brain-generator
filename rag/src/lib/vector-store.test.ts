@@ -7,7 +7,7 @@ import {
   readIndexIdentity,
 } from "./vector-store.js";
 
-test("index_meta : round-trip de l'identité (écrite à l'indexation, relue ensuite)", () => {
+test("index_meta: identity round-trip (written at indexing time, read back afterwards)", () => {
   const db = new Database(":memory:");
   applySchema(db);
 

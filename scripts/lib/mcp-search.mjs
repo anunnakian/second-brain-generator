@@ -1,13 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// mcp-search.mjs — ouvre UNE session MCP stdio (vault-rag), déroule le handshake,
-// puis lance une recherche search_vault par query et corrèle chaque réponse à sa
-// query (via l'id JSON-RPC). Renvoie [{ query, text }] dans l'ordre des queries.
-// Sert l'orchestrateur d'eval (run-eval.mjs) : un seul serveur pour tout le set.
-// Pur Node, multi-OS, même esprit que mcp-smoke.mjs.
+// mcp-search.mjs — opens ONE stdio MCP session (vault-rag), runs the handshake,
+// then issues one search_vault search per query and correlates each response to
+// its query (via the JSON-RPC id). Returns [{ query, text }] in the order of the
+// queries. Serves the eval orchestrator (run-eval.mjs): a single server for the
+// whole set. Pure Node, cross-OS, same spirit as mcp-smoke.mjs.
 // ─────────────────────────────────────────────────────────────────────────────
 import { spawn } from "node:child_process";
 
-const FIRST_CALL_ID = 100; // au-delà de initialize(1)/tools-list(2)
+const FIRST_CALL_ID = 100; // beyond initialize(1)/tools-list(2)
 
 export function mcpSearch({ command, args = [], cwd, queries, timeoutMs = 60000, env }) {
   return new Promise((resolve, reject) => {
@@ -40,7 +40,7 @@ export function mcpSearch({ command, args = [], cwd, queries, timeoutMs = 60000,
 
     child.on("error", (e) => finish(e));
     child.on("exit", (code, signal) => {
-      if (!done) finish(new Error(`serveur MCP terminé prématurément (code ${code ?? signal})`));
+      if (!done) finish(new Error(`MCP server exited prematurely (code ${code ?? signal})`));
     });
 
     child.stdout.setEncoding("utf8");

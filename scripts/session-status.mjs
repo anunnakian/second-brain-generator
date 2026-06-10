@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// session-status.mjs — calcule 2-3 lignes de statut de démarrage (repo + RAG) et
-// les émet via le champ JSON `systemMessage` du hook SessionStart, ce qui les
-// AFFICHE DIRECTEMENT sur le terminal CLI, sans dépendre de Claude pour les recopier.
-// Démarrage déterministe : tout le calcul ET l'affichage sont ici.
-// NB : `systemMessage` n'est PAS rendu par l'onglet Code de Claude Desktop — c'est
-// `statusLine` (cf. scripts/status-line.mjs) qui couvre l'affichage déterministe
-// côté Desktop et le statut persistant. Le hook garde en plus son effet de bord :
-// le `git pull --rebase` de synchro au démarrage (que statusLine ne fait JAMAIS).
+// session-status.mjs — computes 2-3 startup status lines (repo + RAG) and emits
+// them via the SessionStart hook's JSON `systemMessage` field, which DISPLAYS
+// them DIRECTLY in the CLI terminal, without relying on Claude to copy them.
+// Deterministic startup: all the computation AND the display happen here.
+// NB: `systemMessage` is NOT rendered by the Code tab of Claude Desktop — it's
+// `statusLine` (cf. scripts/status-line.mjs) that covers the deterministic
+// display on the Desktop side and the persistent status. The hook also keeps its
+// side effect: the startup sync `git pull --rebase` (which statusLine NEVER does).
 //
-// Appelé par le hook SessionStart (cf. .claude/settings.json).
-// Multi-OS : pur Node, aucune dépendance bash/jq/sqlite3-CLI.
+// Called by the SessionStart hook (cf. .claude/settings.json).
+// Cross-OS: pure Node, no bash/jq/sqlite3-CLI dependency.
 //   - git via child_process
-//   - comptage des .md via fs
-//   - lecture de la DB via better-sqlite3 (déjà installé dans rag/node_modules) ;
-//     dégrade proprement si le module n'est pas chargeable.
+//   - .md counting via fs
+//   - DB reading via better-sqlite3 (already installed in rag/node_modules);
+//     degrades gracefully if the module is not loadable.
 // ─────────────────────────────────────────────────────────────────────────────
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -30,7 +30,7 @@ const VAULT = join(REPO, "vault");
 const DB_PATH = join(REPO, "rag", ".cache", "vault.db");
 const ENV_PATH = join(REPO, ".env");
 
-// Exécute git et renvoie { out, ok } sans jamais throw (stderr inclus).
+// Runs git and returns { out, ok } without ever throwing (stderr included).
 function git(args) {
   try {
     const out = execFileSync("git", args, {
@@ -45,8 +45,8 @@ function git(args) {
   }
 }
 
-// ─── Ligne repo : git pull --rebase + dérivation du statut ───────────────────
-// (silencieux si pas de remote configuré — usage purement local)
+// ─── Repo line: git pull --rebase + status derivation ────────────────────────
+// (silent if no remote configured — purely local usage)
 const hasRemote = git(["remote"]).out.trim().length > 0;
 let pullOut = "already up to date";
 let pullOk = true;
@@ -57,9 +57,9 @@ if (hasRemote) {
 }
 const short = git(["rev-parse", "--short", "HEAD"]).out.trim();
 
-// Garde-fou fail-loud : des notes du vault non committées au démarrage = un
-// auto-commit précédent n'a pas tourné (hooks muets ?). repoStatusLine en fait
-// une alerte prioritaire (cf. scripts/lib/repo-status.mjs).
+// Fail-loud guardrail: uncommitted vault notes at startup = a previous
+// auto-commit didn't run (silent hooks?). repoStatusLine turns this into a
+// priority alert (cf. scripts/lib/repo-status.mjs).
 const uncommittedVault = countVaultUncommitted(git(["status", "--porcelain"]).out);
 const changedCount =
   pullOk && !/already up to date|déjà à jour/i.test(pullOut)
@@ -69,7 +69,7 @@ const changedCount =
     : 0;
 const repoLine = repoStatusLine({ pullOk, pullOut, short, changedCount, uncommittedVault });
 
-// ─── Ligne RAG : docCount (db) vs fichiers .md sur disque ────────────────────
+// ─── RAG line: docCount (db) vs .md files on disk ────────────────────────────
 function countMarkdown(dir) {
   let n = 0;
   let entries;
@@ -90,14 +90,14 @@ const scanned = countMarkdown(VAULT);
 let docs = null;
 if (existsSync(DB_PATH)) {
   try {
-    // better-sqlite3 vit dans rag/node_modules → require résolu depuis rag/.
+    // better-sqlite3 lives in rag/node_modules → require resolved from rag/.
     const require = createRequire(join(REPO, "rag", "package.json"));
     const Database = require("better-sqlite3");
     const db = new Database(DB_PATH, { readonly: true, fileMustExist: true });
     docs = db.prepare("SELECT COUNT(*) AS n FROM documents").get().n;
     db.close();
   } catch {
-    docs = null; // dégrade : module absent, DB en cours d'écriture, etc.
+    docs = null; // degrades: module absent, DB being written, etc.
   }
 }
 
@@ -105,34 +105,34 @@ let ragLine;
 if (docs === null || scanned === 0) {
   if (scanned === 0) {
     ragLine =
-      "🧠 RAG : vault vide — ajoute des notes Markdown dans vault/ puis lance 'cd rag && npm run reindex'.";
+      "🧠 RAG: empty vault — add Markdown notes in vault/ then run 'cd rag && npm run reindex'.";
   } else {
-    ragLine = "🧠 RAG : statut indisponible (serveur en démarrage, ou moteur non installé).";
+    ragLine = "🧠 RAG: status unavailable (server starting up, or engine not installed).";
   }
 } else {
   const remaining = scanned - docs;
   ragLine =
     remaining <= 0
-      ? `🧠 RAG à jour — ${docs}/${scanned} fichiers indexés.`
-      : `🧠 RAG : ${docs}/${scanned} fichiers indexés, ${remaining} en attente — rattrapage auto en tâche de fond.`;
+      ? `🧠 RAG up to date — ${docs}/${scanned} files indexed.`
+      : `🧠 RAG: ${docs}/${scanned} files indexed, ${remaining} pending — auto catch-up in the background.`;
 }
 
-// ─── Ligne clé Gemini : balise si elle manque (le RAG ne peut pas répondre) ──
-// Lue à chaque démarrage : si l'utilisateur a lancé Claude Code AVANT de coller
-// sa clé, on le signale et on rappelle qu'il suffit de la coller puis de reposer
-// sa question (le serveur relit .env à la volée — pas besoin de reconnecter).
-// On n'alerte QUE si l'embedder choisi a besoin d'une clé Gemini : un vault en
-// in-process (« Gemma inside ») ou sur endpoint compatible-OpenAI n'en a aucune.
+// ─── Gemini key line: flag if it's missing (the RAG can't answer) ────────────
+// Read on every startup: if the user launched Claude Code BEFORE pasting their
+// key, we flag it and remind them they just need to paste it then re-ask their
+// question (the server re-reads .env on the fly — no need to reconnect).
+// We only alert IF the chosen embedder needs a Gemini key: an in-process vault
+// ("Gemma inside") or one on an OpenAI-compatible endpoint needs none.
 let keyLine = null;
 const envContent = existsSync(ENV_PATH) ? readFileSync(ENV_PATH, "utf8") : null;
 if (geminiKeyRequired(envContent) && !hasGeminiKey(envContent)) {
   keyLine =
-    "⚠️ Clé Gemini absente de .env → le RAG ne peut pas répondre. Colle-la dans " +
-    ".env (GOOGLE_GEMINI_API_KEY=…) puis repose ta question (le serveur la relit " +
-    "tout seul). Si ça résiste, reconnecte le MCP (/mcp) ou relance Claude Code.";
+    "⚠️ Gemini key missing from .env → the RAG can't answer. Paste it into " +
+    ".env (GOOGLE_GEMINI_API_KEY=…) then re-ask your question (the server re-reads " +
+    "it on its own). If it persists, reconnect the MCP (/mcp) or restart Claude Code.";
 }
 
-// ─── Émission via systemMessage : s'affiche directement sur le terminal ──────
+// ─── Emission via systemMessage: displays directly in the terminal ───────────
 const systemMessage = [keyLine, repoLine, ragLine].filter(Boolean).join("\n");
 process.stdout.write(
   JSON.stringify({

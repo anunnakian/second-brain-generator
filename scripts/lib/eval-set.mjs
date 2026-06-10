@@ -1,68 +1,68 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// eval-set.mjs — le jeu d'évaluation RAG (Étape 2 du plan embedder).
+// eval-set.mjs — the RAG evaluation set (Step 2 of the embedder plan).
 //
-// Source de vérité : 10 questions FR sur le VAULT D'EXEMPLE livré (Flemmr, la boîte
-// parodique qui « industrialise la procrastination »). Chaque item = une question en
-// langage naturel + la réponse ATTENDUE (ground-truth que la bonne récupération doit
-// permettre de donner). Le juge (Claude) ne note QUE si les passages remontés par
-// search_vault suffisent à répondre — cf. eval-judge.mjs.
+// Source of truth: 10 questions about the shipped EXAMPLE VAULT (Flemmr, the parody
+// company that "industrializes procrastination"). Each item = a natural-language
+// question + the EXPECTED answer (ground truth that good retrieval should make it
+// possible to give). The judge (Claude) scores ONLY whether the passages returned by
+// search_vault are enough to answer — see eval-judge.mjs.
 //
-// Pourquoi le vault d'exemple et pas un vrai cerveau : il est INVENTÉ (public-safe),
-// VERSIONNÉ et REPRODUCTIBLE → la baseline Gemini est rejouable par n'importe qui.
-// Pour discriminer finement des embedders (Étape 4), on pourra pointer le même
-// harnais sur un corpus plus riche. La 1ʳᵉ question reprend le canari grep-proof de
-// demo.mjs (cf. eval-set.test.mjs) pour rester arrimé à la preuve sémantique.
+// Why the example vault and not a real brain: it is INVENTED (public-safe), VERSIONED
+// and REPRODUCIBLE → the Gemini baseline can be replayed by anyone. To finely
+// discriminate between embedders (Step 4), we can point the same harness at a richer
+// corpus. The 1st question reuses the grep-proof canary from demo.mjs (cf.
+// eval-set.test.mjs) to stay anchored to the semantic proof.
 //
-// Mélange volontaire : des questions « faciles » (le terme-réponse est dans les notes
-// → testent le plancher) et des questions par synonymes (grep-résistantes → testent
-// le sens). Un embedder faible décroche sur les secondes.
+// Deliberate mix: "easy" questions (the answer term is in the notes → they test the
+// floor) and synonym-based questions (grep-resistant → they test meaning). A weak
+// embedder drops out on the latter.
 // ─────────────────────────────────────────────────────────────────────────────
 import { DEMO_QUESTION } from "./demo.mjs";
 
 export const EVAL_SET = [
   {
-    // Canari grep-proof (cf. demo.mjs) : décrit la réponse par synonymes, aucun mot
-    // de contenu partagé avec les notes → seule la recherche sémantique fait le lien.
+    // Grep-proof canary (cf. demo.mjs): describes the answer with synonyms, no content
+    // word shared with the notes → only semantic search makes the connection.
     question: DEMO_QUESTION,
-    expect: "Pélagie de Mollecuisse, avec un Taux de Rien Foutu (TRF) record de 98,7 %.",
+    expect: "Pélagie de Mollecuisse, with a record Do-Nothing Rate (DNR) of 98.7%.",
   },
   {
-    question: "Quel est le seul indicateur suivi par le board de Flemmr ?",
-    expect: "Le Taux de Rien Foutu (TRF).",
+    question: "What is the only metric tracked by Flemmr's board?",
+    expect: "The Do-Nothing Rate (DNR).",
   },
   {
-    question: "Combien Flemmr a-t-elle levé en série A, et pour quoi faire ?",
-    expect: "14 M€, levés pour ne rien produire.",
+    question: "How much did Flemmr raise in its Series A, and what for?",
+    expect: "€14M, raised to produce nothing.",
   },
   {
-    question: "Qui dirige Flemmr et quel titre porte-t-il ?",
-    expect: "Jean-Kévin de la Glandée, fondateur et Chief Inertia Officer.",
-  },
-  {
-    question:
-      "Comment s'appelle la récompense annuelle de la personne la plus oisive, et de quand date la décision qui l'a créée ?",
-    expect: "Le Trophée de l'Inertie, instauré par la décision du 20 novembre 2025.",
-  },
-  {
-    question: "Quelle conviction personnelle le fondateur défend-il sur le travail ?",
-    expect: "Que « la valeur naît du repos ».",
-  },
-  {
-    question: "Quelle offre par abonnement permet de garder son hamac à demeure ?",
-    expect: "Le Hamac as a Service (HaaS).",
-  },
-  {
-    question: "Combien coûte le séminaire résidentiel d'oisiveté de Flemmr ?",
-    expect: "12 000 € HT (le Séminaire d'Immobilisme en résidentiel).",
+    question: "Who runs Flemmr and what title do they hold?",
+    expect: "Jean-Kévin de la Glandée, founder and Chief Inertia Officer.",
   },
   {
     question:
-      "Qu'est-ce qui reste à organiser et à acheter dans le backlog, autour du trophée et des séminaires ?",
+      "What is the annual award for the laziest person called, and what is the date of the decision that created it?",
+    expect: "The Inertia Trophy, established by the decision of November 20, 2025.",
+  },
+  {
+    question: "What personal conviction does the founder defend about work?",
+    expect: 'That "value is born from rest".',
+  },
+  {
+    question: "Which subscription offering lets you keep your hammock permanently?",
+    expect: "The Hammock as a Service (HaaS).",
+  },
+  {
+    question: "How much does Flemmr's residential idleness retreat cost?",
+    expect: "€12,000 excl. tax (the residential Immobilism Seminar).",
+  },
+  {
+    question:
+      "What is left to organize and to buy in the backlog, around the trophy and the seminars?",
     expect:
-      "Caler la cérémonie de remise du Trophée de l'Inertie, et commander des plaids connectés pour le prochain séminaire d'immobilisme.",
+      "Schedule the Inertia Trophy award ceremony, and order connected blankets for the next immobilism seminar.",
   },
   {
-    question: "Quel est le slogan de Flemmr ?",
-    expect: "« Ne faites rien. On s'en occupe. »",
+    question: "What is Flemmr's slogan?",
+    expect: '"Do nothing. We\'ve got it covered."',
   },
 ];

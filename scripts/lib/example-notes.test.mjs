@@ -6,18 +6,18 @@ import { tmpdir } from "node:os";
 import { isExampleNote, findExampleNotes, clearExampleNotes } from "./example-notes.mjs";
 
 const fmExemple = "---\ntype: topic\ntags: [exemple, architecture]\n---\n\n# Demo\n";
-const fmHarnais = "---\ntype: backlog\ntags: [harnais, backlog]\n---\n\n# Frictions\n";
-const noFm = "# vault/ — Ton contenu\n\nDoc, pas une note.\n";
+const fmHarness = "---\ntype: backlog\ntags: [harness, backlog]\n---\n\n# Frictions\n";
+const noFm = "# vault/ — Your content\n\nDoc, not a note.\n";
 
-test("isExampleNote — vrai si le tag exemple est présent", () => {
+test("isExampleNote — true if the exemple tag is present", () => {
   assert.equal(isExampleNote(fmExemple), true);
 });
 
-test("isExampleNote — faux si pas de tag exemple", () => {
-  assert.equal(isExampleNote(fmHarnais), false);
+test("isExampleNote — false if no exemple tag", () => {
+  assert.equal(isExampleNote(fmHarness), false);
 });
 
-test("isExampleNote — faux sans frontmatter", () => {
+test("isExampleNote — false without frontmatter", () => {
   assert.equal(isExampleNote(noFm), false);
 });
 
@@ -26,12 +26,12 @@ function makeVault() {
   mkdirSync(join(dir, "topics"), { recursive: true });
   mkdirSync(join(dir, "backlog"), { recursive: true });
   writeFileSync(join(dir, "topics", "demo.md"), fmExemple);
-  writeFileSync(join(dir, "backlog", "harnais.md"), fmHarnais);
+  writeFileSync(join(dir, "backlog", "harness.md"), fmHarness);
   writeFileSync(join(dir, "README.md"), noFm);
   return dir;
 }
 
-test("findExampleNotes — ne retourne que les notes taggées exemple", () => {
+test("findExampleNotes — returns only the notes tagged exemple", () => {
   const dir = makeVault();
   try {
     const found = findExampleNotes(dir);
@@ -41,13 +41,13 @@ test("findExampleNotes — ne retourne que les notes taggées exemple", () => {
   }
 });
 
-test("clearExampleNotes — supprime les exemples, garde la machinerie", () => {
+test("clearExampleNotes — removes the examples, keeps the machinery", () => {
   const dir = makeVault();
   try {
     const deleted = clearExampleNotes(dir);
     assert.deepEqual(deleted, [join(dir, "topics", "demo.md")]);
     assert.equal(existsSync(join(dir, "topics", "demo.md")), false);
-    assert.equal(existsSync(join(dir, "backlog", "harnais.md")), true);
+    assert.equal(existsSync(join(dir, "backlog", "harness.md")), true);
     assert.equal(existsSync(join(dir, "README.md")), true);
   } finally {
     rmSync(dir, { recursive: true });

@@ -10,44 +10,44 @@ import type { SchedulerState } from "./reindex-scheduler.js";
 
 const idle: SchedulerState = { scheduled: false, running: false, pending: false };
 
-test("F.live — watcher inactif → « inactif »", () => {
+test("F.live — watcher inactive → \"inactive\"", () => {
   const line = formatWatcherLiveness({ active: false });
-  assert.match(line, /watcher.*inactif/i);
+  assert.match(line, /watcher.*inactive/i);
 });
 
-test("F.live — watcher actif au repos → « actif … au repos »", () => {
+test("F.live — watcher active idle → \"active … idle\"", () => {
   const line = formatWatcherLiveness({ active: true, state: idle });
-  assert.match(line, /actif/i);
-  assert.match(line, /repos/i);
+  assert.match(line, /active/i);
+  assert.match(line, /idle/i);
 });
 
-test("F.live — actif + reindex programmé (debounce) → « programmé »", () => {
+test("F.live — active + reindex scheduled (debounce) → \"scheduled\"", () => {
   const line = formatWatcherLiveness({
     active: true,
     state: { ...idle, scheduled: true },
   });
-  assert.match(line, /actif/i);
-  assert.match(line, /programmé/i);
+  assert.match(line, /active/i);
+  assert.match(line, /scheduled/i);
 });
 
-test("F.live — actif + reindex en cours → « en cours »", () => {
+test("F.live — active + reindex in progress → \"in progress\"", () => {
   const line = formatWatcherLiveness({
     active: true,
     state: { ...idle, running: true },
   });
-  assert.match(line, /en cours/i);
+  assert.match(line, /in progress/i);
 });
 
-test("F.live — actif + run en cours avec rafale en attente → « en cours » + « en attente »", () => {
+test("F.live — active + run in progress with burst pending → \"in progress\" + \"pending\"", () => {
   const line = formatWatcherLiveness({
     active: true,
     state: { scheduled: false, running: true, pending: true },
   });
-  assert.match(line, /en cours/i);
-  assert.match(line, /attente/i);
+  assert.match(line, /in progress/i);
+  assert.match(line, /pending/i);
 });
 
-test("3.1a — index complet → « index à jour » + tableau de bord Y/X", () => {
+test("3.1a — complete index → \"index up to date\" + Y/X dashboard", () => {
   const report = buildStatusReport({
     docCount: 42,
     scannedCount: 42,
@@ -57,12 +57,12 @@ test("3.1a — index complet → « index à jour » + tableau de bord Y/X", () 
     lock: null,
   });
 
-  assert.match(report, /index à jour/i);
-  assert.match(report, /42\s*\/\s*42/); // Y/X fichiers indexés
-  assert.match(report, /fichiers indexés/i);
+  assert.match(report, /index up to date/i);
+  assert.match(report, /42\s*\/\s*42/); // Y/X files indexed
+  assert.match(report, /files indexed/i);
 });
 
-test("3.1b — index incomplet → Y/X indexés + Z en attente + reprise auto", () => {
+test("3.1b — incomplete index → Y/X indexed + Z pending + auto-resume", () => {
   const report = buildStatusReport({
     docCount: 30,
     scannedCount: 42,
@@ -72,13 +72,13 @@ test("3.1b — index incomplet → Y/X indexés + Z en attente + reprise auto", 
     lock: null,
   });
 
-  assert.doesNotMatch(report, /index à jour/i);
-  assert.match(report, /30\s*\/\s*42/); // Y/X indexés
-  assert.match(report, /12 en attente/i); // 42 - 30
-  assert.match(report, /reprise/i);
+  assert.doesNotMatch(report, /index up to date/i);
+  assert.match(report, /30\s*\/\s*42/); // Y/X indexed
+  assert.match(report, /12 pending/i); // 42 - 30
+  assert.match(report, /resume/i);
 });
 
-test("3.1c — ligne quota : utilisés / max / restants + réserve recherche", () => {
+test("3.1c — quota line: used / max / remaining + search reserve", () => {
   const report = buildStatusReport({
     docCount: 42,
     scannedCount: 42,
@@ -88,12 +88,12 @@ test("3.1c — ligne quota : utilisés / max / restants + réserve recherche", (
     lock: null,
   });
 
-  assert.match(report, /200\s*\/\s*950/); // utilisés / max
-  assert.match(report, /750 restant/i); // 950 - 200
-  assert.match(report, /réserve 50.*recherche/i);
+  assert.match(report, /200\s*\/\s*950/); // used / max
+  assert.match(report, /750 remaining/i); // 950 - 200
+  assert.match(report, /reserve 50.*search/i);
 });
 
-test("3.1d — lock présent → « reindex en cours (PID …) »", () => {
+test("3.1d — lock present → \"reindex in progress (PID …)\"", () => {
   const report = buildStatusReport({
     docCount: 42,
     scannedCount: 42,
@@ -103,11 +103,11 @@ test("3.1d — lock présent → « reindex en cours (PID …) »", () => {
     lock: { pid: 12345, acquiredAt: "2026-05-31T11:59:00Z" },
   });
 
-  assert.match(report, /reindex en cours/i);
+  assert.match(report, /reindex in progress/i);
   assert.match(report, /12345/);
 });
 
-test("3.1d — pas de lock → pas de mention de reindex en cours", () => {
+test("3.1d — no lock → no mention of reindex in progress", () => {
   const report = buildStatusReport({
     docCount: 42,
     scannedCount: 42,
@@ -117,21 +117,21 @@ test("3.1d — pas de lock → pas de mention de reindex en cours", () => {
     lock: null,
   });
 
-  assert.doesNotMatch(report, /reindex en cours/i);
+  assert.doesNotMatch(report, /reindex in progress/i);
 });
 
-test("4.2 — incompleteIndexWarning : index incomplet → message de reprise", () => {
+test("4.2 — incompleteIndexWarning: incomplete index → resume message", () => {
   const warning = incompleteIndexWarning({ docCount: 30, scannedCount: 42 });
   assert.notEqual(warning, null);
-  assert.match(warning!, /incomplet/i);
-  assert.match(warning!, /reprise/i);
+  assert.match(warning!, /incomplete/i);
+  assert.match(warning!, /resume/i);
 });
 
-test("4.2 — incompleteIndexWarning : index complet → null (rien à surfacer)", () => {
+test("4.2 — incompleteIndexWarning: complete index → null (nothing to surface)", () => {
   assert.equal(incompleteIndexWarning({ docCount: 42, scannedCount: 42 }), null);
 });
 
-test("C.13 — progress running fourni → section Rattrapage ajoutée au rapport", () => {
+test("C.13 — progress running provided → Catch-up section added to the report", () => {
   const progress: RunProgress = {
     status: "running",
     startedAt: "2026-05-31T18:00:00Z",
@@ -156,11 +156,11 @@ test("C.13 — progress running fourni → section Rattrapage ajoutée au rappor
     now: "2026-05-31T18:01:00Z",
   });
 
-  assert.match(report, /Rattrapage en cours/i);
-  assert.match(report, /120\/660/); // chunks faits / total
+  assert.match(report, /Catch-up in progress/i);
+  assert.match(report, /120\/660/); // chunks done / total
 });
 
-test("C.13 — pas de progress → pas de section Rattrapage", () => {
+test("C.13 — no progress → no Catch-up section", () => {
   const report = buildStatusReport({
     docCount: 42,
     scannedCount: 42,
@@ -170,10 +170,10 @@ test("C.13 — pas de progress → pas de section Rattrapage", () => {
     lock: null,
   });
 
-  assert.doesNotMatch(report, /rattrapage/i);
+  assert.doesNotMatch(report, /catch-up/i);
 });
 
-test("3.1e — embedder in-process : ligne locale honnête, AUCUN quota Gemini", () => {
+test("3.1e — in-process embedder: honest local line, NO Gemini quota", () => {
   const report = buildStatusReport({
     docCount: 7,
     scannedCount: 7,
@@ -184,16 +184,16 @@ test("3.1e — embedder in-process : ligne locale honnête, AUCUN quota Gemini",
     providerId: "transformers-js",
   });
 
-  // Le quota journalier est propre à Gemini : il NE doit pas apparaître en local.
+  // The daily quota is specific to Gemini: it must NOT appear in local mode.
   assert.doesNotMatch(report, /quota\s*:/i);
   assert.doesNotMatch(report, /7600/);
-  assert.doesNotMatch(report, /aujourd'hui/i);
-  // À la place, une ligne locale honnête qui nomme l'embedder et dit l'illimité.
+  assert.doesNotMatch(report, /today/i);
+  // Instead, an honest local line that names the embedder and says unlimited.
   assert.match(report, /in-process/i);
-  assert.match(report, /illimité/i);
+  assert.match(report, /unlimited/i);
 });
 
-test("3.1f — embedder compatible-OpenAI : pas de quota Gemini, sans promettre hors-ligne", () => {
+test("3.1f — OpenAI-compatible embedder: no Gemini quota, without promising offline", () => {
   const report = buildStatusReport({
     docCount: 7,
     scannedCount: 7,
@@ -205,8 +205,8 @@ test("3.1f — embedder compatible-OpenAI : pas de quota Gemini, sans promettre 
   });
 
   assert.doesNotMatch(report, /7600/);
-  assert.doesNotMatch(report, /aujourd'hui/i);
-  // Endpoint nommé, mais on ne promet PAS « hors-ligne » (peut être distant).
-  assert.match(report, /compatible-OpenAI/i);
-  assert.doesNotMatch(report, /hors-ligne/i);
+  assert.doesNotMatch(report, /today/i);
+  // Endpoint named, but we do NOT promise "offline" (it may be remote).
+  assert.match(report, /OpenAI-compatible/i);
+  assert.doesNotMatch(report, /offline/i);
 });

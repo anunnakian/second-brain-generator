@@ -1,27 +1,28 @@
 # Architecture Decision Records — RAG vault
 
-Décisions d'architecture du moteur RAG (`rag/`). **Près du code**, versionnées avec
-lui : un dev qui touche le RAG doit voir ces décisions sans ouvrir le vault Obsidian.
+Architecture decisions for the RAG engine (`rag/`). **Close to the code**,
+versioned with it: a dev who touches the RAG should see these decisions without
+opening the Obsidian vault.
 
-> À ne pas confondre avec `vault/decisions/` — celui-là est pour le contenu du second
-> cerveau (stratégie, management). Ici : décisions **techniques** du moteur.
+> Not to be confused with `vault/decisions/` — that one is for the second brain's
+> content (strategy, management). Here: **technical** decisions of the engine.
 
 ## Format
 
-MADR-lite : **Contexte / Décision / Conséquences / Statut**. Court (~15-25 lignes).
-Pas de cérémonie. Numérotation `NNNN-titre-kebab.md`, incrémentale, jamais réutilisée.
+MADR-lite: **Context / Decision / Consequences / Status**. Short (~15-25 lines).
+No ceremony. Numbering `NNNN-title-kebab.md`, incremental, never reused.
 
-## Règle de vie
+## Living rule
 
-**Toute nouvelle décision d'architecture → un ADR dans le même commit que le code.**
-Une décision n'est pas « prise » tant qu'elle n'est pas écrite ici. On ne réécrit pas
-un ADR passé : si on change d'avis, on en crée un nouveau qui *supersède* l'ancien
-(statut `Superseded by NNNN`).
+**Any new architecture decision → an ADR in the same commit as the code.** A
+decision is not "made" until it is written here. We do not rewrite a past ADR: if
+we change our mind, we create a new one that *supersedes* the old one (status
+`Superseded by NNNN`).
 
 ## Index
 
-| # | Titre | Statut |
+| # | Title | Status |
 |---|---|---|
-| [0001](0001-atomicite-document-hash-chunks.md) | Atomicité d'indexation par document (hash ⇔ chunks) | Accepté |
-| [0002](0002-demarrage-mcp-non-bloquant.md) | Démarrage MCP non-bloquant (transport d'abord, reindex en fond) | Accepté |
-| [0003](0003-pas-de-daemon-session-declencheur.md) | Pas de daemon — la session est le déclencheur | Accepté |
+| [0001](0001-atomicity-document-hash-chunks.md) | Per-document indexing atomicity (hash ⇔ chunks) | Accepted |
+| [0002](0002-non-blocking-mcp-startup.md) | Non-blocking MCP startup (transport first, reindex in background) | Accepted |
+| [0003](0003-no-daemon-session-trigger.md) | No daemon — the session is the trigger | Accepted |

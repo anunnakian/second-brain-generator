@@ -1,22 +1,22 @@
-# NNNN — Titre court de la décision
+# NNNN — Short title of the decision
 
-- **Statut** : Proposé | Accepté | Superseded by NNNN
-- **Date** : YYYY-MM-DD
+- **Status**: Proposed | Accepted | Superseded by NNNN
+- **Date**: YYYY-MM-DD
 
-## Contexte
+## Context
 
-Quel problème / quelle force nous pousse à décider ? (2-4 phrases factuelles.)
+What problem / what force is pushing us to decide? (2-4 factual sentences.)
 
-## Décision
+## Decision
 
-Ce qu'on décide, à l'impératif. Précis et testable.
+What we decide, in the imperative. Precise and testable.
 
-## Conséquences
+## Consequences
 
-- Ce que ça garantit / simplifie.
-- Ce que ça interdit ou coûte.
-- **Invariant à ne pas violer** : ce qu'un futur refactor casserait sans s'en rendre compte.
+- What it guarantees / simplifies.
+- What it forbids or costs.
+- **Invariant not to violate**: what a future refactor would break without realizing it.
 
-## Alternatives écartées
+## Rejected alternatives
 
-- Option X — pourquoi non.
+- Option X — why not.

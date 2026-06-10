@@ -3,7 +3,7 @@ import { resolve, dirname } from "path";
 import { CACHE_DIR } from "./config.js";
 import type { RunProgress, WallReason } from "./progress-report.js";
 
-/** Persistance de l'état d'un run de rattrapage. Injectable pour les tests. */
+/** Persistence of a catch-up run's state. Injectable for tests. */
 export interface ProgressStorage {
   load(): RunProgress | null;
   save(state: RunProgress): void;
@@ -29,8 +29,8 @@ export interface FinishInput {
 }
 
 /**
- * Suit l'avancement d'un run de rattrapage et le persiste au fil de l'eau
- * (état lisible par `vault_stats` et `last-run.md`).
+ * Tracks the progress of a catch-up run and persists it incrementally
+ * (state readable by `vault_stats` and `last-run.md`).
  */
 export class ReindexReporter {
   private readonly storage: ProgressStorage;
@@ -89,7 +89,7 @@ export class ReindexReporter {
     }));
   }
 
-  /** Charge l'état courant, applique le mutateur, persiste. No-op si aucun run en cours. */
+  /** Loads the current state, applies the mutator, persists. No-op if no run is in progress. */
   private update(mutator: (current: RunProgress) => RunProgress): void {
     const current = this.storage.load();
     if (!current) return;
@@ -97,7 +97,7 @@ export class ReindexReporter {
   }
 }
 
-/** Persistance par défaut : un petit JSON dans CACHE_DIR (gitignoré, per-machine). */
+/** Default persistence: a small JSON file in CACHE_DIR (gitignored, per-machine). */
 export class FileProgressStorage implements ProgressStorage {
   private readonly path: string;
 
@@ -114,7 +114,7 @@ export class FileProgressStorage implements ProgressStorage {
       }
       return null;
     } catch {
-      return null; // fichier corrompu → traité comme absent
+      return null; // corrupt file → treated as absent
     }
   }
 

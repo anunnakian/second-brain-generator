@@ -7,8 +7,8 @@ import {
   type FeatureExtractor,
 } from "./in-process-embedder.js";
 
-// Faux extractor (le pipeline Transformers.js, sans télécharger les poids) : capture
-// les appels et renvoie un tenseur-like dont `tolist()` rend les vecteurs voulus.
+// Fake extractor (the Transformers.js pipeline, without downloading the weights):
+// captures the calls and returns a tensor-like whose `tolist()` yields the wanted vectors.
 function fakeExtractor(vectors: number[][]): {
   load: () => Promise<FeatureExtractor>;
   calls: { input: string | string[]; opts: unknown }[];
@@ -21,7 +21,7 @@ function fakeExtractor(vectors: number[][]): {
   return { load: async () => extractor, calls };
 }
 
-test("identity (provider/modèle/dimension) renseignée depuis la config — clé de l'estampille", () => {
+test("identity (provider/model/dimension) populated from the config — the stamp key", () => {
   const embedder = new InProcessEmbedder({
     model: "onnx-community/embeddinggemma-300m-ONNX",
     dimension: 768,
@@ -34,21 +34,21 @@ test("identity (provider/modèle/dimension) renseignée depuis la config — cl�
   });
 });
 
-test("embedQuery : pooling moyen + normalisation via l'extractor, renvoie le 1ᵉʳ vecteur", async () => {
+test("embedQuery: mean pooling + normalization via the extractor, returns the 1st vector", async () => {
   const { load, calls } = fakeExtractor([[0.1, 0.2, 0.3]]);
   const embedder = new InProcessEmbedder(
     { model: "m", dimension: 3 },
     load
   );
 
-  const vector = await embedder.embedQuery("une question");
+  const vector = await embedder.embedQuery("a question");
 
   assert.deepEqual(vector, [0.1, 0.2, 0.3]);
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0].opts, { pooling: "mean", normalize: true });
 });
 
-test("embedDocuments : encode le lot et renvoie les vecteurs dans l'ordre", async () => {
+test("embedDocuments: encodes the batch and returns the vectors in order", async () => {
   const { load, calls } = fakeExtractor([
     [1, 0],
     [0, 1],
@@ -64,9 +64,9 @@ test("embedDocuments : encode le lot et renvoie les vecteurs dans l'ordre", asyn
   assert.deepEqual(calls[0].input, ["doc A", "doc B"]);
 });
 
-test("embedDocuments : plafonne la taille de lot — découpe en sous-lots bornés, concatène dans l'ordre", async () => {
-  // Fake qui renvoie un vecteur par texte d'entrée (echo numérique), et capture
-  // chaque sous-lot reçu : on prouve à la fois le découpage et l'ordre de sortie.
+test("embedDocuments: caps the batch size — splits into bounded sub-batches, concatenates in order", async () => {
+  // Fake that returns one vector per input text (numeric echo), and captures
+  // each sub-batch received: proves both the splitting and the output order.
   const calls: string[][] = [];
   const load: () => Promise<FeatureExtractor> = async () => async (input) => {
     const slice = input as string[];
@@ -80,32 +80,32 @@ test("embedDocuments : plafonne la taille de lot — découpe en sous-lots born�
 
   const vectors = await embedder.embedDocuments(["1", "2", "3", "4", "5"]);
 
-  // 5 textes, lot plafonné à 2 → 3 sous-lots : [1,2] [3,4] [5]
+  // 5 texts, batch capped at 2 → 3 sub-batches: [1,2] [3,4] [5]
   assert.deepEqual(calls, [["1", "2"], ["3", "4"], ["5"]]);
-  // vecteurs reconcaténés dans l'ordre d'origine (rien ne se perd ni ne se mélange)
+  // vectors reconcatenated in their original order (nothing lost or shuffled)
   assert.deepEqual(vectors, [[1], [2], [3], [4], [5]]);
 });
 
-test("embedDocuments : sans batchSize configuré, applique le plafond par défaut EMBED_BATCH (chemin de prod)", async () => {
+test("embedDocuments: with no batchSize configured, applies the default cap EMBED_BATCH (prod path)", async () => {
   const calls: string[][] = [];
   const load: () => Promise<FeatureExtractor> = async () => async (input) => {
     const slice = input as string[];
     calls.push(slice);
     return { tolist: () => slice.map(() => [0]) };
   };
-  // selectEmbedder construit l'adaptateur SANS batchSize → c'est le défaut qui doit protéger.
+  // selectEmbedder builds the adapter WITHOUT batchSize → the default is what must protect.
   const embedder = new InProcessEmbedder({ model: "m", dimension: 1 }, load);
 
   const texts = Array.from({ length: EMBED_BATCH + 1 }, (_, i) => String(i));
   await embedder.embedDocuments(texts);
 
-  // un de plus que le plafond → 2 sous-lots, le 1ᵉʳ plein
+  // one more than the cap → 2 sub-batches, the 1st full
   assert.equal(calls.length, 2);
   assert.equal(calls[0].length, EMBED_BATCH);
   assert.equal(calls[1].length, 1);
 });
 
-test("chargement du modèle impossible → erreur claire (modèle nommé), jamais un vecteur vide", async () => {
+test("model loading fails → clear error (model named), never an empty vector", async () => {
   const load: () => Promise<FeatureExtractor> = async () => {
     throw new Error("offline: download failed");
   };
@@ -120,7 +120,7 @@ test("chargement du modèle impossible → erreur claire (modèle nommé), jamai
   );
 });
 
-test("prompts configurés : embedQuery préfixe la question (EmbeddingGemma exige un prompt de tâche)", async () => {
+test("prompts configured: embedQuery prefixes the question (EmbeddingGemma requires a task prompt)", async () => {
   const { load, calls } = fakeExtractor([[1]]);
   const embedder = new InProcessEmbedder(
     {
@@ -131,12 +131,12 @@ test("prompts configurés : embedQuery préfixe la question (EmbeddingGemma exig
     load
   );
 
-  await embedder.embedQuery("le slogan de Flemmr");
+  await embedder.embedQuery("Flemmr's slogan");
 
-  assert.deepEqual(calls[0].input, ["task: search result | query: le slogan de Flemmr"]);
+  assert.deepEqual(calls[0].input, ["task: search result | query: Flemmr's slogan"]);
 });
 
-test("prompts configurés : embedDocuments préfixe chaque document", async () => {
+test("prompts configured: embedDocuments prefixes each document", async () => {
   const { load, calls } = fakeExtractor([
     [1],
     [1],
@@ -158,7 +158,7 @@ test("prompts configurés : embedDocuments préfixe chaque document", async () =
   ]);
 });
 
-test("sans prompts : texte brut (modèles type bge-m3 n'en veulent pas)", async () => {
+test("without prompts: raw text (bge-m3-type models don't want any)", async () => {
   const { load, calls } = fakeExtractor([[1]]);
   const embedder = new InProcessEmbedder({ model: "bge-m3", dimension: 1 }, load);
 
@@ -167,7 +167,7 @@ test("sans prompts : texte brut (modèles type bge-m3 n'en veulent pas)", async 
   assert.deepEqual(calls[0].input, ["brut"]);
 });
 
-test("promptsForModel : EmbeddingGemma → prompts de tâche query/document ; bge-m3 → aucun", () => {
+test("promptsForModel: EmbeddingGemma → query/document task prompts; bge-m3 → none", () => {
   const gemma = promptsForModel("onnx-community/embeddinggemma-300m-ONNX");
   assert.deepEqual(gemma, {
     query: "task: search result | query: ",
@@ -177,7 +177,7 @@ test("promptsForModel : EmbeddingGemma → prompts de tâche query/document ; bg
   assert.equal(promptsForModel("Xenova/bge-m3"), undefined);
 });
 
-test("le pipeline n'est chargé qu'une fois (modèle coûteux), réutilisé entre appels", async () => {
+test("the pipeline is loaded only once (expensive model), reused across calls", async () => {
   let loads = 0;
   const load: () => Promise<FeatureExtractor> = async () => {
     loads++;

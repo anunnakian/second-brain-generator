@@ -3,17 +3,17 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import { parseAnswers, resolveTargetDir, resolveRunMode } from "./installer-args.mjs";
 
-test("parseAnswers — forme --x=v", () => {
-  const r = parseAnswers(["--name=mon-cerveau"], {}, {});
-  assert.equal(r.projectName, "mon-cerveau");
+test("parseAnswers — --x=v form", () => {
+  const r = parseAnswers(["--name=my-brain"], {}, {});
+  assert.equal(r.projectName, "my-brain");
 });
 
-test("parseAnswers — forme --x v (espace)", () => {
-  const r = parseAnswers(["--name", "mon-cerveau"], {}, {});
-  assert.equal(r.projectName, "mon-cerveau");
+test("parseAnswers — --x v form (space)", () => {
+  const r = parseAnswers(["--name", "my-brain"], {}, {});
+  assert.equal(r.projectName, "my-brain");
 });
 
-test("parseAnswers — aucune clé/secret n'est jamais reconnue (sécurité)", () => {
+test("parseAnswers — no key/secret is ever recognized (security)", () => {
   for (const argv of [
     ["--gemini-key", "SECRET", "--name", "ok"],
     ["--gemini-key=SECRET", "--name=ok"],
@@ -23,82 +23,82 @@ test("parseAnswers — aucune clé/secret n'est jamais reconnue (sécurité)", (
     const r = parseAnswers(argv, {}, {});
     assert.ok(
       !Object.values(r).includes("SECRET"),
-      `secret fuite dans la sortie pour ${argv.join(" ")}`,
+      `secret leaked into output for ${argv.join(" ")}`,
     );
     assert.equal("geminiKey" in r, false);
   }
-  // le reste continue de parser normalement malgré le flag parasite
+  // the rest keeps parsing normally despite the stray flag
   assert.equal(parseAnswers(["--gemini-key", "SECRET", "--name", "ok"], {}, {}).projectName, "ok");
 });
 
-test("parseAnswers — --embedder (formes v et =v, + env SB_EMBEDDER) → embedder", () => {
+test("parseAnswers — --embedder (v and =v forms, + env SB_EMBEDDER) → embedder", () => {
   assert.equal(parseAnswers(["--embedder", "in-process"], {}, {}).embedder, "in-process");
   assert.equal(parseAnswers(["--embedder=gemini"], {}, {}).embedder, "gemini");
   assert.equal(parseAnswers([], { SB_EMBEDDER: "ollama" }, {}).embedder, "ollama");
-  // absent → undefined (l'installeur appliquera la reco machine)
+  // absent → undefined (the installer will apply the machine recommendation)
   assert.equal(parseAnswers([], {}, {}).embedder, undefined);
 });
 
-test("resolveRunMode — --help prime sur tout → 'help'", () => {
+test("resolveRunMode — --help takes priority over everything → 'help'", () => {
   assert.equal(resolveRunMode({ isTTY: true, nonInteractive: true, help: true }), "help");
   assert.equal(resolveRunMode({ isTTY: false, nonInteractive: false, help: true }), "help");
 });
 
-test("resolveRunMode — --non-interactive explicite → 'non-interactive' (avec ou sans TTY)", () => {
+test("resolveRunMode — explicit --non-interactive → 'non-interactive' (with or without TTY)", () => {
   assert.equal(resolveRunMode({ isTTY: true, nonInteractive: true, help: false }), "non-interactive");
   assert.equal(resolveRunMode({ isTTY: false, nonInteractive: true, help: false }), "non-interactive");
 });
 
-test("resolveRunMode — TTY sans --non-interactive → 'interactive'", () => {
+test("resolveRunMode — TTY without --non-interactive → 'interactive'", () => {
   assert.equal(resolveRunMode({ isTTY: true, nonInteractive: false, help: false }), "interactive");
 });
 
-test("resolveRunMode — ni TTY ni --non-interactive → 'refuse' (anti install fantôme)", () => {
+test("resolveRunMode — neither TTY nor --non-interactive → 'refuse' (anti phantom install)", () => {
   assert.equal(resolveRunMode({ isTTY: false, nonInteractive: false, help: false }), "refuse");
 });
 
-test("resolveTargetDir — sans destParent → join(home, name)", () => {
+test("resolveTargetDir — without destParent → join(home, name)", () => {
   assert.equal(
-    resolveTargetDir({ name: "perso", destParent: undefined, home: "/home/me" }),
-    join("/home/me", "perso"),
+    resolveTargetDir({ name: "personal", destParent: undefined, home: "/home/me" }),
+    join("/home/me", "personal"),
   );
 });
 
-test("resolveTargetDir — avec destParent → join(destParent, name)", () => {
+test("resolveTargetDir — with destParent → join(destParent, name)", () => {
   assert.equal(
-    resolveTargetDir({ name: "boulot", destParent: "/data/brains", home: "/home/me" }),
-    join("/data/brains", "boulot"),
+    resolveTargetDir({ name: "work", destParent: "/data/brains", home: "/home/me" }),
+    join("/data/brains", "work"),
   );
 });
 
-test("parseAnswers — --dest (formes v et =v) → destParent", () => {
+test("parseAnswers — --dest (v and =v forms) → destParent", () => {
   assert.equal(parseAnswers(["--dest", "/parent"], {}, {}).destParent, "/parent");
   assert.equal(parseAnswers(["--dest=/parent"], {}, {}).destParent, "/parent");
 });
 
-test("parseAnswers — destParent : précédence flag (--dest) > env (SB_DEST) > défaut", () => {
-  // env gagne sur défaut
+test("parseAnswers — destParent: precedence flag (--dest) > env (SB_DEST) > default", () => {
+  // env wins over default
   assert.equal(parseAnswers([], { SB_DEST: "/env" }, {}).destParent, "/env");
-  // flag gagne sur env
+  // flag wins over env
   assert.equal(parseAnswers(["--dest=/flag"], { SB_DEST: "/env" }, {}).destParent, "/flag");
-  // défaut sinon
+  // default otherwise
   assert.equal(parseAnswers([], {}, { destParent: "/def" }).destParent, "/def");
 });
 
-test("parseAnswers — --help / -h → help:true (sinon false)", () => {
+test("parseAnswers — --help / -h → help:true (otherwise false)", () => {
   assert.equal(parseAnswers(["--help"], {}, {}).help, true);
   assert.equal(parseAnswers(["-h"], {}, {}).help, true);
   assert.equal(parseAnswers(["--name=ok"], {}, {}).help, false);
 });
 
-test("parseAnswers — --non-interactive et ses alias → nonInteractive:true", () => {
+test("parseAnswers — --non-interactive and its aliases → nonInteractive:true", () => {
   for (const flag of ["--non-interactive", "--yes", "--no-input"]) {
     assert.equal(parseAnswers([flag], {}, {}).nonInteractive, true, `${flag}`);
   }
   assert.equal(parseAnswers([], {}, {}).nonInteractive, false);
 });
 
-test("parseAnswers — précédence flag > env > default", () => {
+test("parseAnswers — precedence flag > env > default", () => {
   const defaults = {
     projectName: "def-proj",
     ownerName: "def-owner",
@@ -109,12 +109,12 @@ test("parseAnswers — précédence flag > env > default", () => {
     SB_OWNER_NAME: "env-owner",
     SB_LANGUAGE: "env-lang",
   };
-  // flag gagne sur env et default
+  // flag wins over env and default
   const flagWins = parseAnswers(["--owner=flag-owner"], env, defaults);
   assert.equal(flagWins.ownerName, "flag-owner");
-  // env gagne sur default (pas de flag)
+  // env wins over default (no flag)
   assert.equal(flagWins.projectName, "env-proj");
-  // default si ni flag ni env
+  // default if neither flag nor env
   const onlyDefaults = parseAnswers([], {}, defaults);
   assert.deepEqual(onlyDefaults, {
     projectName: "def-proj",

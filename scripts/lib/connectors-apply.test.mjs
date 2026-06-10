@@ -8,7 +8,7 @@ import { applyConnectorFiles } from "./connectors-apply.mjs";
 
 const mcpConnector = {
   id: "google-drive",
-  label: "Google Drive (communautaire)",
+  label: "Google Drive (community)",
   kind: "mcp",
   serverConfig: {
     type: "stdio",
@@ -17,10 +17,10 @@ const mcpConnector = {
     env: { GDRIVE_CREDS: "<CHEMIN_CREDENTIALS>" },
   },
   permissions: ["mcp__google-drive__search", "mcp__google-drive__read"],
-  credentialsHint: "Place un fichier de credentials OAuth, voir SETUP §6.",
+  credentialsHint: "Place an OAuth credentials file, see SETUP §6.",
 };
 
-// Prépare un dossier jetable avec un .mcp.json et un settings.json minimaux.
+// Prepares a throwaway folder with a minimal .mcp.json and settings.json.
 function scratch() {
   const dir = mkdtempSync(join(tmpdir(), "sbg-connectors-"));
   const mcpPath = join(dir, ".mcp.json");
@@ -32,7 +32,7 @@ function scratch() {
 
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 
-test("applyConnectorFiles écrit le serveur et les permissions dans les fichiers", () => {
+test("applyConnectorFiles writes the server and the permissions into the files", () => {
   const { mcpPath, settingsPath } = scratch();
 
   const res = applyConnectorFiles(mcpConnector, { mcpPath, settingsPath });
@@ -46,7 +46,7 @@ test("applyConnectorFiles écrit le serveur et les permissions dans les fichiers
   ]);
 });
 
-test("applyConnectorFiles est idempotent : une 2ᵉ passe ne duplique rien", () => {
+test("applyConnectorFiles is idempotent: a 2nd pass duplicates nothing", () => {
   const { mcpPath, settingsPath } = scratch();
 
   applyConnectorFiles(mcpConnector, { mcpPath, settingsPath });
@@ -60,7 +60,7 @@ test("applyConnectorFiles est idempotent : une 2ᵉ passe ne duplique rien", () 
   ]);
 });
 
-test("applyConnectorFiles n'écrit rien pour un connecteur natif", () => {
+test("applyConnectorFiles writes nothing for a native connector", () => {
   const { mcpPath, settingsPath } = scratch();
 
   const res = applyConnectorFiles(

@@ -1,10 +1,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// connectors-apply.mjs — branche un connecteur en fusionnant sa conf sur disque.
+// connectors-apply.mjs — wires a connector by merging its config onto disk.
 //
-// Couche I/O fine au-dessus des fusions pures de connectors-merge.mjs : lit
-// .mcp.json + settings.json, applique addServerToMcpJson / addPermissions, puis
-// réécrit les fichiers. Idempotent (hérité des fusions). Les connecteurs natifs
-// (kind:'native') n'écrivent RIEN → { wrote: false }.
+// Thin I/O layer on top of the pure merges in connectors-merge.mjs: reads
+// .mcp.json + settings.json, applies addServerToMcpJson / addPermissions, then
+// rewrites the files. Idempotent (inherited from the merges). Native connectors
+// (kind:'native') write NOTHING → { wrote: false }.
 // ─────────────────────────────────────────────────────────────────────────────
 import { readFileSync, writeFileSync } from "node:fs";
 

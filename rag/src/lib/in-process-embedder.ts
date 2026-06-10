@@ -1,12 +1,12 @@
 import type { Embedder, EmbedderIdentity } from "./embedder.js";
 
-/** Quantification ONNX du modèle (q8 = défaut : léger, qualité quasi pleine). */
+/** ONNX quantization of the model (q8 = default: light, near-full quality). */
 export type Dtype = "fp32" | "q8" | "q4";
 
 /**
- * Prompts de tâche d'un modèle. Certains modèles (EmbeddingGemma) sont entraînés
- * avec un préfixe distinct côté question vs document et perdent en qualité sans —
- * d'autres (bge-m3) n'en veulent pas. Absent = texte brut.
+ * A model's task prompts. Some models (EmbeddingGemma) are trained with a distinct
+ * prefix on the query side vs the document side and lose quality without them —
+ * others (bge-m3) don't want them. Absent = raw text.
  */
 export interface TaskPrompts {
   query: string;
@@ -14,61 +14,61 @@ export interface TaskPrompts {
 }
 
 /**
- * Plafond de lot par défaut. L'attention ONNX est en O(seq²)×batch : envoyer tous
- * les chunks d'une note longue d'un coup fait exploser la RAM (mesuré : note de 78
- * chunks → 8,5 Go et stall). Balayage 4/8/16 sur corpus dense (264 notes) : le PETIT
- * lot gagne sur les deux axes (RAM ET temps) — 4 = pic ~3,2 Go / 5,3 min, vs 16 =
- * 5,4 Go / 7,4 min. La qualité est inchangée (chaque texte est embeddé
- * indépendamment). Voir plan Étape 4-ter + eval-set.md.
+ * Default batch cap. ONNX attention is O(seq²)×batch: sending all the chunks of a
+ * long note at once blows up the RAM (measured: a 78-chunk note → 8.5 GB and stall).
+ * A 4/8/16 sweep on a dense corpus (264 notes): the SMALL batch wins on both axes
+ * (RAM AND time) — 4 = peak ~3.2 GB / 5.3 min, vs 16 = 5.4 GB / 7.4 min. Quality is
+ * unchanged (each text is embedded independently). See the Step 4-ter plan +
+ * eval-set.md.
  */
 export const EMBED_BATCH = 4;
 
-/** Config de l'adaptateur in-process (modèle ONNX + dimension + quantification + prompts). */
+/** Config of the in-process adapter (ONNX model + dimension + quantization + prompts). */
 export interface InProcessConfig {
   model: string;
   dimension: number;
   dtype?: Dtype;
   prompts?: TaskPrompts;
-  /** Taille max d'un sous-lot envoyé au pipeline (borne la RAM). Défaut : `EMBED_BATCH`. */
+  /** Max size of a sub-batch sent to the pipeline (bounds the RAM). Default: `EMBED_BATCH`. */
   batchSize?: number;
 }
 
-/** Tenseur de sortie minimal dont l'adaptateur a besoin (sous-ensemble de Transformers.js). */
+/** Minimal output tensor the adapter needs (subset of Transformers.js). */
 export interface FeatureExtractionTensor {
   tolist(): number[][];
 }
 
-/** Le pipeline `feature-extraction` de Transformers.js, réduit à ce qu'on appelle. */
+/** Transformers.js's `feature-extraction` pipeline, reduced to what we call. */
 export type FeatureExtractor = (
   input: string | string[],
   opts: { pooling: "mean"; normalize: boolean }
 ) => Promise<FeatureExtractionTensor>;
 
-/** Charge (et télécharge au 1ᵉʳ usage) le pipeline ONNX — injectable pour tester sans poids. */
+/** Loads (and downloads on first use) the ONNX pipeline — injectable to test without weights. */
 export type LoadExtractor = () => Promise<FeatureExtractor>;
 
-// Prompts officiels d'EmbeddingGemma (model card) : un préfixe distinct côté
-// recherche vs document. Ollama les applique en interne ; en in-process c'est à
-// nous de les poser, sinon la qualité chute (cf. mesure Étape 4-bis).
+// EmbeddingGemma's official prompts (model card): a distinct prefix on the search
+// side vs the document side. Ollama applies them internally; in-process it's up to
+// us to set them, otherwise quality drops (cf. Step 4-bis measurement).
 const EMBEDDING_GEMMA_PROMPTS: TaskPrompts = {
   query: "task: search result | query: ",
   document: "title: none | text: ",
 };
 
 /**
- * Prompts de tâche à appliquer pour un modèle donné, ou `undefined` si le modèle
- * n'en attend pas (bge-m3, e5…). Connaissance modèle isolée ici (pure, testable) :
- * la sélection l'utilise pour configurer l'adaptateur sans coder en dur le modèle.
+ * Task prompts to apply for a given model, or `undefined` if the model doesn't
+ * expect any (bge-m3, e5…). Model-specific knowledge isolated here (pure, testable):
+ * selection uses it to configure the adapter without hard-coding the model.
  */
 export function promptsForModel(model: string): TaskPrompts | undefined {
   return /embeddinggemma/i.test(model) ? EMBEDDING_GEMMA_PROMPTS : undefined;
 }
 
 /**
- * Chargeur réel par défaut : importe Transformers.js **paresseusement** (dynamic
- * import) et construit le pipeline `feature-extraction` pour le modèle/quantif voulus.
- * Les poids sont téléchargés+cachés au 1ᵉʳ appel, puis tout tourne offline et CPU.
- * Isolé ici pour que les tests unitaires injectent un faux extractor (zéro poids).
+ * Default real loader: imports Transformers.js **lazily** (dynamic import) and
+ * builds the `feature-extraction` pipeline for the wanted model/quantization. The
+ * weights are downloaded+cached on the first call, then everything runs offline and
+ * on CPU. Isolated here so unit tests can inject a fake extractor (zero weights).
  */
 function makeDefaultLoad(config: InProcessConfig): LoadExtractor {
   return async () => {
@@ -81,16 +81,16 @@ function makeDefaultLoad(config: InProcessConfig): LoadExtractor {
 }
 
 /**
- * Adaptateur du port `Embedder` qui charge le modèle **dans le process Node** via
- * Transformers.js (runtime ONNX), sans serveur ni app à installer (ni Ollama).
- * « Gemma inside » : `npm i` tire l'embedder, les poids se téléchargent+cachent au
- * 1ᵉʳ usage puis tout est offline. Voir étude §3 ter + plan Étape 4-bis.
+ * Adapter for the `Embedder` port that loads the model **inside the Node process**
+ * via Transformers.js (ONNX runtime), with no server or app to install (no Ollama).
+ * "Gemma inside": `npm i` pulls the embedder, the weights download+cache on first
+ * use and then everything is offline. See study §3 ter + Step 4-bis plan.
  */
 export class InProcessEmbedder implements Embedder {
   readonly identity: EmbedderIdentity;
 
-  // Pipeline mémoïsé : chargé une seule fois (modèle coûteux à monter en mémoire),
-  // réutilisé pour tous les embeds. Sur échec, on ne cache rien → l'appel suivant réessaie.
+  // Memoized pipeline: loaded only once (model expensive to bring into memory),
+  // reused for all embeds. On failure, nothing is cached → the next call retries.
   private extractorPromise: Promise<FeatureExtractor> | null = null;
 
   constructor(
@@ -116,9 +116,9 @@ export class InProcessEmbedder implements Embedder {
   }
 
   /**
-   * Encode les textes par **sous-lots bornés** (pooling moyen + normalisation L2).
-   * Le plafond évite l'explosion RAM d'onnxruntime sur les notes longues ; les
-   * vecteurs sont reconcaténés dans l'ordre d'origine.
+   * Encodes the texts in **bounded sub-batches** (mean pooling + L2 normalization).
+   * The cap avoids onnxruntime's RAM blow-up on long notes; the vectors are
+   * reconcatenated in their original order.
    */
   private async embed(texts: string[]): Promise<number[][]> {
     const extractor = await this.getExtractor();
@@ -135,18 +135,18 @@ export class InProcessEmbedder implements Embedder {
   }
 
   /**
-   * Charge le pipeline. Si le chargement échoue (poids non téléchargeables, runtime
-   * absent…), on lève une erreur **bruyante** qui nomme le modèle — jamais un vecteur
-   * vide silencieux qui empoisonnerait l'index.
+   * Loads the pipeline. If loading fails (weights not downloadable, runtime
+   * missing…), throws a **loud** error that names the model — never a silent empty
+   * vector that would poison the index.
    */
   private getExtractor(): Promise<FeatureExtractor> {
     if (!this.extractorPromise) {
       this.extractorPromise = this.loadExtractor().catch((cause) => {
-        // Échec → on oublie la promesse pour qu'un prochain appel réessaie de charger.
+        // Failure → forget the promise so a future call retries loading.
         this.extractorPromise = null;
         throw new Error(
-          `Impossible de charger le modèle in-process « ${this.config.model} » ` +
-            `(Transformers.js). Cause : ${cause instanceof Error ? cause.message : cause}`
+          `Unable to load the in-process model "${this.config.model}" ` +
+            `(Transformers.js). Cause: ${cause instanceof Error ? cause.message : cause}`
         );
       });
     }

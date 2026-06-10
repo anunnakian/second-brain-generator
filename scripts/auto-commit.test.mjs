@@ -6,16 +6,16 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 
-// Test de NON-RÉGRESSION : verrouille le comportement « pas de remote » de
-// auto-commit.mjs (commit local, AUCUN push tenté, AUCUNE erreur). C'est le
-// socle de la décision « non au dépôt distant = sûr » (cf. PLAN §3.4 / §5.E).
-// Vert d'emblée : on caractérise un comportement déjà correct, pas un ajout.
+// NON-REGRESSION test: locks in the "no remote" behavior of auto-commit.mjs
+// (local commit, NO push attempted, NO error). This is the foundation of the
+// "no remote repository = safe" decision (cf. PLAN §3.4 / §5.E).
+// Green right away: we characterize an already-correct behavior, not an addition.
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REAL_SCRIPT = join(HERE, "auto-commit.mjs");
 
-// auto-commit.mjs dérive la racine du repo de SA position (resolve(scriptDir, "..")).
-// On reconstruit donc <tmp>/scripts/auto-commit.mjs avec le repo à <tmp>.
+// auto-commit.mjs derives the repo root from ITS position (resolve(scriptDir, "..")).
+// So we reconstruct <tmp>/scripts/auto-commit.mjs with the repo at <tmp>.
 function makeRepo() {
   const root = mkdtempSync(join(tmpdir(), "auto-commit-"));
   mkdirSync(join(root, "scripts"));
@@ -25,7 +25,7 @@ function makeRepo() {
   git(["init", "-q"]);
   git(["config", "user.email", "test@example.com"]);
   git(["config", "user.name", "Test"]);
-  // tout committer (y compris le script copié) → arbre propre au départ
+  // commit everything (including the copied script) → clean tree at the start
   git(["add", "-A"]);
   git(["commit", "-q", "-m", "init"]);
   return { root, git };
@@ -39,13 +39,13 @@ function runAutoCommit(root) {
   });
 }
 
-// Crée un dépôt bare local servant de remote `origin`, et renvoie son nb de commits.
+// Creates a local bare repo serving as the `origin` remote, and returns its commit count.
 function addBareRemote(root, git) {
   const bare = mkdtempSync(join(tmpdir(), "auto-commit-remote-"));
   execFileSync("git", ["init", "--bare", "-q", bare]);
   git(["remote", "add", "origin", bare]);
-  // remote réellement *pushable* sans upstream → `git push` nu réussit s'il est
-  // autorisé. Ainsi le test OFF prouve que c'est le GATE qui bloque, pas un échec.
+  // remote actually *pushable* without an upstream → a bare `git push` succeeds if
+  // allowed. So the OFF test proves it's the GATE that blocks, not a failure.
   git(["config", "push.default", "current"]);
   const headCount = () => {
     try {
@@ -55,68 +55,69 @@ function addBareRemote(root, git) {
         }).trim(),
       );
     } catch {
-      return 0; // pas encore de HEAD côté remote = rien n'a été poussé
+      return 0; // no HEAD on the remote yet = nothing has been pushed
     }
   };
   return { bare, headCount };
 }
 
-test("auto-commit — sans remote : commit local, aucun push, aucune erreur", () => {
+test("auto-commit — no remote: local commit, no push, no error", () => {
   const { root, git } = makeRepo();
   try {
     const before = git(["rev-list", "--count", "HEAD"]).trim();
-    writeFileSync(join(root, "note.md"), "# une note\n");
+    writeFileSync(join(root, "note.md"), "# a note\n");
 
-    runAutoCommit(root); // ne doit PAS throw (exit 0)
+    runAutoCommit(root); // must NOT throw (exit 0)
 
     const after = git(["rev-list", "--count", "HEAD"]).trim();
-    assert.equal(Number(after), Number(before) + 1, "un commit local créé");
-    assert.equal(git(["remote"]).trim(), "", "aucun remote configuré");
-    assert.equal(git(["status", "--porcelain"]).trim(), "", "arbre propre après commit");
+    assert.equal(Number(after), Number(before) + 1, "one local commit created");
+    assert.equal(git(["remote"]).trim(), "", "no remote configured");
+    assert.equal(git(["status", "--porcelain"]).trim(), "", "clean tree after commit");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test("auto-commit — arbre propre : aucun commit créé (idempotent)", () => {
+test("auto-commit — clean tree: no commit created (idempotent)", () => {
   const { root, git } = makeRepo();
   try {
     const before = git(["rev-list", "--count", "HEAD"]).trim();
-    runAutoCommit(root); // rien à committer → exit 0 sans rien faire
+    runAutoCommit(root); // nothing to commit → exit 0 doing nothing
     const after = git(["rev-list", "--count", "HEAD"]).trim();
-    assert.equal(after, before, "aucun commit superflu");
+    assert.equal(after, before, "no superfluous commit");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-// ── Couche 1 : push OPT-IN explicite ────────────────────────────────────────
-// La présence d'un remote ne suffit PAS : auto-commit ne pousse que si
-// l'utilisateur l'a explicitement activé (git config secondbrain.autopush true).
-// Garantit qu'un remote hérité (clone lié au générateur) ne reçoit JAMAIS les notes.
+// ── Layer 1: explicit OPT-IN push ───────────────────────────────────────────
+// The presence of a remote is NOT enough: auto-commit only pushes if the user
+// has explicitly enabled it (git config secondbrain.autopush true).
+// Guarantees that an inherited remote (clone linked to the generator) NEVER
+// receives the notes.
 
-test("auto-commit — remote présent mais autopush OFF (défaut) : commit local, AUCUN push", () => {
+test("auto-commit — remote present but autopush OFF (default): local commit, NO push", () => {
   const { root, git } = makeRepo();
   const { bare, headCount } = addBareRemote(root, git);
   try {
-    writeFileSync(join(root, "note.md"), "# privée\n");
+    writeFileSync(join(root, "note.md"), "# private\n");
     runAutoCommit(root); // exit 0
-    assert.equal(git(["status", "--porcelain"]).trim(), "", "commit local OK");
-    assert.equal(headCount(), 0, "le remote ne reçoit RIEN (pas de push)");
+    assert.equal(git(["status", "--porcelain"]).trim(), "", "local commit OK");
+    assert.equal(headCount(), 0, "the remote receives NOTHING (no push)");
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(bare, { recursive: true, force: true });
   }
 });
 
-test("auto-commit — autopush ON : push effectif vers le remote choisi", () => {
+test("auto-commit — autopush ON: effective push to the chosen remote", () => {
   const { root, git } = makeRepo();
   const { bare, headCount } = addBareRemote(root, git);
   try {
     git(["config", "secondbrain.autopush", "true"]);
-    writeFileSync(join(root, "note.md"), "# à sauvegarder\n");
+    writeFileSync(join(root, "note.md"), "# to back up\n");
     runAutoCommit(root); // exit 0
-    assert.ok(headCount() >= 1, "le remote a bien reçu le commit (push)");
+    assert.ok(headCount() >= 1, "the remote did receive the commit (push)");
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(bare, { recursive: true, force: true });

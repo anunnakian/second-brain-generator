@@ -9,7 +9,7 @@ import {
   type QuotaGuard,
 } from "./embedder.js";
 
-// Espionne quel chemin de quota est consommé, sans toucher au réseau.
+// Spies on which quota path is consumed, without touching the network.
 class SpyGuard implements QuotaGuard {
   calls: string[] = [];
   consume(): void {
@@ -20,7 +20,7 @@ class SpyGuard implements QuotaGuard {
   }
 }
 
-test("GeminiEmbedder expose son identité (provider/modèle/dimension) pour l'estampille", () => {
+test("GeminiEmbedder exposes its identity (provider/model/dimension) for the stamp", () => {
   const embedder = new GeminiEmbedder({
     usage: new SpyGuard(),
     embedOne: async () => [],
@@ -33,15 +33,15 @@ test("GeminiEmbedder expose son identité (provider/modèle/dimension) pour l'es
   });
 });
 
-test("createEmbedder() : point de sélection unique → un Embedder Gemini par défaut", () => {
+test("createEmbedder(): single selection point → a Gemini Embedder by default", () => {
   assert.equal(createEmbedder().identity.providerId, "gemini");
 });
 
-test("createEmbedder() mémoïse : le même embedder est partagé entre appels (session ONNX chaude)", () => {
+test("createEmbedder() memoizes: the same embedder is shared across calls (hot ONNX session)", () => {
   assert.equal(createEmbedder(), createEmbedder());
 });
 
-test("selectEmbedder : provider 'openai-compatible' → adaptateur compatible-OpenAI estampillé", () => {
+test("selectEmbedder: provider 'openai-compatible' → stamped OpenAI-compatible adapter", () => {
   const embedder = selectEmbedder({
     EMBEDDING_PROVIDER: "openai-compatible",
     EMBEDDING_BASE_URL: "http://localhost:11434/v1",
@@ -57,7 +57,7 @@ test("selectEmbedder : provider 'openai-compatible' → adaptateur compatible-Op
   });
 });
 
-test("selectEmbedder : provider 'in-process' → adaptateur transformers-js, ni URL ni clé", () => {
+test("selectEmbedder: provider 'in-process' → transformers-js adapter, no URL or key", () => {
   const embedder = selectEmbedder({ EMBEDDING_PROVIDER: "in-process" });
 
   assert.deepEqual(embedder.identity, {
@@ -67,7 +67,7 @@ test("selectEmbedder : provider 'in-process' → adaptateur transformers-js, ni 
   });
 });
 
-test("selectEmbedder : 'in-process' accepte un modèle/dimension custom via l'env", () => {
+test("selectEmbedder: 'in-process' accepts a custom model/dimension via the env", () => {
   const embedder = selectEmbedder({
     EMBEDDING_PROVIDER: "in-process",
     EMBEDDING_MODEL_NAME: "Xenova/bge-m3",
@@ -78,13 +78,13 @@ test("selectEmbedder : 'in-process' accepte un modèle/dimension custom via l'en
   assert.equal(embedder.identity.dimension, 1024);
 });
 
-test("embedQuery consomme en prioritaire (jamais bloqué par l'indexation)", async () => {
+test("embedQuery consumes on the priority path (never blocked by indexing)", async () => {
   const guard = new SpyGuard();
   await embedQuery("q", { usage: guard, embedOne: async () => [1, 2, 3] });
   assert.deepEqual(guard.calls, ["priority"]);
 });
 
-test("embedTexts consomme en indexation, une fois par texte", async () => {
+test("embedTexts consumes on the indexing path, once per text", async () => {
   const guard = new SpyGuard();
   const out = await embedTexts(["a", "b"], {
     usage: guard,

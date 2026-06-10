@@ -3,21 +3,21 @@ import assert from "node:assert/strict";
 
 import { repoStatusLine, countVaultUncommitted } from "./repo-status.mjs";
 
-test("countVaultUncommitted : compte les entrées porcelain sous vault/ (modif + non suivi)", () => {
+test("countVaultUncommitted: counts porcelain entries under vault/ (modified + untracked)", () => {
   const porcelain = [
-    " M vault/notes/idee.md", // modifié
-    "?? vault/brouillon.md", //   non suivi
-    " M rag/.cache/vault.db", // hors vault → ignoré
-    "?? .env", //                hors vault → ignoré
+    " M vault/notes/idea.md", // modified
+    "?? vault/draft.md", //       untracked
+    " M rag/.cache/vault.db", // outside vault → ignored
+    "?? .env", //                outside vault → ignored
   ].join("\n");
   assert.equal(countVaultUncommitted(porcelain), 2);
 });
 
-test("countVaultUncommitted : tree propre → 0", () => {
+test("countVaultUncommitted: clean tree → 0", () => {
   assert.equal(countVaultUncommitted(""), 0);
 });
 
-test("repoStatusLine : repo à jour → ✅ avec le commit court", () => {
+test("repoStatusLine: repo up to date → ✅ with the short commit", () => {
   const line = repoStatusLine({
     pullOk: true,
     pullOut: "Already up to date.",
@@ -25,16 +25,16 @@ test("repoStatusLine : repo à jour → ✅ avec le commit court", () => {
     changedCount: 0,
     uncommittedVault: 0,
   });
-  assert.equal(line, "✅ Repo à jour (commit abc1234).");
+  assert.equal(line, "✅ Repo up to date (commit abc1234).");
 });
 
-test("repoStatusLine : pull échoué → ⚠️ à vérifier", () => {
+test("repoStatusLine: pull failed → ⚠️ to check", () => {
   const line = repoStatusLine({ pullOk: false, pullOut: "boom", short: "abc1234", uncommittedVault: 0 });
   assert.match(line, /^⚠️/);
   assert.match(line, /[Pp]ull/);
 });
 
-test("repoStatusLine : repo mis à jour → 📥 avec le nombre de fichiers", () => {
+test("repoStatusLine: repo updated → 📥 with the file count", () => {
   const line = repoStatusLine({
     pullOk: true,
     pullOut: "Updating 1..2\nFast-forward",
@@ -43,10 +43,10 @@ test("repoStatusLine : repo mis à jour → 📥 avec le nombre de fichiers", ()
     uncommittedVault: 0,
   });
   assert.match(line, /^📥/);
-  assert.match(line, /3 fichier/);
+  assert.match(line, /3 file/);
 });
 
-test("repoStatusLine : modifs du vault NON committées → ⚠️ fail-loud (auto-commit muet)", () => {
+test("repoStatusLine: UNcommitted vault changes → ⚠️ fail-loud (silent auto-commit)", () => {
   const line = repoStatusLine({
     pullOk: true,
     pullOut: "Already up to date.",
@@ -54,14 +54,14 @@ test("repoStatusLine : modifs du vault NON committées → ⚠️ fail-loud (aut
     changedCount: 0,
     uncommittedVault: 2,
   });
-  assert.match(line, /^⚠️/); // crie au lieu du ✅ vert
-  assert.match(line, /2/); // nombre de notes en jeu
-  assert.match(line, /auto-commit/i); // nomme la cause (le hook n'a pas tourné)
+  assert.match(line, /^⚠️/); // shouts instead of the green ✅
+  assert.match(line, /2/); // number of notes at stake
+  assert.match(line, /auto-commit/i); // names the cause (the hook didn't run)
 });
 
-test("repoStatusLine : le fail-loud vault PRIME sur 'à jour'", () => {
-  // Même quand le pull dit « à jour », des notes non committées doivent crier :
-  // c'est exactement le symptôme des hooks muets sous nvm (PATH minimal).
+test("repoStatusLine: the vault fail-loud TAKES PRIORITY over 'up to date'", () => {
+  // Even when the pull says "up to date", uncommitted notes must shout:
+  // that's exactly the symptom of silent hooks under nvm (minimal PATH).
   const line = repoStatusLine({
     pullOk: true,
     pullOut: "Already up to date.",
