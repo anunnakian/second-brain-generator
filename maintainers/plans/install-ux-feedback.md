@@ -67,7 +67,11 @@ the Desktop path most users need. Screenshot confirmed.
 **Verify:** the final message of an install must lead with the ⚠️ block and show both labelled options,
 Desktop first.
 
-## E. NEW — Brain offers yes/no deletion of the fictional example notes after the demo answer  ⬜ TODO
+## E. NEW — Brain offers yes/no deletion of the fictional example notes after the demo answer  ✅ DONE (e993af4)
+> Delivered: §0 of `CLAUDE.md.template` + FR overlay now add a post-demo yes/no offer (write stays
+> confirmed) with both branches + "anytime later" reassurance. New tag-based helper
+> `scripts/clear-example-notes.mjs` (TDD, `clearExamples(root)` reuses `clearExampleNotes` over
+> `<root>/vault`; CLI deletes then `npm run reindex`). 134/134 tests green.
 **Files:** `CLAUDE.md.template` (EN, §0 "First launch") + `templates/fr/CLAUDE.md.template` (FR overlay).
 Possibly a tiny brain-side helper for the actual removal.
 **Desired behaviour (from Thomas):** right **after** the brain successfully answers the demo/canary
@@ -98,7 +102,12 @@ and the harness backlog are NOT tagged → preserved by construction.
 **Verify:** ask the canary question in a fresh brain → answer + yes/no deletion offer; answer "no" →
 reassurance shown; answer "yes" → 5 files gone, re-indexed, demo block no longer appears.
 
-## F. Align the interactive installer menu with the new embedder wording  ⬜ TODO
+## F. Align the interactive installer menu with the new embedder wording  ✅ DONE (a16711c)
+> Delivered: `installer.mjs` option 2 → "Via an API (Gemini, OpenAI, Mistral, or your own endpoint)",
+> option 3 → "A model running locally, via Ollama" (most technically advanced); privacy scale +
+> Gemini sub-flow de-dramatized (pick the right plan/settings so notes aren't used for training);
+> Mistral added to the OpenAI-compatible sub-choice. `SETUP.md` §0/§9 + `CLAUDE.md` Step 4 CASE B
+> aligned. `embedder-choice` tests assert logic only → 134/134 green.
 **File:** `installer.mjs` (lines ~284–324 region) + check `SETUP.md` / `.env.example` for the old framing.
 **What to change:** mirror Items B & C in the interactive menu so both flows match:
 - `EMBEDDER_LABELS.api.title` → "Via an API (Gemini, OpenAI, Mistral, or your own endpoint)".
@@ -117,7 +126,14 @@ update it as a wording change.
 **Note:** this is consistency work; the field test used the **chat** flow (already fixed), so F is lower
 priority than E but should ship together for coherence.
 
-## G. README — make the install section findable & visually scannable  ⬜ TODO
+## G. README — make the install section findable & visually scannable  ✅ DONE (03717ce)
+> Delivered: two top nav links (What's a second brain? / Install yours now); stronger separator —
+> emoji callout after the `---` + heading "🚀 Ready to try it? — install your brain in one paste";
+> 4-step flow strip `docs/img/install-flow.svg` (option A: clone → 4 questions → brain created →
+> new conversation); emoji-prefixed subsections (🧭/📦/⚙️) + 3 moves (🔑/💾/🔄). **Anchor safety:**
+> explicit `<a id>` for `ready-to-try-it` and `how-do-i-choose-my-semantic-search-my-rag` so the new
+> emoji headings don't break the 4 existing in-page links. README "free ≠ private"/"exploit" framing
+> also softened for coherence with B/F.
 **File:** `README.md`. Field feedback: the install/onboarding part feels "lost" when scrolling.
 **Structure today:** pitch (l.1–31) → `---` (l.33) → explainer sections → `---` (l.135) → `## Ready to
 try it?` (l.137, the install) with `### How do I choose my RAG / What you need / Installation`.
