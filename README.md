@@ -71,6 +71,14 @@ A few properties define it:
 
 > <sub>☝️ A real brain seen in Obsidian — each dot is a note, each line a `[[wikilink]]`. The folder tree on the left (decisions, meetings, people, prep-1-1…) and the graph are *exactly* what Claude reads and writes.</sub>
 
+> 💡 **And honestly — the graph isn't the point.** Pretty as that constellation is, and fun to spin
+> around, it's rarely a *useful* view day-to-day. Where Obsidian truly earns its place is as a
+> **polished, advanced Markdown reader and editor**: comfortable reading, live preview, instant local
+> search — and the freedom to **edit a note by hand** whenever you'd rather type than ask Claude.
+> And since these are the very files your brain runs on, anything you tweak in Obsidian is **autosaved
+> and automatically re-indexed within seconds** (a live watcher re-embeds the modified note), so your
+> brain's search stays current — no "save" button, no "sync", nothing to do by hand.
+
 ## Who is it for?
 
 For anyone who's **drowning in scattered information** and wants to retrieve it effortlessly —
