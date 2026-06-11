@@ -7,8 +7,8 @@
 > **STATUS: 🗺️ ACTION PLAN** (created 2026-06-08).
 > **Orchestration layer** on top of the docs already written — it doesn't replace them, it
 > **sequences** them:
-> - the *why* → ADR [`../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md)
->   (+ [`../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md));
+> - the *why* → ADR [`../decisions/0007-three-embedder-adapters-privacy-scale.md`](../decisions/0007-three-embedder-adapters-privacy-scale.md)
+>   (+ [`../decisions/0006-rag-mcp-is-stable-contract.md`](../decisions/0006-rag-mcp-is-stable-contract.md));
 > - the *how* of the port → plan [`embedder-spi.md`](archived/embedder-spi.md) **(✅ DELIVERED — archived)**;
 > - the *what to measure* → study [`etude-rag-local-criteres-et-veille.md`](etude-rag-local-criteres-et-veille.md).
 
@@ -37,7 +37,7 @@
 - [x] **D1 — Decide the install default** 🧭 *(Thomas's decision, **AFTER Steps 4 AND 4-bis**; depends on: 4, 4-bis)* — **DECIDED: option C (explicit 3-way choice), ADAPTIVE reco (16 GB+ → in-process ⭐ ; ≤ 8 GB or Intel Mac → API key ⭐)** _(2026-06-09)_
   - [x] Cross-testing the adapters **together** (Thomas + Claude), on the basis of the measurements (Steps 4 + 4-bis) _(2026-06-09)_
   - [x] Decide the default — **in-process "Gemma inside"** retained as the **recommended default** (viability proven Step 4-bis), presented in an **explicit 3-way choice** (option C): 1=in-process ⭐ / 2=API key (Gemini or enterprise endpoint) / 3=Ollama (advanced); Intel Mac guard-rail (option 1 hidden) _(2026-06-09)_
-  - [x] Record (ADR 0007 addendum) with the *why* + the **mandatory free/paid key framing** for option 2 → [`../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md#addendum-d1-2026-06-09--défaut-dembedder-à-linstallation--tranché) _(2026-06-09)_
+  - [x] Record (ADR 0007 addendum) with the *why* + the **mandatory free/paid key framing** for option 2 → [`../decisions/0007-three-embedder-adapters-privacy-scale.md`](../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--défaut-dembedder-à-linstallation--tranché) _(2026-06-09)_
 - [x] **Step 1 — `Embedder` port + safe index** 🧪 TDD *(depends on: —)* _(2026-06-08 · 2ac9698→bf2ead8)_
   - [x] `index_meta` stamp — round-trip (written at indexing, read back) _(2026-06-08 · 2ac9698)_
   - [x] Identity guard — divergent/absent identity → "stale index" signal, no false results _(2026-06-08 · 7e9fdec)_
@@ -99,7 +99,7 @@
 
 > **✅ RESOLVED (2026-06-09) → option C: explicit 3-way choice at install**, **recommended default
 > ADAPTIVELY based on the machine** (see below). Recorded in an **ADR 0007 addendum**
-> ([link](../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md#addendum-d1-2026-06-09--défaut-dembedder-à-linstallation--tranché)).
+> ([link](../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--défaut-dembedder-à-linstallation--tranché)).
 > The section below is kept as a **trace of the reasoning**. The implementation = **Step 5**.
 >
 > **🎚️ ADAPTIVE reco (Thomas's directive, 2026-06-09) — the install detects the machine:**
@@ -365,7 +365,7 @@
 - **Prerequisite:** Steps 4 (+6) delivered and a persistent ceiling.
 - **Load:** study §3 (big Qwen3 / Nemotron-8B), §4 (**E2GraphRAG** — the graph route *without an LLM per
   chunk*, to prefer over LightRAG on a modest machine); ADR
-  [`../decisions/0008-lightrag-et-graph-rag-differes.md`](../decisions/0008-lightrag-et-graph-rag-differes.md)
+  [`../decisions/0008-lightrag-graph-rag-deferred.md`](../decisions/0008-lightrag-graph-rag-deferred.md)
   (the *why* of deferring LightRAG / graph-RAG: LLM per chunk → cost + leak; to measure on the
   FR eval-set; E2GraphRAG preferred).
 - **Do:** wire up a "max quality" embedder (opt-in) and/or evaluate E2GraphRAG; **measure** vs the

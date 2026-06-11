@@ -9,9 +9,9 @@
 > LOUD failure to catch any broken state** — has been executed (CHANGE 6 + sourced post-flight).
 > The EN translation (`translate-to-english.md`) remains deferred to the very end.
 >
-> **Associated architecture decisions:** [`../../decisions/0005-support-onglet-code-desktop.md`](../../decisions/0005-support-onglet-code-desktop.md)
+> **Associated architecture decisions:** [`../../decisions/0005-support-desktop-code-tab.md`](../../decisions/0005-support-desktop-code-tab.md)
 > (revised 2026-06-06 — reversal of D1/D4) and
-> [`../../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md)
+> [`../../decisions/0006-rag-mcp-is-stable-contract.md`](../../decisions/0006-rag-mcp-is-stable-contract.md)
 > (stable MCP contract, unchanged).
 
 ---

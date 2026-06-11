@@ -4,11 +4,11 @@
   graph-RAG) in the current effort; we **reserve it for later**, conditioned on a measurement. This
   is a **sequencing and scope** decision, not a definitive rejection.
 - **Related:**
-  [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](0006-le-mcp-du-rag-est-un-contrat-stable.md)
+  [`0006-rag-mcp-is-stable-contract.md`](0006-rag-mcp-is-stable-contract.md)
   (the MCP contract stays stable; a graph-RAG would live *behind* that contract, not in its place),
-  [`0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md)
+  [`0007-three-embedder-adapters-privacy-scale.md`](0007-three-embedder-adapters-privacy-scale.md)
   (the current effort is about the swappable **embedder** — a different layer from LightRAG's),
-  [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (the LLM that *answers*
+  [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md) (the LLM that *answers*
   stays Claude → already bounds the privacy promise; LightRAG would add an LLM **at indexing**).
 - **Associated plan:** [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md)
   (Step 7 "big-machine profile", **conditional**, where this lead lands) and the study

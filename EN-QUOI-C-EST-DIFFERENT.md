@@ -71,7 +71,7 @@ question, that's it".
 
 > 📌 *Founding episode/decision:* the founding anecdote (Richard's bare machine, the
 > "Frankenstein" state) and the "trust Claude + fail loudly" reversal are in ADR
-> [`0005`](maintainers/decisions/0005-support-onglet-code-desktop.md).
+> [`0005`](maintainers/decisions/0005-support-desktop-code-tab.md).
 
 ---
 
@@ -117,7 +117,7 @@ by using it: your notes, your rules (`CLAUDE.md`), your skills.
 
 > 📌 *Underlying decisions:* [`maintainers/decisions/0001`](maintainers/decisions/0001-launcher-vs-brain.md)
 > (reusable launcher vs brain created elsewhere) and
-> [`0002`](maintainers/decisions/0002-installateur-maison-vs-plugin.md) (home-grown installer rather
+> [`0002`](maintainers/decisions/0002-in-house-installer-vs-plugin.md) (home-grown installer rather
 > than a plugin).
 
 ---
@@ -158,8 +158,8 @@ brain folder (copies the files + `git init`, **0 remotes**), so **no link** to t
 by construction. Backup/multi-machine = wire up **your** remote repository, **opt-in** (nothing is
 pushed until you ask for it).
 
-> 📌 *Underlying decisions:* [`0002`](maintainers/decisions/0002-installateur-maison-vs-plugin.md)
-> (home-grown vs plugin), [`0003`](maintainers/decisions/0003-pas-upgrade-capacites-cerveaux.md)
+> 📌 *Underlying decisions:* [`0002`](maintainers/decisions/0002-in-house-installer-vs-plugin.md)
+> (home-grown vs plugin), [`0003`](maintainers/decisions/0003-no-brain-capability-upgrade.md)
 > (self-sufficiency rather than upstream upgradability).
 
 ---
@@ -188,12 +188,12 @@ the most lightweight:
 > otherwise key). Measured: the in-process "Gemma inside" scores **90%** (= Ollama, > Gemini 80%) on
 > the eval-set. The architecture (stable MCP contract + SPI port) is what makes the swap **safe**:
 > index identity stamp + explicit confirmation, never a silent reindex. See
-> ADR [`0007`](maintainers/decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md)
-> (decision + addendum D1) and [`0006`](maintainers/decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md).
+> ADR [`0007`](maintainers/decisions/0007-three-embedder-adapters-privacy-scale.md)
+> (decision + addendum D1) and [`0006`](maintainers/decisions/0006-rag-mcp-is-stable-contract.md).
 >
 > 🔭 **Still at the ambition stage** (not shipped): the opt-in **"big machine"** profile (heavy
 > embedder such as Qwen3, reranking, possibly GraphRAG/LightRAG — cf. ADR
-> [`0008`](maintainers/decisions/0008-lightrag-et-graph-rag-differes.md)).
+> [`0008`](maintainers/decisions/0008-lightrag-graph-rag-deferred.md)).
 
 ---
 

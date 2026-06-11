@@ -2,7 +2,7 @@
 
 - **STATUS:** ACCEPTED (2026-06-05).
 - **Related:** [`0001-launcher-vs-brain.md`](0001-launcher-vs-brain.md) (the launcher→brain link
-  is severed "by construction" — that's the cause of this consequence), [`0002-installateur-maison-vs-plugin.md`](0002-installateur-maison-vs-plugin.md).
+  is severed "by construction" — that's the cause of this consequence), [`0002-in-house-installer-vs-plugin.md`](0002-in-house-installer-vs-plugin.md).
 
 ## Context
 

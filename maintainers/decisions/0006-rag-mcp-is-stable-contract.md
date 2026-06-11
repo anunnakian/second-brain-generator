@@ -1,10 +1,10 @@
 # ADR 0006 — The RAG's MCP server is a stable interface contract
 
 - **STATUS:** ACCEPTED (2026-06-06).
-- **Related:** [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md)
+- **Related:** [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md)
   (reinforces its invariant "RAG server = standard MCP, no dependency on a proprietary API"),
-  [`0003-pas-upgrade-capacites-cerveaux.md`](0003-pas-upgrade-capacites-cerveaux.md) (tension
-  examined below), [`0005-support-onglet-code-desktop.md`](0005-support-onglet-code-desktop.md).
+  [`0003-no-brain-capability-upgrade.md`](0003-no-brain-capability-upgrade.md) (tension
+  examined below), [`0005-support-desktop-code-tab.md`](0005-support-desktop-code-tab.md).
 - **Associated implementation plan:** [`../plans/archived/onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md) (§8).
 
 ## Context

@@ -1,8 +1,8 @@
 # ADR 0004 — Claude-only for now, cross-platform not excluded
 
 - **STATUS:** ACCEPTED (2026-06-05).
-- **Related:** [`0002-installateur-maison-vs-plugin.md`](0002-installateur-maison-vs-plugin.md),
-  [`0003-pas-upgrade-capacites-cerveaux.md`](0003-pas-upgrade-capacites-cerveaux.md).
+- **Related:** [`0002-in-house-installer-vs-plugin.md`](0002-in-house-installer-vs-plugin.md),
+  [`0003-no-brain-capability-upgrade.md`](0003-no-brain-capability-upgrade.md).
 
 ## Context
 

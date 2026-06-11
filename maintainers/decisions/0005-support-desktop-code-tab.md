@@ -4,9 +4,9 @@
   forbid installs" is **reversed** in favor of "trust Claude + fail loud". See the
   **"Revision 2026-06-06"** section at the end of the document. The official desktop target (the
   central decision of this ADR) remains **unchanged**; only the *way we make it reliable* changes.
-- **Related:** [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (the Code
+- **Related:** [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md) (the Code
   tab is **another surface of the same Claude Code** — it does NOT reopen cross-AI),
-  [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](0006-le-mcp-du-rag-est-un-contrat-stable.md).
+  [`0006-rag-mcp-is-stable-contract.md`](0006-rag-mcp-is-stable-contract.md).
 - **Associated implementation plan:** [`../plans/archived/onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md).
 
 ## Context

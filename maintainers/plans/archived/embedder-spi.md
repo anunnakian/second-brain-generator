@@ -14,7 +14,7 @@
 > file + the cited files. Discipline **TDD** (skill `tdd-discipline`, and `outside-in-diamond-tdd`
 > for the back-end/Hive scope), **manual** conventional commits + co-author Claude.
 >
-> **Realizes ADR [`../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md)**
+> **Realizes ADR [`../decisions/0006-rag-mcp-is-stable-contract.md`](../decisions/0006-rag-mcp-is-stable-contract.md)**
 > (stable MCP port, embedder = interchangeable SPI) + its **"confirm-gate" addendum**.
 
 ---

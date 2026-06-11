@@ -16,29 +16,29 @@
 - **`decisions/`** — the architecture decisions (ADRs): the *why*, durable.
   - [`0001-launcher-vs-brain.md`](decisions/0001-launcher-vs-brain.md) — reusable read-only launcher
     vs brain created elsewhere; rename `starter` → `generator`.
-  - [`0002-installateur-maison-vs-plugin.md`](decisions/0002-installateur-maison-vs-plugin.md) —
+  - [`0002-in-house-installer-vs-plugin.md`](decisions/0002-in-house-installer-vs-plugin.md) —
     home-grown installer/generator (designed for non-tech users, chat-guided) rather than a Claude
     plugin / marketplace.
-  - [`0003-pas-upgrade-capacites-cerveaux.md`](decisions/0003-pas-upgrade-capacites-cerveaux.md) —
+  - [`0003-no-brain-capability-upgrade.md`](decisions/0003-no-brain-capability-upgrade.md) —
     no (yet) upgradability of capabilities: disproportionate complexity + simple local iteration
     (home-grown skills); to be reopened on feedback.
-  - [`0004-claude-only-pour-l-instant.md`](decisions/0004-claude-only-pour-l-instant.md) —
+  - [`0004-claude-only-for-now.md`](decisions/0004-claude-only-for-now.md) —
     Claude-only for now (vault + RAG already agnostic); cross-platform not ruled out, on
     feedback, with the orchestration layer to adapt.
-  - [`0005-support-onglet-code-desktop.md`](decisions/0005-support-onglet-code-desktop.md) —
+  - [`0005-support-desktop-code-tab.md`](decisions/0005-support-desktop-code-tab.md) —
     the Code tab (Claude desktop app) becomes an official target (= the same Claude Code, not
     cross-AI). **Revised 2026-06-06**: we flip the install gate → **trust Claude to install +
     fail loud** (failure A unproven; we catch instead of prevent).
-  - [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md) —
+  - [`0006-rag-mcp-is-stable-contract.md`](decisions/0006-rag-mcp-is-stable-contract.md) —
     the RAG's MCP surface is a stable public contract (API port); embedder/vector store/chunking
     = interchangeable adapters (SPI). Lets us move off Gemini (→ local) without breaking the
     brains. Complements 0003; generalization of `vault_stats` enacted.
-  - [`0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md) —
+  - [`0007-three-embedder-adapters-privacy-scale.md`](decisions/0007-three-embedder-adapters-privacy-scale.md) —
     three embedder choices (native Gemini **kept** / **OpenAI-compatible** with configurable URL,
     covering OpenAI·Azure·company gateway·Mistral·Ollama / **local**), ~2 impls to code; privacy
     scale by provider; on swap the database stays but the vectors don't (reindex).
     Concretizes 0006, opens the "2nd embedder discussion" of the SPI plan. **Default at install = open.**
-  - [`0008-lightrag-et-graph-rag-differes.md`](decisions/0008-lightrag-et-graph-rag-differes.md) —
+  - [`0008-lightrag-graph-rag-deferred.md`](decisions/0008-lightrag-graph-rag-deferred.md) —
     **LightRAG / graph-RAG deferred** (interesting but not now): it's a **different paradigm**
     (LLM **per chunk** at indexing → cost + content leakage, breaks the non-dev/privacy target), not
     an embedder adapter → **orthogonal** to the current effort. Reserved for **Step 7**

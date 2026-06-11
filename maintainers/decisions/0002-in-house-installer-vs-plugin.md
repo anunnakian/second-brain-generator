@@ -2,8 +2,8 @@
 
 - **STATUS:** ACCEPTED (2026-06-05).
 - **Related:** [`0001-launcher-vs-brain.md`](0001-launcher-vs-brain.md) (the launcher↔brain
-  architecture this decision dresses up), [`0003-pas-upgrade-capacites-cerveaux.md`](0003-pas-upgrade-capacites-cerveaux.md)
-  (updatability, a direct consequence of the choice), [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md).
+  architecture this decision dresses up), [`0003-no-brain-capability-upgrade.md`](0003-no-brain-capability-upgrade.md)
+  (updatability, a direct consequence of the choice), [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md).
 
 ## Context
 
@@ -42,7 +42,7 @@ We **do not package** the generator as a plugin/marketplace for now.
   the brain's **local `settings.json`** — they act only there, not globally as plugin hooks might.
 - **Costs discoverability:** no "1-command" install from a marketplace; you have to clone.
   Acceptable as long as onboarding goes through the Claude bootstrap stub.
-- **Costs updatability** (see [`0003`](0003-pas-upgrade-capacites-cerveaux.md)): without a
+- **Costs updatability** (see [`0003`](0003-no-brain-capability-upgrade.md)): without a
   versioned distribution channel, generated brains receive no engine/skills updates. It's a
   conscious choice, addressed in the dedicated ADR.
 - **Invariant not to violate:** install must remain doable **without any technical skill or
