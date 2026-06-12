@@ -476,6 +476,7 @@ missteps):
 1. [My second brain pivoted twice in 3 days](https://medium.com/@tpierrain/my-second-brain-pivoted-twice-in-3-days-0e6a723faf34)
 2. [I hired a no-bullshit coach in my second brain](https://medium.com/@tpierrain/i-hired-a-no-bullshit-coach-in-my-second-brain-e7b1ce5702c5)
 3. [Why my second brain was talking without understanding](https://medium.com/@tpierrain/why-my-second-brain-was-talking-without-understanding-103d5c305341)
+4. [Embeddings and RAG explained to my parents](https://medium.com/@tpierrain/embeddings-and-rag-explained-to-my-parents-006f76dd4c14)
 
 ---
 
