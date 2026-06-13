@@ -68,11 +68,11 @@
       **refreshed** watch (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **privacy scale by
       provider**, plain-language "embedder ≠ chat LLM", eval-first. **STATUS: 🔬 STUDY — nothing
       enacted.** *(feeds the SPI plan + ADR 0007)*
-    - [`auto-open-env-gemini.md`](plans/auto-open-env-gemini.md) — make the **installer open `.env`
-      itself** on the Gemini-key path (CASE B), deterministically, instead of relying on the
-      Claude-driven amorce. Diagnosed (**not** a code regression — the old behaviour was the amorce,
-      non-deterministic). **STATUS: ⏳ PENDING** — fix to run after a `/clear`.
   - **`plans/archived/`** — shipped/closed plans (kept for the detail of the steps):
+    - [`auto-open-env-gemini.md`](plans/archived/auto-open-env-gemini.md) — make the **installer open
+      `.env` itself** on the Gemini-key path (CASE B), deterministically (tested seam
+      `scripts/lib/open-env.mjs`, guard `SBG_NO_OPEN_ENV`), instead of relying on the Claude-driven
+      amorce. **STATUS: ✅ SHIPPED** (2026-06-13; proven end-to-end + real-Mac TextEdit confirm).
     - [`embedder-spi.md`](plans/archived/embedder-spi.md) — abstract the RAG's embedder behind an
       `Embedder` SPI port + stamp the index with an identity (provider/model/dimension) to make a
       swap **safe** (natural-language confirm-gate, never a silent reindex). Concretizes

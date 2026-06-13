@@ -7,6 +7,37 @@
 
 ---
 
+> ## STATUS — ✅ LIVRÉ (2026-06-13, branche `feat/auto-open-env`)
+> 3 commits : seam `9860c9a` · wiring `37b7c0c` · amorce `f322460`. Suite 147/147 verte
+> (dont `open-env.test.mjs` 13/13). Prouvé end-to-end : Gemini GUARD ON → exit 0, copy `!opened`,
+> aucune fenêtre ; in-process → exit 0, `.env` JAMAIS ouvert ; **GUI réel (Thomas) → TextEdit s'ouvre
+> sur le `.env`, copy `✓ I opened your .env`**.
+
+## Tracking
+
+- [x] **Part 1 — tested cross-platform opener seam (`scripts/lib/open-env.mjs`, TDD)** _(9860c9a)_
+  - [x] `buildOpenEnvCommand(platform, absPath)` — darwin / win32 / linux / unknown→null
+  - [x] `shouldOpenEnv(env, platform)` — guard matrix (SBG_NO_OPEN_ENV, CI, linux headless)
+  - [x] `openEnvInEditor(absPath, {platform, env, spawn})` — best-effort, swallow errors, `{opened}`
+  - [x] `open-env.test.mjs` green (command matrix + guard matrix + swallow-errors) — 13/13
+- [x] **Part 2 — wire into `installer.mjs` (CASE B only)** _(37b7c0c)_
+  - [x] import `spawn` from `node:child_process`
+  - [x] call `openEnvInEditor` in the `geminiKeyMissing` branch
+  - [x] adapt banner copy to `opened` / `!opened`
+  - [x] never invoked for in-process / Ollama / endpoint-completed (structurally — guarded by `geminiKeyMissing`)
+- [x] **Part 3 — reconcile the amorce (`CLAUDE.md`, Step 4 → point 1 → CASE B)** _(f322460)_
+  - [x] "installer already opened `.env`" wording; Claude only guides the paste; fallback if not opened
+  - [x] key-never-in-chat guardrail preserved
+- [x] **Validation**
+  - [x] full test suite green incl. `open-env.test.mjs` — 147/147
+  - [x] disposable Gemini install, GUARD ON → exit 0, `!opened` copy, no editor window
+  - [x] manual Mac GUI (Thomas) → TextEdit opens on `.env`, `opened` copy _(2026-06-13)_
+  - [x] disposable in-process install → exit 0, `.env` NOT opened
+  - [x] cleanup `rm -rf /tmp/sbg-gem.*`
+- [x] **Commits (3, on a branch)** + plan archived per `plan-done-equals-archived`
+
+---
+
 ## Diagnosis (verified 2026-06-10 — NOT a code regression)
 
 - **There is no auto-open logic anywhere in `installer.mjs` / `scripts/`** — `grep` for
