@@ -124,23 +124,25 @@ node installer.mjs --non-interactive --name "<name>" --dest "<parent-location>" 
      is offline.)* **Move on to point 2.**
 
    - **CASE B — "Gemini API key" option.** Here, and only here, the key is missing (it **never**
-     travels through the chat or the CLI) → the brain is not verified yet. **Actively guide the
-     user**: (a) **open the `.env` YOURSELF in their editor** — i.e. **LAUNCH it via a shell command
-     (Bash)**. Do **NOT** use the Read tool and do **not** merely print its contents in the chat:
-     "open" means making an **editor window appear on the user's side** (`.env` is a *hidden* file that
-     an average person won't be able to locate on their own). Use an **absolute path** (or `$HOME/…`),
-     **never a quoted `~`** (it doesn't expand in the shell):
+     travels through the chat or the CLI) → the brain is not verified yet. **The installer has
+     ALREADY opened the user's `.env` in their editor itself** (deterministic, CASE B only — it prints
+     `✓ I opened your .env in your editor`). So your job is **only to guide the paste**: tell them
+     "Your `.env` is open in your editor — paste your key right after `GOOGLE_GEMINI_API_KEY=`, save
+     (⌘S on macOS), and let me know when it's done." *(free key: https://aistudio.google.com/apikey ;
+     **repeat the calm framing** — notes' text leaves the machine, and for a confidential vault you'd
+     enable billing / data-controls so it isn't used for training, see SETUP §9; or switch to option 1
+     fully-local.)*
+     (a) **Only if the installer did NOT open it** (headless / no GUI editor — it prints the
+     `⚠️ Gemini key not provided yet … paste it into <path>` copy instead), open it YOURSELF via a
+     shell command (Bash) — making an **editor window appear on the user's side** (`.env` is a *hidden*
+     file an average person won't locate). Use an **absolute path** (or `$HOME/…`), **never a quoted
+     `~`** (it doesn't expand in the shell):
      ```bash
      open -t "$HOME/<sub-path>/.env"   # macOS — opens TextEdit (field-verified)
      notepad "<path>\.env"              # Windows
      xdg-open "<path>/.env"             # Linux (or: ${EDITOR:-nano} "<path>/.env")
      ```
-     Then tell them exactly what to do: "I've opened your `.env` in TextEdit — paste your key right
-     after `GOOGLE_GEMINI_API_KEY=`, save (⌘S), and let me know when it's done." *(free key:
-     https://aistudio.google.com/apikey ; **repeat the calm framing** — notes' text leaves the machine,
-     and for a confidential vault you'd enable billing / data-controls so it isn't used for training,
-     see SETUP §9; or switch to option 1 fully-local.)* **If nothing opens**
-     (no GUI editor, headless), chain the fallbacks without waiting: reveal in Finder
+     If even that opens nothing, chain the fallbacks without waiting: reveal in Finder
      (`open -R "$HOME/<sub-path>/.env"`), or VS Code (`code "<path>/.env"`); only as a last resort,
      give the path + the line to fill in. **The key stays edited in `.env` by the user — never pasted
      into the chat nor passed as an argument.** Then (b) **run, from the brain folder, the deterministic
