@@ -57,7 +57,7 @@ du debounce sur un cerveau existant, backport **manuel** dans le dossier du cerv
   - [x] push KO simulé (mauvaise URL) → commits locaux intacts, exit 0, message d'avertissement, **pas de blocage** _(exit 0, ⚠️ PUSH FAILED, 2 commits intacts, tree clean)_
   - [x] no-remote / autopush=false → ni commit-push ni erreur (parité avec aujourd'hui) _(no-remote : exit 0 silencieux ; autopush OFF : skip, remote < local, silencieux)_
   - [x] cleanup des dossiers de test
-- [ ] **Commits (séparés, sur la branche)** + plan archivé per [[plan-done-equals-archived]]
+- [x] **Commits (séparés, sur la branche)** + plan archivé per [[plan-done-equals-archived]] _(2026-06-13 : 6 commits séparés ; plan déplacé dans archived/ + README MAJ + STATUS ✅)_
 
 ---
 
