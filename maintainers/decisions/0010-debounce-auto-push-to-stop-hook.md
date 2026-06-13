@@ -26,6 +26,25 @@ PostToolUse "Write|Edit"  →  auto-commit.mjs   (git add + commit, PER EDIT)   
 Stop                       →  auto-push.mjs     (git push pending commits, 1×/TURN) ← new
 ```
 
+Visually, over a single exchange — many edits, many local commits, **one** push at the end:
+
+```
+┌─────────────────────────  ONE TURN (one exchange)  ─────────────────────────┐
+│                                                                             │
+│   edit      edit      edit      edit      edit       ···  (any number)      │
+│    │         │         │         │         │                                │
+│    ▼         ▼         ▼         ▼         ▼                                 │
+│  commit    commit    commit    commit    commit     ← auto-commit.mjs       │
+│  (local · instant · one per edit · NO network)                              │
+│                                                                             │
+└──────────────────────────────────────────────────────────  Stop  ──────────┘
+                                                                │
+                                                                ▼
+                                          1 × git push     ← auto-push.mjs
+                                          pushes ALL pending commits (@{u}..HEAD)
+                                          best-effort: exit 0, retry next Stop
+```
+
 - **Why the `Stop` event.** It fires **once per main-agent turn**, whatever the number of edits, so
   **the event itself is the debounce** — no in-memory timer (the hook is an ephemeral process), no
   state file to drift. 30 edits → 30 local commits + **1 push**.
