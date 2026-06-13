@@ -1,5 +1,13 @@
 # Plan — Debouncer l'auto-push (commit par-édition, push 1× par tour via le hook `Stop`)
 
+> **STATUS : ✅ SHIPPED** _(2026-06-13, branche `feat/debounce-auto-push`)._ Toutes les parties
+> livrées (5 commits séparés) : seam `git-push.mjs` (`shouldPush`, 5/5) → `auto-push.mjs` hook `Stop`
+> best-effort (`attemptPush`, 5/5) → `auto-commit.mjs` commit-only (4/4) → câblage `Stop` dans
+> `settings.json.template` → doc (SETUP/CLAUDE) + note de backport. **Suite 157/157.** Prouvé
+> empiriquement (shim git comptant les push) : 5 éditions/tour → 0 push, 1 seul push au `Stop`,
+> rattrapage complet ; push KO → exit 0 + ⚠️ + commits intacts ; no-remote & autopush=off → skip
+> silencieux. Indexation hors-scope (déjà debouncée + incrémentale).
+
 > **À exécuter après un `/clear`.** Branche : `feat/debounce-auto-push`.
 > Objectif Thomas : les **commits permanents** lui vont, mais le **push à chaque édition** doit être
 > debouncé (sinon micro-pushs → risque de rate-limit GitHub/GitLab + « temps fou »). Solution la plus
@@ -43,12 +51,12 @@ du debounce sur un cerveau existant, backport **manuel** dans le dossier du cerv
 3. ajouter le bloc `"Stop"` dans `<brain>/.claude/settings.json` (même `{{NODE}}` que les autres hooks,
    déjà substitué dans le fichier généré) ;
 4. relancer une conversation neuve rootée dans le cerveau.
-- [ ] **Validation**
-  - [ ] suite complète verte (incl. `git-push.test.mjs` + `auto-push.test.mjs` + `auto-commit.test.mjs` MAJ)
-  - [ ] install jetable + remote bidon : N éditions dans un tour → N commits, **1 seul push** (observer `git log`/reflog du remote, ou tracer les invocations)
-  - [ ] push KO simulé (mauvaise URL) → commits locaux intacts, exit 0, message d'avertissement, **pas de blocage**
-  - [ ] no-remote / autopush=false → ni commit-push ni erreur (parité avec aujourd'hui)
-  - [ ] cleanup des dossiers de test
+- [x] **Validation** _(2026-06-13)_
+  - [x] suite complète verte (incl. `git-push.test.mjs` + `auto-push.test.mjs` + `auto-commit.test.mjs` MAJ) _(157/157)_
+  - [x] install jetable + remote bidon : N éditions dans un tour → N commits, **1 seul push** _(shim git comptant les push : 5 éditions → 0 push ; 1 Stop → 1 push ; remote rattrape les 6 commits d'un coup)_
+  - [x] push KO simulé (mauvaise URL) → commits locaux intacts, exit 0, message d'avertissement, **pas de blocage** _(exit 0, ⚠️ PUSH FAILED, 2 commits intacts, tree clean)_
+  - [x] no-remote / autopush=false → ni commit-push ni erreur (parité avec aujourd'hui) _(no-remote : exit 0 silencieux ; autopush OFF : skip, remote < local, silencieux)_
+  - [x] cleanup des dossiers de test
 - [ ] **Commits (séparés, sur la branche)** + plan archivé per [[plan-done-equals-archived]]
 
 ---
