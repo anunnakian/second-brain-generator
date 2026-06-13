@@ -57,17 +57,31 @@ Two transverse rules fall out of the ladder:
 
 ## The deterministic machinery (what we actually ship)
 
+Grouped along the same axis as this ADR's **Scope** field (the launcher↔brain split of ADR 0001).
+
+### Harness — the second brain's runtime (hooks + MCP server)
+
 | Mechanism (file) | What it guarantees | Why deterministic — how tested |
 |---|---|---|
 | `auto-commit.mjs` (PostToolUse) | every note edit → a local commit | edit-event-triggered, pure git, `exit 0`; `auto-commit.test.mjs` on a real tmp repo |
 | `auto-push.mjs` + `lib/git-push.mjs` (Stop) | the turn's commits pushed **once**, best-effort | the `Stop` event *is* the debounce (no timer/state); pure `shouldPush` + injectable `attemptPush({git, sleep})` — **10/10** tests |
 | `reindex-scheduler.ts` (MCP process) | a write burst → **one** incremental reindex | bounded 5 s coalescing, **injected** `setTimer`; `reindex-scheduler.test.ts` with a fake clock |
 | `reindex-lock.ts` | no two windows reindex at once | pid+timestamp lock, **injected** storage; `reindex-lock.test.ts` |
-| `verify-rag.mjs` | proves the RAG answers FROM the vault | deterministic `exit 0` / `exit 1` on the sourced canary |
-| `session-status.mjs` + `lib/repo-status.mjs` | loud ⚠️ if notes were left uncommitted | pure `countVaultUncommitted` / `repoStatusLine`, unit-tested |
-| `lib/rag-launcher.mjs` (`run-node.*`) | hooks/MCP keep working on a bare PATH | **re-resolves** node every run, no baked path |
-| `installer.mjs --non-interactive` | one command creates **and** verifies the brain | refuses if the folder exists; self-judging exit code |
+| `session-status.mjs` + `lib/repo-status.mjs` (SessionStart) | loud ⚠️ if notes were left uncommitted | pure `countVaultUncommitted` / `repoStatusLine`, unit-tested |
+
+### Installer
+
+| Mechanism (file) | What it guarantees | Why deterministic — how tested |
+|---|---|---|
+| `installer.mjs --non-interactive` | one command creates **and** verifies the brain | refuses if the target folder exists (provably the creator); self-judging exit code |
 | `lib/open-env.mjs` (CASE B) | the `.env` is opened for the user deterministically | tested seam + `SBG_NO_OPEN_ENV` guard; `open-env.test.mjs` |
+
+### Both (the brain runs on the same bare machine it was installed on)
+
+| Mechanism (file) | What it guarantees | Why deterministic — how tested |
+|---|---|---|
+| `verify-rag.mjs` | proves the RAG answers FROM the vault | deterministic `exit 0` / `exit 1` on the sourced canary — run at install post-flight **and** re-runnable in the brain |
+| `lib/rag-launcher.mjs` (`run-node.*`) | hooks/MCP keep working on a bare PATH | generated at install, **re-resolves** node on every runtime launch, no baked path |
 
 ## Consequences
 
