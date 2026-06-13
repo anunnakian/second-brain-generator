@@ -214,7 +214,7 @@ is not rebuilt from scratch.
 
 > **What was "to benchmark" above now is.** First real numbers under our
 > own harness (eval-set, judge = Claude) on the FR Flemmr vault, via Ollama + the
-> OpenAI-compatible adapter. Detail + repro: [`../eval-set.md`](../eval-set.md#étape-4--résultats-mesurés-local-vs-gemini-2026-06-09).
+> OpenAI-compatible adapter. Detail + repro: [`../eval-set.md`](../eval-set.md#step-4--measured-results-local-vs-gemini-2026-06-09).
 
 | Embedder | Location | Dim | **FR score** | Index 7 notes (warm) | Disk | RAM |
 |---|---|---|---|---|---|---|

@@ -1,6 +1,6 @@
 # Plan — Translate the remaining French to English (international OSS)
 
-> **STATUS: 🚧 IN PROGRESS** (created 2026-06-12). Lot 1 ✅ SHIPPED (`fbd70ba`). Lots 2 & 3 pending.
+> **STATUS: 🚧 IN PROGRESS** (created 2026-06-12). Lots 1 & 2 ✅ SHIPPED (`fbd70ba` + this lot). Lot 3 pending.
 > Thomas decision (scope question): **"Everything, including archived plans"** — translate ALL
 > remaining French prose in the repo, **preserving quoted French** (real commit messages in
 > backticks, screenshot quotes, the `starter→générateur` naming analysis which is *about* French).
@@ -10,7 +10,7 @@
 ## Tracking — checkboxes (tick from the markdown)
 
 - [x] **Lot 1** — `.gitignore` + measure scripts (✅ SHIPPED `fbd70ba`)
-- [ ] **Lot 2** — active maintainer docs + coordinated anchor renames
+- [x] **Lot 2** — active maintainer docs + coordinated anchor renames (✅ all 7 anchors repointed to the live EN headings, verified by slugger; the two FR *records* — QA-screenshot quote + real commit message — kept verbatim) _(2026-06-13)_
 - [ ] **Lot 3** — archived plans (prose only, quoted French preserved)
 - [ ] **On completion** — STATUS ✅ + `git mv` to `plans/archived/` + refresh README
 
@@ -46,27 +46,32 @@
 
 Residual FR in these = 0.
 
-## Lot 2 — Active maintainer docs + coordinated anchor renames  ⬜ TODO
+## Lot 2 — Active maintainer docs + coordinated anchor renames  ✅ SHIPPED _(2026-06-13)_
 
 ⚠️ **Anchor coupling:** several files link to **French section headings** via `#anchor`. Renaming a
 heading **breaks its anchor** → must update every referencing link **in the same change**. Known
 French heading anchors to rename + their referrers:
 
-- [ ] `maintainers/eval-set.md` — body already EN; only the **link** at line 9 points at a French
-  anchor (`#étape-4--brancher-le-local…` in the action plan). NB: eval-set's own headings are ALREADY
-  English (`## Step 4`, `## Step 4-bis`, `## Step 4-ter`) → the inbound `#étape-4…` links from other
-  files are **already dangling** and must be repointed to `#step-4…` / `#step-4-bis…` / `#step-4-ter…`.
-- [ ] `maintainers/plans/rag-embedder-plan-action.md` — fix the dangling anchor **links** at lines
-  ~40, 65, 73, 77, 102, 270 (to eval-set.md `#step-4…` and ADR 0007 `#addendum…`); body already EN.
-- [ ] `maintainers/decisions/0007-three-embedder-adapters-privacy-scale.md` — check the addendum
-  heading `#addendum-d1…défaut-dembedder…` (still French?) → translate heading + repoint its referrers.
-- [ ] `maintainers/plans/etude-rag-local-criteres-et-veille.md` — line 217 anchor link + any FR prose.
-- [ ] `maintainers/plans/auto-open-env-gemini.md` — line ~25 is a **quoted French screenshot** ("C'est
-  ouvert — …") → **preserve as a quote** (or gloss in English), don't silently rewrite.
-- [ ] `maintainers/retrospectives/takeaways-embedder-partage-2026-06-09.md` — FR prose.
+- [x] `maintainers/eval-set.md` — line 9 link repointed `#étape-4--brancher-le-local…` →
+  `#step-4--wire-up-local--measure-vs-gemini-` (body was already EN). _(2026-06-13)_
+- [x] `maintainers/plans/rag-embedder-plan-action.md` — 5 dangling anchor **links** repointed
+  (lines 40, 65, 73, 102, 270) to the live eval-set.md `#step-4…` / `#step-4-bis…` / `#step-4-ter…`
+  and ADR 0007 `#addendum-d1-…-default-embedder-at-install-settled`; body already EN. _(2026-06-13)_
+- [x] `maintainers/decisions/0007-three-embedder-adapters-privacy-scale.md` — addendum heading was
+  **already English** (`## Addendum D1 … default embedder at install: SETTLED`); only its inbound
+  referrers (above) were stale → fixed. Nothing to translate in the file. _(2026-06-13)_
+- [x] `maintainers/plans/etude-rag-local-criteres-et-veille.md` — line 217 link repointed to
+  `#step-4--measured-results-local-vs-gemini-2026-06-09`; no other FR prose. _(2026-06-13)_
+- [x] `maintainers/plans/auto-open-env-gemini.md` — line 25 is a **field-evidence QA quote** (what
+  the user typed + what Claude replied, in TextEdit) → **kept verbatim as a record** (already italic).
+  _(2026-06-13)_
+- [x] `maintainers/retrospectives/takeaways-embedder-partage-2026-06-09.md` — the only FR is the
+  **real commit message** `feat(rag): embedder partagé (createEmbedder mémoïsé)` (commit `2c2994d`,
+  in backticks) → **kept verbatim as a record**. _(2026-06-13)_
 
-**Method:** translate the headings, then `git grep -n "#étape\|#addendum-d1\|#étude"` and update ALL
-referrers; re-grep to confirm no dangling French anchors remain.
+**Verification:** the 7 repointed anchors were checked against the actual headings with a
+github-slugger reproduction — **all resolve** (they were dangling on French slugs before). Re-grep
+for `#étape|#étude|défaut-dembedder` returns only this plan file (its own task descriptions).
 
 ## Lot 3 — Archived plans (prose translated, quoted French preserved)  ⬜ TODO
 

@@ -37,7 +37,7 @@
 - [x] **D1 — Decide the install default** 🧭 *(Thomas's decision, **AFTER Steps 4 AND 4-bis**; depends on: 4, 4-bis)* — **DECIDED: option C (explicit 3-way choice), ADAPTIVE reco (16 GB+ → in-process ⭐ ; ≤ 8 GB or Intel Mac → API key ⭐)** _(2026-06-09)_
   - [x] Cross-testing the adapters **together** (Thomas + Claude), on the basis of the measurements (Steps 4 + 4-bis) _(2026-06-09)_
   - [x] Decide the default — **in-process "Gemma inside"** retained as the **recommended default** (viability proven Step 4-bis), presented in an **explicit 3-way choice** (option C): 1=in-process ⭐ / 2=API key (Gemini or enterprise endpoint) / 3=Ollama (advanced); Intel Mac guard-rail (option 1 hidden) _(2026-06-09)_
-  - [x] Record (ADR 0007 addendum) with the *why* + the **mandatory free/paid key framing** for option 2 → [`../decisions/0007-three-embedder-adapters-privacy-scale.md`](../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--défaut-dembedder-à-linstallation--tranché) _(2026-06-09)_
+  - [x] Record (ADR 0007 addendum) with the *why* + the **mandatory free/paid key framing** for option 2 → [`../decisions/0007-three-embedder-adapters-privacy-scale.md`](../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--default-embedder-at-install-settled) _(2026-06-09)_
 - [x] **Step 1 — `Embedder` port + safe index** 🧪 TDD *(depends on: —)* _(2026-06-08 · 2ac9698→bf2ead8)_
   - [x] `index_meta` stamp — round-trip (written at indexing, read back) _(2026-06-08 · 2ac9698)_
   - [x] Identity guard — divergent/absent identity → "stale index" signal, no false results _(2026-06-08 · 7e9fdec)_
@@ -62,7 +62,7 @@
   - [x] Wire up bge-m3 — `bge-m3` pulled, 1024-dim, score **90% (9/10)** _(2026-06-09)_
   - [x] Re-index the representative vault for each — DB purged + full reindex per model, distinct `index_meta` stamp (anti-fallback proof) _(2026-06-09)_
   - [x] Run the eval-set on each, vs Gemini (baseline re-measured same session = **80% (8/10)**, reproduced from yesterday) _(2026-06-09)_
-  - [x] Table of quantified results (FR quality + footprint/latency) → recorded [`../eval-set.md`](../eval-set.md#étape-4--résultats-mesurés-local-vs-gemini-2026-06-09) _(2026-06-09)_
+  - [x] Table of quantified results (FR quality + footprint/latency) → recorded [`../eval-set.md`](../eval-set.md#step-4--measured-results-local-vs-gemini-2026-06-09) _(2026-06-09)_
   - [~] **Office default decision**: measurement + **recorded reco** (local viable, lightweight EmbeddingGemma natural candidate); quantified answer to Dimitry written. **Final decision = D1 (Thomas)** — small corpus ⇒ fine decision EmbeddingGemma vs bge-m3 to be redone on a rich corpus before recording
 - [x] **Step 4-bis — Standalone RAG MCP "Gemma inside" (in-process embedder, WITHOUT a server)** 🧪 TDD *(depends on: 1, 4)* — **VIABLE as default: npm-only install Mac+Win, tenable latency, 90% quality = Ollama** _(2026-06-09 · 86ea386)_
   - [x] `InProcessEmbedder implements Embedder` via Transformers.js v4 (`@huggingface/transformers@4.2`) — `feature-extraction` pipeline, **EmbeddingGemma-300m-ONNX** (q8), `embedDocuments`/`embedQuery`, mean pooling + L2 normalization; **injectable** pipeline (logic tested **without** weights); **memoized** (loaded once) _(2026-06-09)_
@@ -70,7 +70,7 @@
   - [x] **V1 — cross-OS install**: `npm i @huggingface/transformers` → `onnxruntime-node@1.24.3` **bundles** the pre-built binaries `win32/x64+arm64`, `darwin/arm64`, `linux/x64+arm64`; `requirements=[]` everywhere (only remote CUDA GPU on Linux) → **nothing to compile or download, offline-friendly Mac+Win**. ⚠️ **Intel Mac (darwin/x64) not covered** by this version _(2026-06-09)_
   - [x] **V2 — CPU latency**: weights download ~28 s **once** (cached); cold start with cached weights **675 ms**; warm throughput **8–9 ms/text (~110/s)** without Metal GPU → tenable (one-off encoding) _(2026-06-09)_
   - [x] **V3 — quality re-measured (quantized)**: in-process q8 eval-set = **90% (9/10)** = EmbeddingGemma via Ollama, **> Gemini 80%**. **Parity confirmed, not assumed.** Discovery: the gap came from the **EmbeddingGemma task prompts** (raw q8 = 80%; q8 + prompts = 90%), not from quantization _(2026-06-09)_
-  - [x] Viability table + **verdict "VIABLE as default"** recorded [`../eval-set.md`](../eval-set.md#étape-4-bis--viabilité-de-lin-process--gemma-inside--sans-ollama-2026-06-09) → feeds D1. `npm test` **green (109/109)**; MCP contract **unchanged** _(2026-06-09)_
+  - [x] Viability table + **verdict "VIABLE as default"** recorded [`../eval-set.md`](../eval-set.md#step-4-bis--viability-of-in-process-gemma-inside-without-ollama-2026-06-09) → feeds D1. `npm test` **green (109/109)**; MCP contract **unchanged** _(2026-06-09)_
 - [x] **Step 4-ter — Embedding batch capping (in-process hardening)** 🧪 TDD *(depends on: 4-bis; **BLOCKING for option 1 delivered in Step 5**)* — **delivered: `EMBED_BATCH=4` (measured sweet-spot), 111/111 green, MCP contract unchanged** _(2026-06-09)_
   - [x] Bounded sub-batches in **`InProcessEmbedder.embedDocuments`** (constant `EMBED_BATCH` + configurable `batchSize?`) — placed in the adapter because the RAM constraint is **specific to in-process ONNX** (Gemini/OpenAI = network) → protects all callers; `embedQuery` unchanged _(2026-06-09)_
   - [x] **4/8/16** sweep on the dense corpus (264 notes): **counter-intuitive — the small batch wins on both axes** (batch 4 = ~3.2 GB in-proc peak / 5.3 min / 8.5 ch/s; batch 16 = 5.35 GB / 7.4 min). Quality unchanged. Constant **frozen at 4**; reusable script `rag/scripts/measure-batch.mts` (dev-only, excluded from the brain) _(2026-06-09)_
@@ -99,7 +99,7 @@
 
 > **✅ RESOLVED (2026-06-09) → option C: explicit 3-way choice at install**, **recommended default
 > ADAPTIVELY based on the machine** (see below). Recorded in an **ADR 0007 addendum**
-> ([link](../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--défaut-dembedder-à-linstallation--tranché)).
+> ([link](../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--default-embedder-at-install-settled)).
 > The section below is kept as a **trace of the reasoning**. The implementation = **Step 5**.
 >
 > **🎚️ ADAPTIVE reco (Thomas's directive, 2026-06-09) — the install detects the machine:**
@@ -267,7 +267,7 @@
 > transcript = **78 chunks of ~2000 tokens**) creates a batch whose O(seq²)×batch attention **makes
 > onnxruntime explode** → **8.5 GB RSS and climbing, stall** (process killed at ~12 min, stuck). It's a
 > **MANDATORY fix**, not an edge-case: without it, the option 1 default crashes on a dense
-> user. Numbers recorded [`../eval-set.md`](../eval-set.md#étape-4-ter--corpus-dense--plafonnement-de-lot-2026-06-09).
+> user. Numbers recorded [`../eval-set.md`](../eval-set.md#step-4-ter--dense-corpus-batch-cap-2026-06-09).
 
 - **Prerequisite:** **Step 4-bis delivered** (`InProcessEmbedder`).
 - **Load:** `rag/src/lib/in-process-embedder.ts` (`embedDocuments`); `rag/src/lib/indexer.ts`
