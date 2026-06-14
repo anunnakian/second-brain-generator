@@ -196,6 +196,13 @@
       brain's pinned `source.ref`, ADR 0017) + bake `CLAUDE_CODE_AUTO_COMPACT_WINDOW=350000` into every brain.
       "Update available" detection **deferred** (opt-in, non-blocking). **STATUS: ✅ DONE 2026-06-14**
       (`aaa0f64`, `de21eee`, `05ab1b1`; harness 212/212). Not yet merged — maintainer merges post-demos, tag `v3.0.0`.
+    - [`post-qa-comet-tail-polish-action.md`](plans/archived/post-qa-comet-tail-polish-action.md) — **post-QA
+      polish** of the comet-tail (PR #10), from the maintainer's manual QA: **Item 1** = make the *conversational*
+      "which version?" answer **deterministic** by single-sourcing it (`vault_stats` headlines the engine **tag**
+      from `source.ref`, demotes the mechanical `rag`/schema numbers to "internal build"; ADR 0017 §1.bis) +
+      EN/FR constitution & skill guidance; **Item 2** = stop the false "⚠️ Gemini key missing" status-line segment
+      on **keyless** embedders (shared `geminiKeyWarning`). **STATUS: ✅ DONE 2026-06-14** (`311b009`, `2d5cbe3`,
+      `acd032c`; harness 216/216, RAG 137/137, tsc clean). Not yet merged — maintainer QA + merge post-demos.
 - **`retrospectives/`** — 📝 **takeaway-oriented retros**: the **story** of a notable session
   (the starting question, the path investigation→measurement→fix, the transferable lessons). To be
   distinguished from ADRs (the *why* of a decision) and plans (the *what/how*): here it's the

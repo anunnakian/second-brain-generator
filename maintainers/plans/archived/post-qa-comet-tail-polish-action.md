@@ -1,6 +1,12 @@
 # Post-QA polish — conversational version answer + status-line key segment (PR #10)
 
-**STATUS: 🚧 PLANNED (not started).** Two findings from the maintainer's **manual QA** of the comet-tail
+**STATUS: ✅ DONE (2026-06-14, branch `engine-packaging` / PR #10) — pending the maintainer's manual QA + merge
+post-demos.** Item 1 (deterministic version via `vault_stats` + guidance) and Item 2 (status-line key gate)
+both shipped green (harness 216/216, RAG 137/137, tsc clean). Commits: `311b009` (1a), `2d5cbe3` (1b),
+`acd032c` (Item 2). Only the optional CLI-banner version box is intentionally left for a maintainer call. Plan to
+be archived once merged. Original brief below.
+
+**STATUS (original): 🚧 PLANNED (not started).** Two findings from the maintainer's **manual QA** of the comet-tail
 (2026-06-14), on branch `engine-packaging` (**PR #10**, draft). **✅ Sequencing DECIDED = B (2026-06-14):** the
 **deterministic fix goes into PR #10 now** — the version answer must rest on a single source of truth, not on
 probabilistic prose ([`ADR 0009`](../decisions/0009-prefer-deterministic-mechanisms.md)). **This means `rag/` IS
@@ -62,10 +68,11 @@ before the Mon/Tue demos.**
   - [ ] _(optional, decide with maintainer)_ also surface the engine version in the **CLI startup banner**
         (`session-status.mjs` `systemMessage`) — currently intentionally skipped (status-line covers both
         surfaces). 2 lines if wanted; otherwise leave.
-- [ ] **Definition of done** — harness `node --test` green (fail 0, todo 0); **RAG suite green** (`rag/` `node
-      --test` + **`tsc` clean** — `rag/` IS changed now, option B); tick all boxes with _(date · commit)_; refresh
-      the PR #10 body; **NO `main` merge** (post-demos). When done, `git mv` this plan into
-      [`plans/archived/`](archived/) ([[plan-done-equals-archived]]).
+- [x] **Definition of done** _(2026-06-14)_ — harness `node --test` green (216/216, fail 0, todo 0); **RAG suite green**
+      (`rag/` 137/137 + **`tsc` clean** — `rag/` IS changed now, option B); all boxes ticked with _(date · commit)_;
+      PR #10 body refreshed; **NO `main` merge** (post-demos). Plan `git mv`'d into
+      [`plans/archived/`](archived/) ([[plan-done-equals-archived]]). ⚠️ **Remaining (optional)**: the CLI-banner
+      version box stays unchecked — a maintainer call (status-line already covers both surfaces).
 
 ## Findings (the QA evidence, so a fresh window has the context)
 
