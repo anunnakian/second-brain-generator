@@ -17,19 +17,35 @@ ADR 0014). ⚠️ **No `main` merge before the Mon/Tue demos.**
 > **commits green only** ([[commit-only-green-todo-gate]]), ticks the box in the finishing commit, and mirrors
 > progress in the PR #10 body.
 
-- [ ] **Item 1 — Conversational version answer = the engine TAG, not the mechanical vector** _(= the maintainer's
-      "A"; aligns the spoken answer with [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md)
-      and with the status-line)._
-  - [ ] **constitution EN** (`CLAUDE.md.template`): add a short guidance line — when asked "what's your engine
-        version", read `engine-manifest.json` and report **`source.ref`** (the engine tag, e.g. `engine v3.0.0`)
-        as THE version; the `rag X.Y.Z` / index-schema from `vault_stats` is **internal mechanics** (mention only
-        if the user digs). Natural home: near the existing "intent → MCP tool" table (line ~164).
-  - [ ] **constitution FR** (`templates/fr/CLAUDE.md.template`): the same guidance, in French (table ~line 151).
-  - [ ] **`update-engine` SKILL.md**: one line so the version-reporting path also points to `source.ref`
-        (the skill already says the engine "records its version + where to pull from in `engine-manifest.json`").
-  - [ ] _(optional, DEFERRED post-demo)_ harden by making **`vault_stats` itself surface `source.ref`** as the
-        headline version (so the answer is robust even without guidance). **Not now** — it touches `rag/` and the
-        MCP contract (ADR 0006/0014). Guidance is enough pre-demo.
+- [ ] **Item 1 — Make the conversational version answer = the engine TAG, reliably** _(= the maintainer's "A";
+      aligns the spoken answer with [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md) and
+      with the status-line)._ ⚠️ **Key insight (maintainer, 2026-06-14):** prose guidance to an LLM is **itself
+      probabilistic** — it biases the coin flip, it doesn't remove it ([`ADR 0009`](../decisions/0009-prefer-deterministic-mechanisms.md):
+      instructing an LLM ≠ determinism). The **real fix is a single source of truth**: remove the wrong answer at
+      its source so every path leads to the tag. So this Item is **two layers**, with a sequencing decision below.
+  - [ ] **1a — THE deterministic fix (single source of truth): `vault_stats` surfaces `source.ref` as "Version".**
+        The brain reaches for `vault_stats` spontaneously → make that tool return the **right** value: the engine
+        **tag** (`source.ref`, read from `engine-manifest.json` at the brain root), labelled **"Version"**; and
+        **relabel** `rag X.Y.Z` / index-schema as **"internal build / mechanics"** (kept for debug/reindex, never
+        again presented as "the version"). Then whether the LLM reads the tool **or** the manifest, it lands on the
+        tag — no wrong number left to grab. _(TS, TDD: a pure formatter mirroring `scripts/lib/engine-version.mjs`
+        `formatEngineVersion` + a loader reading `../engine-manifest.json`; wire into `rag/src/tools/vault-stats.ts`
+        via `rag/src/lib/engine-version.ts`.)_ **Cost / caveat:** touches **`rag/`** + the MCP report shape
+        (additive) → [`ADR 0006`](../decisions/0006-rag-mcp-is-stable-contract.md) (additive, OK) and
+        [`ADR 0014`](../decisions/0014-ship-update-engine-before-mass-deployment.md) (rag changes were parked for
+        post-demo). **See the sequencing decision.**
+  - [ ] **1b — Interim mitigation (guidance, cheap, pre-demo-safe, doc-only).** Even with 1a, a short constitution
+        line removes any residual ambiguity; before 1a lands, it's the only lever.
+    - [ ] **constitution EN** (`CLAUDE.md.template`): when asked "what's your engine version", report the engine
+          **tag** (`source.ref` / `vault_stats` "Version") as THE version; the `rag`/schema vector is **internal
+          mechanics**. Natural home: near the "intent → MCP tool" table (line ~164).
+    - [ ] **constitution FR** (`templates/fr/CLAUDE.md.template`): same, in French (table ~line 151).
+    - [ ] **`update-engine` SKILL.md**: one line pointing the version-reporting path to `source.ref`.
+  - [ ] **⚖️ SEQUENCING DECISION (open, with the maintainer):**
+        **(A)** guidance (1b) **now** pre-demo + deterministic `vault_stats` (1a) **post-demo** — layered, keeps
+        `rag/` frozen before the demos; **(B)** pull the deterministic fix (1a) into **PR #10 now** (additive +
+        tested, but pulls `rag/` into the pre-demo PR). _Maintainer leans toward the deterministic fix being the
+        actual solution; decide A vs B after the `/clear`._
 - [ ] **Item 2 — status-line: stop the false "⚠️ Gemini key missing" on keyless embedders.** _(pre-existing bug,
       now QA-confirmed user-visible on an in-process brain — CLI screenshot 2026-06-14.)_
   - [ ] `scripts/status-line.mjs`: gate `keySeg` behind **`geminiKeyRequired(envContent)`** (import it from
