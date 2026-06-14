@@ -101,6 +101,12 @@
     improvement → manual per-user migration (the very nightmare 0003's invariant spares them). The model
     (0012) and invariant (0003) are unchanged — only the *timing* moves. **Scope: Second brain (runtime) +
     Installer.**
+  - [`0015-cross-platform-parity.md`](decisions/0015-cross-platform-parity.md) —
+    **Mac AND Windows are first-class, at parity (HARD requirement, release gate).** Enshrines a
+    requirement that previously lived only in (archived) plans. Every launcher ships `.sh` **and** `.cmd`;
+    pure-Node core (no `bash`/`jq`); paths normalised; the Windows half is unit-tested even on a Mac.
+    Only sanctioned gap = the in-process embedder's **Intel-Mac** carve-out (ADR 0007). Operative rule =
+    `DEVELOPING.md` §8. **Scope: Second brain (runtime) + Installer.**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
