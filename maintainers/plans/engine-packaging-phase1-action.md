@@ -50,10 +50,10 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
       index schema stamp); else skip. Then update the brain's recorded `engineVersion` + `source.ref` and
       **re-seed `provenance`** for the new `merge` files.
   - [ ] reindex-trigger lib + tests (stale → reindex; fresh → skip).
-- [ ] **Step 6 — Brain-side `update-engine` skill (Claude-driven UX).** A skill shipped by the installer
-      into the brain that confirms with the user (opt-in, **never** auto), calls the core, and reports
-      what changed / whether a reindex ran. Deterministic work stays in the `.mjs`; the skill is the thin
-      conversational driver.
+- [ ] **Step 6 — Brain-side `update-engine` skill (Claude-driven UX) — [ADR 0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md).**
+      A skill shipped by the installer into the brain that confirms with the user (opt-in, **never** auto),
+      calls the core, and reports what changed / whether a reindex ran. Deterministic work stays in the
+      `.mjs`; the skill is the thin conversational driver. **Not** a tool on the `vault-rag` MCP server.
   - [ ] add the skill to the launcher's shipped skills + manifest `merge` list; install-copy verified.
 - [ ] **Step 7 — Cross-platform parity gate (ADR 0015 §8).** Confirm every launcher/script touched has
       **both** `.sh` and `.cmd`; `win32`-branch unit tests pass; note the periodic real bare-Windows check.

@@ -107,6 +107,12 @@
     pure-Node core (no `bash`/`jq`); paths normalised; the Windows half is unit-tested even on a Mac.
     Only sanctioned gap = the in-process embedder's **Intel-Mac** carve-out (ADR 0007). Operative rule =
     `DEVELOPING.md` §8. **Scope: Second brain (runtime) + Installer.**
+  - [`0016-update-engine-is-a-skill-not-an-mcp-tool.md`](decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md) —
+    **`update-engine` = a Claude-driven *skill* + a deterministic Node *core* (`scripts/update-engine.mjs`),
+    NOT a tool on the `vault-rag` MCP server** (and not a terminal CLI). Keeps the MCP retrieval contract
+    clean (0006), matches the Claude-driven ethos (0002), stays testable/deterministic (0009). User
+    triggers it in conversation (or the brain offers it, thanks to Phase 0 observability). **Scope: Second
+    brain (runtime) + Installer.**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
