@@ -1,7 +1,22 @@
 # Engine packaging — Phase 0 action plan (Track D: decouple now, defer the channel)
 
-**STATUS: 🚧 IN PROGRESS.** Gate #0 written (red, by design) + **Step 1 done** on branch
-`claude/engine-packaging-phase0-wmfjxz`. See **Progress log** at the bottom before continuing.
+**STATUS: 🚧 IN PROGRESS** on branch `claude/engine-packaging-phase0-wmfjxz`. **Where we are = the
+checklist just below** (the first unchecked box is the next big step). Full detail in the **Progress log**
+at the bottom.
+
+## ▶ Progress checklist (SOURCE OF TRUTH — resume at the first unchecked box)
+
+> To resume, the maintainer only says **“reprends le plan en cours”**. The agent then locates the plan
+> whose STATUS is 🚧 IN PROGRESS, reads **this** checklist, and does **the first unchecked `- [ ]` big
+> step** (and nothing more — see the Session protocol). Tick the box in the **same commit** that finishes
+> the step, so the last commit pushed on the branch always shows the true state.
+
+- [x] **Gate #0** — survival test written (RED by design until Step 3). `scripts/lib/engine-manifest.test.mjs`.
+- [x] **Step 1** — Relocatable paths (`config.ts` → `resolvePath` + env vars). RAG suite green, tsc clean.
+- [ ] **Step 2** — Observable version vector (semver + `vault_stats` + index schema stamp). ⬅ **NEXT**
+- [ ] **Step 3** — Ownership manifest (`engine-manifest.json`) → **turns gate #0 green**; full test file.
+- [ ] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified, then `git mv` into
+  [`plans/archived/`](archived/).
 
 Enacts **Phase 0** of
 [`engine-packaging-study.md`](engine-packaging-study.md) (Track D), under the four-part model and the
@@ -42,15 +57,20 @@ Three deliverables, independent, shippable one at a time (a `/clear` between eac
 ## Session protocol (the maintainer's standing working agreement — honour it without being re-asked)
 
 These rules are **fixed by the maintainer (Thomas)** and apply to **every** session running this plan, so
-he never has to restate them in a new prompt:
+he never has to restate them in a new prompt. The only thing he ever needs to say is **“reprends le plan
+en cours”**.
 
-1. **One big step per fresh window.** Each **big step** (gate #0, Step 1, Step 2, Step 3) is executed in
-   its **own new session** — never drag a long conversation across steps (context rot). The committed docs
-   (ADR 0012 + this plan, incl. the **Progress log** at the bottom) are the **only** external memory a new
-   window needs.
-2. **Update the Progress log as you go.** Whenever you advance, **edit this plan's Progress log in the same
-   breath** — record where we are (what's done, the branch, commit SHAs, what's next), so the next window
-   can pick up cold.
+0. **Self-locate — never ask “where are we?”.** On **“reprends le plan en cours”** (or any equivalent),
+   find the plan under [`maintainers/plans/`](.) whose **STATUS is 🚧 IN PROGRESS**, read its **Progress
+   checklist**, and take **the first unchecked `- [ ]` big step** as the task. The checklist is the source
+   of truth; the maintainer should never have to tell you where to resume.
+1. **One big step per fresh window.** Each **big step** (a checklist line) is executed in its **own new
+   session** — never drag a long conversation across steps (context rot). The committed docs (ADR 0012 +
+   this plan: its **checklist** + **Progress log**) are the **only** external memory a new window needs.
+2. **Tick the box + update the log in the finishing commit.** When a big step is done, **check its box**
+   (`- [ ]` → `- [x]`), move the **⬅ NEXT** marker to the following box, and refresh the **Progress log**
+   — all in the **same commit** that finishes the step. So the **last commit pushed on the branch always
+   reflects the true state**, and the maintainer can follow just by reading the plan file.
 3. **Stop and ask before the next big step.** At the **end of each big step**, **do NOT roll into the next
    one.** Report where we are and **explicitly ask the maintainer** (via `AskUserQuestion`) whether to
    continue in this session or open a fresh window. Wait for the answer — the default expectation is a
@@ -58,21 +78,25 @@ he never has to restate them in a new prompt:
 
 ## Execution kickoff (run in a fresh window — avoid context rot)
 
-Execute this plan from a **new session**, not by dragging a long conversation along. The committed docs
-(ADR 0012 + this plan) **are** the external memory — the new window needs nothing else. Open it and give
-it only:
+Execute each big step from a **new session**. The committed docs (ADR 0012 + this plan) **are** the
+external memory — the new window needs nothing else.
+
+**The whole kickoff is one sentence:** the maintainer says **“reprends le plan en cours”**. By the
+**Session protocol** (rule 0) the agent self-locates — finds the 🚧 IN PROGRESS plan, reads the
+**Progress checklist**, and does the first unchecked big step — then commits/pushes (ticking the box) and
+asks before the next one.
+
+If the maintainer prefers to be explicit, the long form is equivalent:
 
 > Read and follow `maintainers/decisions/0012-engine-packaging-four-part-model.md` and
 > `maintainers/plans/engine-packaging-phase0-action.md` **to the letter** (four-part model, additive-only
-> founding principle, three regimes — and the **Session protocol** + **Progress log**). Work on the branch
-> named in the Progress log (currently **`claude/engine-packaging-phase0-wmfjxz`**). **Do NOT merge to
-> `main`** (demo week — runtime code merges only after). **TDD strict** (skill `tdd-discipline`): do **the
-> single next big step named in the Progress log**, then stop and show me the diff. Keep the `rag` suite
-> green; commit + push to that branch; update the Progress log; then **ask me** before the next big step.
+> founding principle, three regimes — and the **Session protocol** + **Progress checklist**). Work on the
+> branch in the STATUS line (currently **`claude/engine-packaging-phase0-wmfjxz`**). **Do NOT merge to
+> `main`** (demo week). **TDD strict** (skill `tdd-discipline`): do **the first unchecked big step**, then
+> stop and show me the diff. Keep the `rag` suite green; commit + push (tick the box + update the log);
+> then **ask me** before the next big step.
 
-**Each big step gets its own fresh window** (one clean context per step — the tablet-friendly equivalent
-of `/clear` between steps), per the **Session protocol** above. Branch off `main` once the framing PR is merged;
-otherwise branch off `claude/engine-packaging-study-2nzmkg`.
+Branch off `main` once the framing PR is merged; otherwise branch off `claude/engine-packaging-study-2nzmkg`.
 
 ## Acceptance gate #0 — the founding principle, made testable (do this first)
 
