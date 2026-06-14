@@ -153,14 +153,22 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         DEVELOPING §8: parity is enforced by the `win32`-branch unit tests above, backed by an occasional
         real bare-Windows install. Full Windows CI stays deferred until proven necessary (ADR 0009 spirit) —
         the next reinforcement if drift is ever found.
-- [ ] **Step 8 (one of the LAST steps) — Document second-brain maintainability for everyone.** Update the
+- [x] **Step 8 (one of the LAST steps) — Document second-brain maintainability for everyone.** Update the
       **project `README.md`** (and `SETUP.md` for the hands-on flow) to explain, in plain language, **how a
       second brain stays maintainable**: that every brain ships a built-in, opt-in `update-engine`; the
       **user journey** (ask → confirm → swap engine + reindex-if-needed → report; or the brain offers it
       thanks to Phase 0 observability); what it touches vs never touches (notes/.env/constitution/settings/
       skills are sacred); and the role of `engine-manifest.json` as the readable map of "what is the
       engine". Reuse the PR's "In plain words" + "user journey" boxes ([ADR 0014](../decisions/0014-ship-update-engine-before-mass-deployment.md), [0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md)).
-  - [ ] README: a short "Keeping your brain up to date" section (audience = everyone, incl. non-technical).
+      _(2026-06-14 · docs-only, no code change → harness unchanged at 204 tests, fail 0. README gets a new
+      "🔄 Keeping your brain up to date (its engine)" section right after Backup — leads with the 4-element
+      mental model (launcher-once / brain self-carries its updater / `engine-manifest.json` as the map +
+      recorded `source` / throw-away shallow-clone), then "ask + confirm", the sacred list, and the git/npm/
+      network prereqs incl. the "npm = local deps, not a registry" note. SETUP gets a new "§10 — Keeping your
+      engine up to date" with the concrete trigger phrases + the 6-step what-it-does + fails-loud/sacred
+      guarantees + the optional `node scripts/update-engine.mjs`. §10 appended after §9 to avoid renumbering
+      the `SETUP §8`/`§9` anchors README links to.)_
+  - [x] README: a short "Keeping your brain up to date" section (audience = everyone, incl. non-technical).
         **Framing asked for by the maintainer (2026-06-14):** lead with **the basic concepts / the 3–4
         elements**, then **what the user concretely does**. The mental model to convey:
         (1) **launcher vs brain** — the launcher (installer) is used **once**, at install; you **never re-run
@@ -177,7 +185,7 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         **Prereqs at upgrade time:** `git` + `npm` + network (same as install) — note that `npm install`
         here means installing the RAG engine's **dependencies locally**, NOT publishing/pulling a package
         from a central registry (ADR 0001: self-hosted, no registry in Phase 1).
-  - [ ] SETUP: the concrete steps to trigger / accept an engine update.
+  - [x] SETUP: the concrete steps to trigger / accept an engine update.
 - [ ] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified (harness `node --test`,
       RAG `npm test`, `tsc --noEmit`), then `git mv` this plan into [`plans/archived/`](archived/), refresh
       the PR body, confirm `SETUP.md`/README reflect the shipped flow (Step 8).
