@@ -175,6 +175,25 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
 > itself**, later refinements (the 3-way merge of `CLAUDE.md`/settings in Phase 2, a separate
 > `update-skills`) can ride in through it — no brain is ever stranded.
 
+## Direct follow-up — surface the engine version / proactive offer (PARKED, same subject)
+
+> **Not an orphan side-task — this is the direct continuation of the observability thread** this work
+> opened (Phase 0 made the engine observable; [ADR 0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md)
+> says the brain *may proactively offer* an update). Raised by the maintainer 2026-06-14. **Parked
+> deliberately: NOT in PR #10** (would widen the scope right before the 15-16 June demos), to be done as a
+> small follow-up once Phase 1 lands. Captured so it isn't lost. *(memory: `brain-version-display-idea`.)*
+
+- [ ] **Decouple the two halves** (the key design call):
+  - [ ] **"which version do I have"** — cheap, **offline**: read `engineVersion` from `engine-manifest.json`.
+        Best home = the **status-line** (`scripts/status-line.mjs`), not only the SessionStart hook —
+        `session-status.mjs` emits via `systemMessage`, which **only the CLI terminal renders**; Claude
+        Desktop's Code tab (the non-dev common case) shows the **status-line** instead. Discreet suffix,
+        e.g. `· engine v1.1.0`. (`engineVersion` is a vector `{rag, constitutionTemplate, scripts}` → pick
+        what to show.)
+  - [ ] **"an update is available"** — the genuinely *actionable* win, but it costs a **network** call
+        (`git ls-remote`/fetch on the recorded `source`) → **throttle** (~once/day, cached) + **fail-silent**
+        offline; never block startup. This is ADR 0016's **proactive offer**, post-Phase 1.
+
 ## Decisions settled (2026-06-14, with the maintainer)
 
 - **Source = a git tag/ref of the launcher** recorded in the brain (`source: {repo, ref}`). Self-hosted,
