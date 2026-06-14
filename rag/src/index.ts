@@ -17,7 +17,11 @@ import {
   staleIndexMessage,
   staleSchemaMessage,
 } from "./lib/index-freshness.js";
-import { loadEngineVersion, formatEngineVersionReport } from "./lib/engine-version.js";
+import {
+  loadEngineVersion,
+  loadManifestEngineVersion,
+  formatEngineVersionReport,
+} from "./lib/engine-version.js";
 import {
   VAULT_DIR,
   SEARCH_DEFAULT_LIMIT,
@@ -220,10 +224,14 @@ server.tool(
       state: liveScheduler?.state() ?? null,
     });
 
-    const engineReport = formatEngineVersionReport(loadEngineVersion(), {
-      stamped: currentIndexSchemaVersion(),
-      running: INDEX_SCHEMA_VERSION,
-    });
+    const engineReport = formatEngineVersionReport(
+      loadManifestEngineVersion(),
+      loadEngineVersion(),
+      {
+        stamped: currentIndexSchemaVersion(),
+        running: INDEX_SCHEMA_VERSION,
+      }
+    );
 
     const typeLines = stats.types.map((t) => `  - ${t.type}: ${t.n}`).join("\n");
     const text =

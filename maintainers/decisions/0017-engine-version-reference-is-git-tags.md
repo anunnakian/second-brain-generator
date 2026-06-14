@@ -51,6 +51,17 @@ Phase 1 Step 5). It is a **purely local read**: no network, no coupling, no phon
 status-line suffix (e.g. `engine v1.1.0`). There is **no hand-maintained version number** in any repo file.
 When `source.ref` is not a semver tag (dev launcher / branch install), show it verbatim — never invent.
 
+**1.bis (addendum 2026-06-14) — the conversational/tool answer single-sources the version from `source.ref` too.**
+The status-line is deterministic, but the *spoken* answer to "which version?" was not: the brain reaches for
+`vault_stats`, which used to headline the **mechanical** `rag X.Y.Z` vector — so on Desktop it answered with the
+wrong number while the CLI read `source.ref` and answered right (a coin flip, per [`0009`](0009-prefer-deterministic-mechanisms.md):
+prose guidance biases an LLM, it doesn't make it deterministic). Fix: `vault_stats` now headlines
+**`Version: <source.ref>`** (the same tag the status-line shows, read from the brain-root `engine-manifest.json`)
+and **demotes** the `rag` vector + index-schema versions to a labelled **"internal build"** line — kept for
+reindex-staleness diagnostics, **never again presented as "the version"** (a mute tool would just push the LLM
+back to guessing). So every path — status-line, tool, or a direct manifest read — lands on the same tag. The
+constitution guidance is a thin complement, no longer load-bearing.
+
 **2. The version-number reference is a git tag, not a tracked file.** A tag is an intentional, maintainer-
 controlled release act, decoupled from file churn; GitHub surfaces it under Releases/Tags for free. The
 manifest's `engineVersion` vector + `indexSchemaVersion` stay for the **mechanics** (`update-engine`'s
