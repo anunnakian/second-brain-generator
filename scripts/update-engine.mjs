@@ -22,7 +22,11 @@ import { execFileSync } from "node:child_process";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { fetchSource as defaultFetchSource, readTargetManifest } from "./lib/engine-fetch.mjs";
+import {
+  fetchSource as defaultFetchSource,
+  resolveLatestTag as defaultResolveLatestTag,
+  readTargetManifest,
+} from "./lib/engine-fetch.mjs";
 import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
 import { needsReindex } from "./lib/reindex-trigger.mjs";
 import { reseedProvenance } from "./lib/engine-source.mjs";
@@ -82,6 +86,7 @@ export async function updateEngine({
   brainDir,
   platform = process.platform,
   fetchSource = defaultFetchSource,
+  resolveLatestTag = defaultResolveLatestTag,
   regenerateLaunchers = defaultRegenerateLaunchers,
   runInstall = defaultRunInstall,
   runReindex = defaultRunReindex,
@@ -90,8 +95,14 @@ export async function updateEngine({
   const local = JSON.parse(readFileSync(manifestPath, "utf8"));
   const source = local.source ?? {};
 
-  // 1. Fetch the pinned launcher source + read its (target) manifest.
-  const sourceDir = await fetchSource({ repo: source.repo, ref: source.ref });
+  // 1. Resolve the LATEST semver release tag on the remote (ADR 0017) — that is the
+  //    engine version we pull and the new `source.ref` we record, so the displayed
+  //    Version actually advances. No tag / offline → fall back to the pinned ref (the
+  //    committed launcher manifest has no `source`, so we never read `target.source`).
+  const ref = (await resolveLatestTag({ repo: source.repo })) ?? source.ref;
+
+  //    Fetch the launcher at that ref + read its (target) manifest.
+  const sourceDir = await fetchSource({ repo: source.repo, ref });
   const target = readTargetManifest(sourceDir);
 
   // 2. The write-allowlist (the safety core, Step 3): the ONLY files we may write.
@@ -135,7 +146,7 @@ export async function updateEngine({
     ...local,
     engineVersion: target.engineVersion,
     indexSchemaVersion: target.indexSchemaVersion,
-    source: { ...source, ref: target.source?.ref ?? source.ref },
+    source: { ...source, ref },
     provenance: reseedProvenance({
       priorProvenance: local.provenance ?? {},
       manifest: target,

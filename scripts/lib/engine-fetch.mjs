@@ -16,10 +16,40 @@ import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { pickLatestSemverTag } from "./semver-tag.mjs";
+
 // The exact git argv to shallow-clone a single pinned ref into `dir`. Pure so the
 // command is unit-asserted and proven identical on every platform.
 export function buildCloneArgs({ repo, ref, dir }) {
   return ["clone", "--depth", "1", "--branch", ref, "--single-branch", repo, dir];
+}
+
+// The git argv that lists the remote's TAG refs (no dereferenced `^{}` peels,
+// thanks to --refs). Pure so the command is unit-asserted and identical on every
+// platform (git is a real .exe on Windows — no shell branch needed, ADR 0015).
+export function buildLsRemoteArgs(repo) {
+  return ["ls-remote", "--tags", "--refs", repo];
+}
+
+// The launcher's CURRENT engine version = the HIGHEST semver release tag on the
+// remote (ADR 0017). `update-engine` resolves it, fetches it, and records it as the
+// brain's new `source.ref` so the displayed Version actually advances. Returns null
+// when the remote is unreachable or carries no semver tag → the caller falls back to
+// the pinned ref (dev branches, offline) rather than breaking the update. `git`
+// (args[] → {out, ok}) is injected so the unit tests run offline.
+export function resolveLatestTag({ repo, git = defaultGit }) {
+  if (!repo) return null;
+  const { ok, out } = git(buildLsRemoteArgs(repo));
+  if (!ok) return null;
+  // Each line: "<sha>\trefs/tags/<name>". --refs already dropped the ^{} peels.
+  const tags = out
+    .split("\n")
+    .map((line) => {
+      const m = /\srefs\/tags\/(.+)$/.exec(line);
+      return m ? m[1].trim() : null;
+    })
+    .filter(Boolean);
+  return pickLatestSemverTag(tags);
 }
 
 // Shallow-clone the recorded launcher at the pinned ref into a fresh temp dir and

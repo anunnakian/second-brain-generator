@@ -213,12 +213,17 @@ function assertSacredUntouched(brainDir, before) {
 // Run the core with the network/npm/reindex SEAMS stubbed. fetchSource hands back the
 // prepared source dir (stands in for `git clone --depth 1 --branch <ref>`); the calls
 // object records the side effects we assert on.
-async function runUpdate({ brainDir, sourceDir, platform }) {
+async function runUpdate({ brainDir, sourceDir, platform, resolveLatestTag }) {
   const updateEngine = await loadCore();
   const calls = { install: [], reindex: [], regenerate: [] };
   const report = await updateEngine({
     brainDir,
     platform,
+    // The launcher's latest release tag on the remote (ADR 0017). Default = the
+    // target's version; overridable to exercise the offline/no-tag fallback. The
+    // committed launcher manifest has NO `source`, so this — not target.source —
+    // is the single thing that advances the brain's recorded ref.
+    resolveLatestTag: resolveLatestTag ?? (async () => "v1.1.0"),
     fetchSource: async ({ repo, ref }) => {
       calls.fetch = { repo, ref };
       return sourceDir;
@@ -253,6 +258,10 @@ for (const platform of ["posix", "win32"]) {
 
     const { calls } = await runUpdate({ brainDir, sourceDir, platform });
 
+    // 0. The engine was fetched at the RESOLVED latest tag (not the brain's pinned
+    //    ref) — this is what makes the displayed Version actually advance (ADR 0017).
+    assert.equal(calls.fetch.ref, "v1.1.0", "must fetch the resolved latest tag, not the old pinned ref");
+
     // 1. Every COPIED engine file now carries the vB bytes — the `replace` bucket and
     //    the engine-owned scripts (incl. update-engine.mjs self-update). The launchers
     //    are not copied: they are regenerated (asserted just below).
@@ -285,7 +294,7 @@ for (const platform of ["posix", "win32"]) {
     const m = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
     assert.equal(m.engineVersion.rag, "1.1.0", "manifest engineVersion.rag must be bumped to the target");
     assert.equal(m.indexSchemaVersion, 2, "manifest indexSchemaVersion must follow the target");
-    assert.equal(m.source.ref, "v1.1.0", "manifest source.ref must record the pulled ref");
+    assert.equal(m.source.ref, "v1.1.0", "manifest source.ref must ADVANCE to the resolved latest tag");
 
     // 6. PROVENANCE RE-SEED (Step 5): the base for the re-delivered engine script is
     //    refreshed to vB, while the user merge file's base (never touched) is preserved
@@ -322,4 +331,26 @@ test("gate — schema UNCHANGED → engine still swapped but NO reindex", async 
   assert.deepEqual(calls.install, [join(brainDir, "rag")], "npm install must still run");
   assert.deepEqual(calls.reindex, [], "schema unchanged → reindex must NOT run");
   assertSacredUntouched(brainDir, before);
+});
+
+test("gate — no tag resolvable (offline / no semver tag) → fall back to the pinned ref, update still applies", async (t) => {
+  const brainDir = buildBrain(); // pinned at v1.0.0
+  const sourceDir = buildSource({ indexSchemaVersion: 1 });
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  const { calls } = await runUpdate({
+    brainDir,
+    sourceDir,
+    platform: "posix",
+    resolveLatestTag: async () => null, // remote unreachable / no semver tag
+  });
+
+  // The fetch falls back to the brain's recorded ref → the update still proceeds…
+  assert.equal(calls.fetch.ref, "v1.0.0", "no resolvable tag → fetch the pinned ref (never undefined)");
+  // …and the recorded ref stays the pinned one (we never invent a version).
+  const m = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
+  assert.equal(m.source.ref, "v1.0.0", "with no resolvable tag the ref is preserved, not blanked");
 });

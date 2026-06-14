@@ -51,6 +51,7 @@ import {
 } from "./scripts/lib/embedder-choice.mjs";
 import { openEnvInEditor } from "./scripts/lib/open-env.mjs";
 import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
+import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
 
 // ROOT = the LAUNCHER (this cloned repo). READ-ONLY, reusable source: the
 // installer NEVER writes to it. It CREATES a brain folder elsewhere (TARGET),
@@ -530,12 +531,24 @@ function setEnvVar(env, key, value) {
     const r = run("git", ["-C", ROOT, ...args]);
     return r.ok ? r.out.trim() : "";
   };
+  const gitSeam = (args) => {
+    const r = run("git", ["-C", ROOT, ...args]);
+    return { out: r.ok ? r.out : "", ok: r.ok };
+  };
   const branch = refOf(["rev-parse", "--abbrev-ref", "HEAD"]);
+  const repo = refOf(["remote", "get-url", "origin"]);
+  // The brain's recorded version = the LATEST semver release tag on the remote
+  // (ADR 0017) so a fresh brain displays `vX.Y.Z`, not a branch name. Fall back to
+  // an exact-match tag on HEAD, else null (update-engine then keeps the branch ref).
+  const tag =
+    (repo ? resolveLatestTag({ repo, git: gitSeam }) : null) ||
+    refOf(["describe", "--tags", "--exact-match"]) ||
+    null;
   recordSourceAndProvenance({
     brainDir: TARGET,
     git: {
-      repo: refOf(["remote", "get-url", "origin"]),
-      tag: refOf(["describe", "--tags", "--exact-match"]) || null,
+      repo,
+      tag,
       branch: branch === "HEAD" ? null : branch || null, // "HEAD" = detached → no branch
       commit: refOf(["rev-parse", "HEAD"]) || null,
     },

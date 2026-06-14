@@ -5,7 +5,13 @@ import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { buildCloneArgs, fetchSource, readTargetManifest } from "./engine-fetch.mjs";
+import {
+  buildCloneArgs,
+  buildLsRemoteArgs,
+  fetchSource,
+  readTargetManifest,
+  resolveLatestTag,
+} from "./engine-fetch.mjs";
 
 // A scripted git seam: returns {out, ok} (the auto-push convention) and records
 // every argv it was handed, so a test asserts both the command and the side effect.
@@ -32,6 +38,13 @@ test("buildCloneArgs — a shallow, single-branch clone of the pinned ref into d
   assert.deepEqual(
     buildCloneArgs({ repo: "https://example.test/launcher.git", ref: "v2.0.0", dir: "/tmp/src" }),
     ["clone", "--depth", "1", "--branch", "v2.0.0", "--single-branch", "https://example.test/launcher.git", "/tmp/src"],
+  );
+});
+
+test("buildLsRemoteArgs — lists the remote's tag refs only (no dereferenced ^{} dupes)", () => {
+  assert.deepEqual(
+    buildLsRemoteArgs("https://example.test/launcher.git"),
+    ["ls-remote", "--tags", "--refs", "https://example.test/launcher.git"],
   );
 });
 
@@ -80,6 +93,42 @@ test("fetchSource — a brain with no recorded repo fails clearly without spawni
   );
   assert.deepEqual(calls, [], "git is never spawned when there is nothing to clone");
   assert.equal(made, false, "no temp dir is created for a clone that cannot happen");
+});
+
+test("resolveLatestTag — parses `git ls-remote --tags` and returns the HIGHEST semver tag", () => {
+  const out = [
+    "abc123\trefs/tags/v1.0.0",
+    "def456\trefs/tags/v1.2.0",
+    "789aaa\trefs/tags/v1.10.0",
+    "000bbb\trefs/tags/v1.1.0",
+  ].join("\n");
+  const { git, calls } = fakeGit({ out });
+
+  const tag = resolveLatestTag({ repo: "https://example.test/launcher.git", git });
+
+  assert.equal(tag, "v1.10.0", "numeric ordering: v1.10.0 beats v1.2.0");
+  assert.deepEqual(
+    calls,
+    [["ls-remote", "--tags", "--refs", "https://example.test/launcher.git"]],
+    "ls-remote is run once against the recorded repo",
+  );
+});
+
+test("resolveLatestTag — no recorded repo → null, git never spawned (caller falls back)", () => {
+  const { git, calls } = fakeGit();
+  assert.equal(resolveLatestTag({ repo: null, git }), null);
+  assert.deepEqual(calls, [], "no remote → no git");
+});
+
+test("resolveLatestTag — git failure (offline / unreachable) → null (fall back to pinned ref)", () => {
+  const { git } = fakeGit({ ok: false, out: "fatal: could not read from remote" });
+  assert.equal(resolveLatestTag({ repo: "https://example.test/launcher.git", git }), null);
+});
+
+test("resolveLatestTag — a remote with no semver tag → null", () => {
+  const out = ["abc\trefs/tags/nightly", "def\trefs/tags/latest"].join("\n");
+  const { git } = fakeGit({ out });
+  assert.equal(resolveLatestTag({ repo: "https://example.test/launcher.git", git }), null);
 });
 
 test("readTargetManifest — reads the fetched manifest → target version vector + index schema", (t) => {
