@@ -134,7 +134,12 @@ exhaustive enumeration: the impoverished smoke test is the **safety net** for ev
      that branch's **Progress checklist** in the active plan under `maintainers/plans/` → does **the
      first unchecked `- [ ]` big step**. The open PR is discoverable from **any** starting branch (even
      `main`), which closes the gap where the work branch's name only lived on the work branch.
-   - **If it finds zero or several** of his open PRs, it **stops and asks** rather than guessing.
+   - **Ambiguity → make him pick from a menu; never guess, never require him to recall names.** If it
+     finds **several** of his open PRs, it **lists them** (number, title, head branch, last-updated) and
+     asks him to **choose which to resume** via `AskUserQuestion` — he selects from the menu, with **no
+     need to know any PR/branch name by heart**. If it finds **zero**, it asks whether to start one. It
+     **never** picks one on its own. This keeps the everyday command dead-simple while removing the
+     multi-PR conflict risk.
    - **Source of truth = the plan's checklist** on the PR branch (ticked in the step's finishing commit);
      the **PR body mirrors it** for at-a-glance tracking. The per-plan **Session protocol** section
      spells out the step-by-step etiquette (stop-and-ask before each next big step, etc.).

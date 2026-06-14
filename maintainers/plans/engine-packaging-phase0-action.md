@@ -66,7 +66,9 @@ où on en était sur la PR ouverte”**.
    PRs authored by `tpierrain`**, take the only one, **check out its head branch**, then read that
    branch's **Progress checklist** in this plan and take **the first unchecked `- [ ]` big step** as the
    task. The open PR is the durable anchor (discoverable from any starting branch, even `main`); the
-   checklist on its branch is the source of truth for *where* to resume.
+   checklist on its branch is the source of truth for *where* to resume. **If there are several of his
+   open PRs**, don't guess and don't make him recall names: **list them (number, title, branch) and let
+   him pick** via `AskUserQuestion`. **If zero**, ask whether to start one.
 1. **One big step per fresh window.** Each **big step** (a checklist line) is executed in its **own new
    session** — never drag a long conversation across steps (context rot). The committed docs (ADR 0012 +
    this plan: its **checklist** + **Progress log**) are the **only** external memory a new window needs.
@@ -82,8 +84,9 @@ où on en était sur la PR ouverte”**.
    This plan runs under **one** open PR authored by `tpierrain` (its branch is the work branch). **Never
    open a second** of his while it is open; **don't merge or close it** until the plan's Definition of done
    (demo week — runtime merges only after). Other people's / bots' PRs don't count (scope to
-   `author:tpierrain`). If you ever find zero or several of his open PRs, **stop and ask** rather than
-   guessing. Keep the PR a **draft** until done.
+   `author:tpierrain`). If you ever find **several** of his open PRs, **list them and let him pick** (via
+   `AskUserQuestion`) rather than guessing; if **zero**, ask whether to start one. Keep the PR a **draft**
+   until done.
 
 ## Execution kickoff (run in a fresh window — avoid context rot)
 
