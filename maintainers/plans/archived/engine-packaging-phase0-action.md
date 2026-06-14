@@ -1,8 +1,11 @@
 # Engine packaging — Phase 0 action plan (Track D: decouple now, defer the channel)
 
-**STATUS: 🚧 IN PROGRESS** on branch `claude/engine-packaging-phase0-wmfjxz`. **Where we are = the
-checklist just below** (the first unchecked box is the next big step). Full detail in the **Progress log**
-at the bottom.
+**STATUS: ✅ DONE** on branch `claude/engine-packaging-phase0-wmfjxz` (PR #9, kept a **draft** — no merge
+to `main` before the client demos, ADR 0012 / rule 4). All three deliverables landed + gate #0 is green.
+**Commit SHAs:** gate #0 (red) + Step 1 relocatable paths — `6e26b9a` · Step 2 observable version vector —
+`01368bb` · Step 3 ownership manifest (gate #0 → green) — `934ceae`. **Verified at close:** harness
+`node --test scripts/lib/*.test.mjs` → **148/148** (gate #0 now green); RAG `cd rag && npm test` →
+**129/129**; `cd rag && npx tsc --noEmit` clean. Full detail in the **Progress log** at the bottom.
 
 ## ▶ Progress checklist (SOURCE OF TRUTH — resume at the first unchecked box)
 
@@ -15,8 +18,8 @@ at the bottom.
 - [x] **Step 1** — Relocatable paths (`config.ts` → `resolvePath` + env vars). RAG suite green, tsc clean.
 - [x] **Step 2** — Observable version vector (semver + `vault_stats` + index schema stamp). RAG suite green, tsc clean.
 - [x] **Step 3** — Ownership manifest (`engine-manifest.json`) → **gate #0 green**; full test file (4 guards). RAG suite green, tsc clean.
-- [ ] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified, then `git mv` into
-  [`plans/archived/`](archived/). ⬅ **NEXT**
+- [x] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified, then `git mv` into
+  [`plans/archived/`](archived/). **Done** — every box ticked; the plan is archived.
 
 Enacts **Phase 0** of
 [`engine-packaging-study.md`](engine-packaging-study.md) (Track D), under the four-part model and the
@@ -367,5 +370,13 @@ same branch unless told otherwise. **One `/clear` (fresh window) between steps**
   red, now green, +3 new guards). RAG `cd rag && npm test` → **129/129**, `npx tsc --noEmit` clean (rag/
   untouched). *(Reminder: `cd rag && npm install` first — deps not vendored.)*
 
-### ⏭️ Next: Definition of done — set STATUS → ✅ (commit SHAs + what was verified) and `git mv` this file into
-`plans/archived/`. **No merge to `main`** before the client demos (ADR 0012 / rule 4) — the PR stays a draft.
+### ✅ Definition of done (DONE — plan closed)
+- **STATUS line** set to ✅ with the commit SHAs (`6e26b9a` gate #0 + Step 1 · `01368bb` Step 2 · `934ceae`
+  Step 3) and the close-time verification.
+- **Re-verified at close** (not just transcribed): harness `node --test scripts/lib/*.test.mjs` → **148/148**
+  (gate #0 green); RAG `cd rag && npm test` → **129/129**; `cd rag && npx tsc --noEmit` clean.
+- **Archived:** `git mv` of this file into [`plans/archived/`](archived/) — its checklist is the last commit's
+  record of a fully-ticked Phase 0.
+- **PR #9 stays a draft** — **no merge to `main`** before the client demos (ADR 0012 / rule 4). Merging Phase 0
+  to `main` is a separate, post-demo decision for the maintainer; Phase 1 (Track A, `update-engine`) is the
+  next plan to open when he chooses to resume.
