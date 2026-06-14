@@ -67,6 +67,23 @@ export function checkSchemaFreshness(
 }
 
 /**
+ * Should this reindex run as a FULL re-encode (force)? A schema-format bump can
+ * ONLY be repaired by re-encoding every doc: an incremental run skips unchanged
+ * docs (leaving the old format in place) AND never re-stamps the schema version
+ * (`shouldStamp` returns false on an already-stamped index) → the staleness gate
+ * would loop forever. So a stale schema forces a full reindex, exactly like an
+ * explicit `force`. A grandfathered index (`stamped === null`) stays compatible
+ * (cf. `checkSchemaFreshness`) → no forced reindex.
+ */
+export function reindexForce(
+  requested: boolean,
+  stampedSchema: number | null,
+  currentSchema: number
+): boolean {
+  return requested || !checkSchemaFreshness(stampedSchema, currentSchema);
+}
+
+/**
  * Confirm-gate prose for a schema-format bump (the embedder is unchanged, so the
  * embedder-swap message would mislead). Same reindex path, different reason: the
  * index layout moved and the documents must be re-encoded into the new format.
