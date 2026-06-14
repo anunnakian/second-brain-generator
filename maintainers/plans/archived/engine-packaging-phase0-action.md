@@ -1,6 +1,6 @@
 # Engine packaging — Phase 0 action plan (Track D: decouple now, defer the channel)
 
-**STATUS: ✅ DONE** on branch `claude/engine-packaging-phase0-wmfjxz` (PR #9, kept a **draft** — no merge
+**STATUS: ✅ DONE** on branch `engine-packaging` (PR #10, kept a **draft** — no merge
 to `main` before the client demos, ADR 0012 / rule 4). All three deliverables landed + gate #0 is green.
 **Commit SHAs:** gate #0 (red) + Step 1 relocatable paths — `6e26b9a` · Step 2 observable version vector —
 `01368bb` · Step 3 ownership manifest (gate #0 → green) — `934ceae`. **Verified at close:** harness
@@ -125,7 +125,7 @@ If the maintainer prefers to be explicit, the long form is equivalent:
 > Read and follow `maintainers/decisions/0012-engine-packaging-four-part-model.md` and
 > `maintainers/plans/engine-packaging-phase0-action.md` **to the letter** (four-part model, additive-only
 > founding principle, three regimes — and the **Session protocol** + **Progress checklist**). Work on the
-> branch in the STATUS line (currently **`claude/engine-packaging-phase0-wmfjxz`**). **Do NOT merge to
+> branch in the STATUS line (currently **`engine-packaging`**). **Do NOT merge to
 > `main`** (demo week). **TDD strict** (skill `tdd-discipline`): do **the first unchecked big step**, then
 > stop and show me the diff. Keep the `rag` suite green; commit + push (tick the box + update the log);
 > then **ask me** before the next big step.
@@ -311,7 +311,7 @@ The framing is now fixed by **ADR 0012**; this plan is its first, smallest, full
 
 ## Progress log (external memory — read this to continue in a fresh window)
 
-**Branch:** `claude/engine-packaging-phase0-wmfjxz` (NOT `main` — demo week). Steps continue here on the
+**Branch:** `engine-packaging` (NOT `main` — demo week). Steps continue here on the
 same branch unless told otherwise. **One `/clear` (fresh window) between steps** to avoid context rot.
 
 ### ✅ Gate #0 — survival test (written RED, by design)
@@ -396,6 +396,6 @@ same branch unless told otherwise. **One `/clear` (fresh window) between steps**
   (gate #0 green); RAG `cd rag && npm test` → **129/129**; `cd rag && npx tsc --noEmit` clean.
 - **Archived:** `git mv` of this file into [`plans/archived/`](archived/) — its checklist is the last commit's
   record of a fully-ticked Phase 0.
-- **PR #9 stays a draft** — **no merge to `main`** before the client demos (ADR 0012 / rule 4). Merging Phase 0
+- **PR #10 stays a draft** — **no merge to `main`** before the client demos (ADR 0012 / rule 4). Merging Phase 0
   to `main` is a separate, post-demo decision for the maintainer; Phase 1 (Track A, `update-engine`) is the
   next plan to open when he chooses to resume.

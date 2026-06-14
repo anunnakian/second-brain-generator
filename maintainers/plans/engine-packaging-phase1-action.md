@@ -1,6 +1,6 @@
 # Engine packaging — Phase 1 action plan (Track A: `update-engine`, opt-in re-pull)
 
-**STATUS: 🚧 IN PROGRESS** on branch `claude/engine-packaging-phase0-wmfjxz` (PR #9, kept a **draft** —
+**STATUS: 🚧 IN PROGRESS** on branch `engine-packaging` (PR #10, kept a **draft** —
 no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1** of
 [`engine-packaging-study.md`](engine-packaging-study.md) (Track A), **re-timed to NOW by**
 [`ADR 0014`](../decisions/0014-ship-update-engine-before-mass-deployment.md): the updater must ship
@@ -91,7 +91,7 @@ construction** (Step 3's guard tests prove it).
 ## Session protocol (per ADR 0013)
 
 - **One big step per fresh window** (avoid context rot); **stop and ask** before the next step.
-- This is the **single open PR** (#9). The agent self-locates from it (open PR → branch → this checklist
+- This is the **single open PR** (#10). The agent self-locates from it (open PR → branch → this checklist
   → first unchecked box). Tick the box in the step's finishing commit; mirror progress in the PR body.
 - **TDD, baby-steps** (skill `tdd-discipline`): one failing test at a time, red→green→refactor, no
   test-first batch. **Cross-platform parity (ADR 0015) is part of "green"** — a step isn't done until its
