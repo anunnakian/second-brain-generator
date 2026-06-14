@@ -58,33 +58,39 @@ Three deliverables, independent, shippable one at a time (a `/clear` between eac
 
 These rules are **fixed by the maintainer (Thomas)** and apply to **every** session running this plan, so
 he never has to restate them in a new prompt. The only thing he ever needs to say is **“reprends le plan
-en cours”**.
+où on en était sur la PR ouverte”**.
 
-0. **Self-locate — never ask “where are we?”.** On **“reprends le plan en cours”** (or any equivalent),
-   find the plan under [`maintainers/plans/`](.) whose **STATUS is 🚧 IN PROGRESS**, read its **Progress
-   checklist**, and take **the first unchecked `- [ ]` big step** as the task. The checklist is the source
-   of truth; the maintainer should never have to tell you where to resume.
+0. **Self-locate via the single open PR — never ask “where are we?” nor “which branch?”.** There is, by
+   invariant, **exactly one open PR** at a time (see rule 4). On **“reprends … sur la PR ouverte”** (or any
+   equivalent): list the repo's **open** PRs, take the only one, **check out its head branch**, then read
+   that branch's **Progress checklist** in this plan and take **the first unchecked `- [ ]` big step** as
+   the task. The open PR is the durable anchor (discoverable from any starting branch, even `main`); the
+   checklist on its branch is the source of truth for *where* to resume.
 1. **One big step per fresh window.** Each **big step** (a checklist line) is executed in its **own new
    session** — never drag a long conversation across steps (context rot). The committed docs (ADR 0012 +
    this plan: its **checklist** + **Progress log**) are the **only** external memory a new window needs.
 2. **Tick the box + update the log in the finishing commit.** When a big step is done, **check its box**
    (`- [ ]` → `- [x]`), move the **⬅ NEXT** marker to the following box, and refresh the **Progress log**
    — all in the **same commit** that finishes the step. So the **last commit pushed on the branch always
-   reflects the true state**, and the maintainer can follow just by reading the plan file.
+   reflects the true state**, and the maintainer can follow just by reading the plan file (or the PR).
 3. **Stop and ask before the next big step.** At the **end of each big step**, **do NOT roll into the next
    one.** Report where we are and **explicitly ask the maintainer** (via `AskUserQuestion`) whether to
    continue in this session or open a fresh window. Wait for the answer — the default expectation is a
    fresh window.
+4. **Exactly one open PR — the anchor invariant.** This plan runs under **one** open PR (its branch is the
+   work branch). **Never open a second** while it is open; **don't merge or close it** until the plan's
+   Definition of done (demo week — runtime merges only after). If you ever find zero or several open PRs,
+   **stop and ask** rather than guessing. Keep the PR a **draft** until done.
 
 ## Execution kickoff (run in a fresh window — avoid context rot)
 
 Execute each big step from a **new session**. The committed docs (ADR 0012 + this plan) **are** the
 external memory — the new window needs nothing else.
 
-**The whole kickoff is one sentence:** the maintainer says **“reprends le plan en cours”**. By the
-**Session protocol** (rule 0) the agent self-locates — finds the 🚧 IN PROGRESS plan, reads the
-**Progress checklist**, and does the first unchecked big step — then commits/pushes (ticking the box) and
-asks before the next one.
+**The whole kickoff is one sentence:** the maintainer says **“reprends le plan où on en était sur la PR
+ouverte”**. By the **Session protocol** (rule 0) the agent self-locates — finds the single open PR, checks
+out its branch, reads the **Progress checklist**, and does the first unchecked big step — then
+commits/pushes (ticking the box) and asks before the next one.
 
 If the maintainer prefers to be explicit, the long form is equivalent:
 
