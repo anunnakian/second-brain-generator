@@ -121,6 +121,25 @@ exhaustive enumeration: the impoverished smoke test is the **safety net** for ev
    green. Deliberate and **explicitly flagged** exception: the purely mechanical / not unit-testable
    (renaming, a message, trivial config, the Gemini network integration) — no artificial test
    just for form's sake.
+7. **Resuming a multi-session plan — the "one open PR of mine" convention (harness rule).** Long plans
+   run across several fresh sessions (one big step per window, to avoid context rot). So that the
+   maintainer **never has to say where we are or which branch**, resumption is anchored on **his open
+   PR**, and this is a standing rule — **not to be re-described each time**:
+   - **Invariant: at most ONE open PR authored by the maintainer (`tpierrain`) at a time.** The agent
+     **must refuse to open a second** while one of his is open, and must **never merge/close** it on its
+     own. (Other people's / bots' open PRs don't count — scope strictly to `author:tpierrain`.) This is
+     what removes any ambiguity (and merge-conflict risk) about which work is "in flight".
+   - **Resume = "reprends le plan où on en était sur la PR ouverte".** The agent then: lists the **open
+     PRs authored by `tpierrain`** → expects **exactly one** → **checks out its head branch** → reads
+     that branch's **Progress checklist** in the active plan under `maintainers/plans/` → does **the
+     first unchecked `- [ ]` big step**. The open PR is discoverable from **any** starting branch (even
+     `main`), which closes the gap where the work branch's name only lived on the work branch.
+   - **If it finds zero or several** of his open PRs, it **stops and asks** rather than guessing.
+   - **Source of truth = the plan's checklist** on the PR branch (ticked in the step's finishing commit);
+     the **PR body mirrors it** for at-a-glance tracking. The per-plan **Session protocol** section
+     spells out the step-by-step etiquette (stop-and-ask before each next big step, etc.).
+   - *Note:* a local hook can't stop a human from clicking "New PR" on GitHub; this rule binds **the
+     agent's** behaviour (never opens a 2nd, flags any extra it sees), which covers the practical risk.
 
 ## Improvement ideas (informal backlog)
 

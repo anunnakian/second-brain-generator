@@ -60,11 +60,12 @@ These rules are **fixed by the maintainer (Thomas)** and apply to **every** sess
 he never has to restate them in a new prompt. The only thing he ever needs to say is **“reprends le plan
 où on en était sur la PR ouverte”**.
 
-0. **Self-locate via the single open PR — never ask “where are we?” nor “which branch?”.** There is, by
-   invariant, **exactly one open PR** at a time (see rule 4). On **“reprends … sur la PR ouverte”** (or any
-   equivalent): list the repo's **open** PRs, take the only one, **check out its head branch**, then read
-   that branch's **Progress checklist** in this plan and take **the first unchecked `- [ ]` big step** as
-   the task. The open PR is the durable anchor (discoverable from any starting branch, even `main`); the
+0. **Self-locate via the single open PR — never ask “where are we?” nor “which branch?”.** By invariant
+   (rule 4 + DEVELOPING.md "Dev rules" §7) there is **exactly one open PR authored by the maintainer
+   (`tpierrain`)** at a time. On **“reprends … sur la PR ouverte”** (or any equivalent): list the **open
+   PRs authored by `tpierrain`**, take the only one, **check out its head branch**, then read that
+   branch's **Progress checklist** in this plan and take **the first unchecked `- [ ]` big step** as the
+   task. The open PR is the durable anchor (discoverable from any starting branch, even `main`); the
    checklist on its branch is the source of truth for *where* to resume.
 1. **One big step per fresh window.** Each **big step** (a checklist line) is executed in its **own new
    session** — never drag a long conversation across steps (context rot). The committed docs (ADR 0012 +
@@ -77,10 +78,12 @@ où on en était sur la PR ouverte”**.
    one.** Report where we are and **explicitly ask the maintainer** (via `AskUserQuestion`) whether to
    continue in this session or open a fresh window. Wait for the answer — the default expectation is a
    fresh window.
-4. **Exactly one open PR — the anchor invariant.** This plan runs under **one** open PR (its branch is the
-   work branch). **Never open a second** while it is open; **don't merge or close it** until the plan's
-   Definition of done (demo week — runtime merges only after). If you ever find zero or several open PRs,
-   **stop and ask** rather than guessing. Keep the PR a **draft** until done.
+4. **Exactly one open PR of the maintainer's — the anchor invariant** (general rule in DEVELOPING.md §7).
+   This plan runs under **one** open PR authored by `tpierrain` (its branch is the work branch). **Never
+   open a second** of his while it is open; **don't merge or close it** until the plan's Definition of done
+   (demo week — runtime merges only after). Other people's / bots' PRs don't count (scope to
+   `author:tpierrain`). If you ever find zero or several of his open PRs, **stop and ask** rather than
+   guessing. Keep the PR a **draft** until done.
 
 ## Execution kickoff (run in a fresh window — avoid context rot)
 
