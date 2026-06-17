@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🚧 ACTIVE — Steps 0–7 done (full API port: setup_source/list_sources/sync/check_freshness/status/remove_source, SPI adapters incl. FsConfigStore/FsStateStore, deletion reconciliation/guardrail). Next: Step 8 (integration + bootstrap layer + engine-manifest + docs/ADR). Branch: golden-source-sync. -->
+<!-- STATUS: 🚧 ACTIVE — Steps 0–8 done (full API port + SPI adapters + deletion reconciliation/guardrail; Step 8 = composition root/stdio boot, engine-manifest + .mcp.json.template registration, self-heal launchers in installer + update-engine, bootstrap skill + routing, docs). Next: Step 9 (manual Notion QA gate by Thomas, then PR/merge/tag/archive). Branch: golden-source-sync. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — `golden-source-sync`: synchronize golden-source content into the second brain's vault
@@ -135,12 +135,13 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
   - [x] `status`: last sync, watermark, item count, lateness (= `describe` for one source; never-synced ⇒ `never`; unknown ⇒ clear reject) (3 acceptance tests)
   - [x] `remove_source`: de-register from the config (versioned truth); **opt-in `cleanup`** also deletes every synced `.md` (from the state map) + the sidecar state (`IStateStore.delete` added, `FsStateStore.delete` idempotent ENOENT-swallow); unknown source = graceful no-op (3 acceptance + 1 adapter test)
   - [x] Refactor: extracted `maxLastEditedTime` helper (reused by `sync` + `checkFreshness`); removed dead `notImplemented`. 54 green, `tsc --noEmit` exit 0
-- [ ] **Step 8 — Integration + bootstrap layer + docs**
-  - [ ] Register the server: `.mcp.json.template` entry + **`engine-manifest.json`** (`engineMcpServers` += `golden-source-sync`, `regimes.replace` += `golden-source-sync/src/**` + its `package.json`/`tsconfig`)
-  - [ ] Launcher self-heal (PATH-poor / bare Mac, like `rag/launch.*` + `run-node`); installer awareness
-  - [ ] **Bootstrap skill (layer 1)**: `.claude/skills/golden-source/SKILL.md` — thin driver: "sync the \<zone\> golden source from Notion" → wires MCP via `connectors-apply.mjs` pattern, creates `golden-sources/` + `.golden-source-sync/`, then hands off to `setup_source`
-  - [ ] Routing guidance lives in the **harness** (CLAUDE.md template / skill), via the `description` field — **not baked into the MCP** (§8)
-  - [ ] Docs: README/SETUP/CONNECTORS mention; **ADR** for "Golden Source as a first-class concept + filesystem decoupling" (Scope: Second brain runtime + Installer)
+- [x] **Step 8 — Integration + bootstrap layer + docs** _(2026-06-18 · 9c04927→3fc2b55)_
+  - [x] Composition root + stdio boot: `lib/config.ts` (path/env resolution, loads `.env` for the token, TDD), `adapters/system-clock.ts` (IClock), `server.ts` (wires the real FS/Notion SPI into the Domain Service, `StdioServerTransport`); `index.ts` stays pure. Proven by a live MCP handshake + `tools/list` exposing the 6 tools _(9c04927)_
+  - [x] Register the server: `.mcp.json.template` entry (always-on, boots empty without config) + **`engine-manifest.json`** (`engineMcpServers` += `golden-source-sync`; `engineVersion` += `golden-source-sync 0.1.0`; `regimes.replace` += `golden-source-sync/src/**` + `package.json`/`package-lock.json`/`tsconfig.json`; `regimes.regenerate` += `launch.sh`/`launch.cmd`) _(0b6197d)_
+  - [x] Launcher self-heal (PATH-poor / bare Mac): `buildGoldenSourceShLauncher`/`Cmd` + `applyGoldenSourceLauncher` in `rag-launcher.mjs` (same self-heal as `rag/`, NO install invocation — pure JS, ADR 0021 N/A; TDD, 4 tests); installer generates + applies them + `npm install golden-source-sync`; `update-engine` regenerates them + installs its deps (guarded by package.json presence) _(0b6197d)_
+  - [x] **Bootstrap skill (layer 1)**: `.claude/skills/golden-source/SKILL.md` — thin driver (intent → gather declaration → token into `.env` → call the MCP tool → report); covers the one-time `.mcp.json` wiring + `npm install` for brains that predate the feature; declared in the manifest `merge` regime (self-carry) _(d52a59c)_
+  - [x] Routing guidance lives in the **harness** (CLAUDE.md template §4 *Golden sources* subsection + the skill `description`), via the `description` field — **not baked into the MCP** (§8) _(d52a59c)_
+  - [x] Docs: README (skill row) / SETUP §6(d) / CONNECTORS (*Golden sources* section) mention; **ADR already recorded as 0022** ("Golden Source as a first-class concept + filesystem decoupling", Scope: Second brain runtime + Installer) — written up front, no new ADR needed _(3fc2b55)_
 - [ ] **Step 9 — Manual Notion QA gate (the demo) + ship**
   - [ ] Real PA/SC zone: `setup_source` → scope test → 1st sync → FileWatcher indexes → second brain answers **bounded + clickable citation** (§17)
   - [ ] Verify de-index on delete on the real vault; two sources without perimeter leak
