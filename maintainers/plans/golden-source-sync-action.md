@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🚧 ACTIVE — Steps 0–8 done (full API port + SPI adapters + deletion reconciliation/guardrail; Step 8 = composition root/stdio boot, engine-manifest + .mcp.json.template registration, self-heal launchers in installer + update-engine, bootstrap skill + routing, docs). Next: Step 9 (manual Notion QA gate by Thomas, then PR/merge/tag/archive). Branch: golden-source-sync. -->
+<!-- STATUS: 🚧 ACTIVE — Steps 0–8 done. Step 9 IN PROGRESS: live-Notion QA started against a throwaway personal test zone (10 pages). PROVEN against the real API: setup_source (scope OK), first sync (1 .md/page + correct frontmatter, token only via token_env), delta no-op, watermark, check_freshness. BLOCKING FINDING B1: pages embedding Notion-hosted files/images churn on every sync (notion-to-md emits rotating S3 pre-signed URLs with X-Amz-* params → hash differs → rewrite) → violates "no-change sync rewrites nothing"; fix = normalize/strip X-Amz-* before hashing (TDD) + ADR. STILL NEEDS THOMAS: real rename/delete reconciliation in Notion, installed-brain demo (FileWatcher index + bounded answer + citation). Branch: golden-source-sync. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — `golden-source-sync`: synchronize golden-source content into the second brain's vault
@@ -142,9 +142,46 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
   - [x] **Bootstrap skill (layer 1)**: `.claude/skills/golden-source/SKILL.md` — thin driver (intent → gather declaration → token into `.env` → call the MCP tool → report); covers the one-time `.mcp.json` wiring + `npm install` for brains that predate the feature; declared in the manifest `merge` regime (self-carry) _(d52a59c)_
   - [x] Routing guidance lives in the **harness** (CLAUDE.md template §4 *Golden sources* subsection + the skill `description`), via the `description` field — **not baked into the MCP** (§8) _(d52a59c)_
   - [x] Docs: README (skill row) / SETUP §6(d) / CONNECTORS (*Golden sources* section) mention; **ADR already recorded as 0022** ("Golden Source as a first-class concept + filesystem decoupling", Scope: Second brain runtime + Installer) — written up front, no new ADR needed _(3fc2b55)_
-- [ ] **Step 9 — Manual Notion QA gate (the demo) + ship**
-  - [ ] Real PA/SC zone: `setup_source` → scope test → 1st sync → FileWatcher indexes → second brain answers **bounded + clickable citation** (§17)
-  - [ ] Verify de-index on delete on the real vault; two sources without perimeter leak
+- [ ] **Step 9 — Manual Notion QA gate (the demo) + ship**  _(IN PROGRESS — 2026-06-18)_
+  - **QA run setup (privacy):** a throwaway PERSONAL Notion test zone was used (10 pages). Its
+    content is private (ex-employer data) and **must never be reused** in examples/docs/commits/memory;
+    the local scratch (`/tmp/gss-qa`) holding the mirrored content was **purged**. The QA integration
+    token stays only in `.env` (gitignored). Re-running the QA re-aspirates from scratch — nothing
+    private is retained on disk.
+  - **Proven against the LIVE Notion API (golden-source-sync side):**
+    - [x] `setup_source` (token via `token_env` in `.env`) → scope confirmed, first sync OK
+    - [x] One `.md` per page, named by pageId, mandatory frontmatter present
+          (`golden_source` + `source_id` + `title` + `source_url` + `last_edited_time`); atomic write
+    - [x] Token never in the config file (only `token_env`), never logged
+    - [x] Delta: `check_freshness` reports up-to-date; sidecar state lives outside the vault
+    - [x] Watermark advances to the perimeter max on a fully successful sync
+  - **BLOCKING FINDING B1 — image/file pages churn every sync.** Pages embedding Notion-hosted
+    files/images are rewritten on EVERY sync even with no upstream change (2/10 in the test zone).
+    Root cause: `notion-to-md` emits the asset as a Notion **S3 pre-signed URL**
+    (`prod-files-secure.s3…amazonaws.com/…?X-Amz-Date=…&X-Amz-Expires=…&X-Amz-Signature=…`); the
+    `X-Amz-*` query params rotate on every API call → markdown bytes differ → `contentHash` differs
+    → rewrite. Violates acceptance criterion "a no-change sync rewrites nothing" (noise commits +
+    needless re-embedding), and the stored URLs expire (~1h) so they're useless anyway.
+    - [x] **Fix B1 (TDD):** strip the volatile signing params (`X-Amz-*`, plus notion.so
+          `signature`/`expirationTimestamp`) from attachment URLs — applied to BOTH the written
+          markdown AND the hash input (same bytes), since the canonical body is what gets written.
+          **DECIDED (Thomas, 2026-06-18): the WRITTEN file keeps the canonical param-stripped URL**
+          (no placeholder; signed URLs expire ~1h anyway). Pure leaf lib
+          `src/lib/strip-volatile-urls.ts` (4 baby-step tests: SigV4, notion.so preserve-stable,
+          no-over-strip, B1 stability invariant) wired into `NotionConnector.fetchContent` (1 test).
+          Surgical (other links/params untouched). _(2026-06-18 · TDD · 63/63 tests, tsc clean)_
+    - [x] **ADR** for the golden-source markdown contract: asset-URL normalization + provenance
+          strategy (see "Provenance" note below). Follow the ADR Scope-field convention.
+          _(2026-06-18 · [`decisions/0023-canonicalize-volatile-presigned-urls-before-hashing.md`](../decisions/0023-canonicalize-volatile-presigned-urls-before-hashing.md))_
+  - **Provenance / "tags" strategy (decided — to be documented in the ADR above):** provenance lives
+    in **frontmatter** (`golden_source: <name>`) + the **`golden-sources/<name>/` folder**, NOT as
+    hashtags injected into the body (the body stays a faithful mirror). Open lever (RAG side, not sync):
+    carry `golden_source` from frontmatter into chunk metadata so answers can label/filter by source.
+  - **STILL NEEDS THOMAS (cannot be done read-only / without an installed brain):**
+    - [ ] Real **rename** of a Notion page → same file rewritten (no duplicate/orphan) — needs Thomas to edit Notion
+    - [ ] Real **delete / move out of scope** → `.md` deleted AND purged from the index — needs Thomas to edit Notion
+    - [ ] **Two sources** (two connections/tokens) without perimeter leak; routing (a topic-X question refreshes source X, not Y)
+    - [ ] Installed-brain demo: **FileWatcher indexes** the golden files → brain answers **bounded + clickable citation** (§17)
   - [ ] On green: PR, `/code-review`, fix findings TDD, merge, tag (codename "The One With…"), **archive this plan** (`git mv` → `plans/archived/`, STATUS ✅ + proof)
 
 ---
