@@ -11,6 +11,7 @@ import {
   buildNodeRunnerSh,
   buildNodeRunnerCmd,
   nodeHookCommand,
+  buildRagInstallInvocation,
 } from "./rag-launcher.mjs";
 
 // Reproduces installer.mjs's (gen) text substitution: .split().join() per key.
@@ -114,6 +115,24 @@ test("minimalPathEnv win32: PATH reduced to System32 (cmd.exe findable), rest pr
 test("minimalPathEnv win32: SystemRoot missing → fallback C:\\Windows", () => {
   const env = minimalPathEnv("win32", { PATH: "x" });
   assert.equal(env.PATH, "C:\\Windows\\System32");
+});
+
+test("buildRagInstallInvocation posix: npm install runs UNDER the launcher's self-heal PATH (same Node as runtime)", () => {
+  const { command, args } = buildRagInstallInvocation("darwin");
+  assert.equal(command, "/bin/sh");
+  // the install must resolve node through the SAME self-heal block as launch.sh,
+  // so the native binary is moulded for exactly the Node the launcher will load.
+  assert.equal(args[0], "-c");
+  assert.match(args[1], /\/opt\/homebrew\/bin/); // self-heal block embedded
+  assert.match(args[1], /npm install/); // …then installs the rag deps
+});
+
+test("buildRagInstallInvocation win32: npm install runs under the cmd self-heal PATH", () => {
+  const { command, args } = buildRagInstallInvocation("win32");
+  assert.equal(command, "cmd");
+  assert.equal(args[0], "/c");
+  assert.match(args[1], /%ProgramFiles%\\nodejs/); // cmd self-heal block embedded
+  assert.match(args[1], /npm install/);
 });
 
 test("applyRagLauncher: rewrites the vault-rag command per OS, preserves cwd/env", () => {

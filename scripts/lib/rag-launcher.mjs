@@ -91,6 +91,24 @@ node %*
 `;
 }
 
+// Builds the invocation that installs the rag/ deps THROUGH the same self-heal
+// PATH the launcher uses at runtime (pathPrependSh/Cmd) — so the native binary
+// (better-sqlite3) is moulded for exactly the Node that will later load it,
+// killing the install-node ≠ runtime-node ABI skew. Returns {command, args} for
+// child_process; run it with cwd = rag/.
+export function buildRagInstallInvocation(platform) {
+  if (platform === "win32") {
+    return {
+      command: "cmd",
+      args: ["/c", `${pathPrependCmd()}\r\nnpm install --silent`],
+    };
+  }
+  return {
+    command: "/bin/sh",
+    args: ["-c", `${pathPrependSh()}\nexec npm install --silent`],
+  };
+}
+
 // Returns a COPY of baseEnv where only PATH is neutralized (the rest — HOME,
 // ProgramFiles, APPDATA, LOCALAPPDATA, NVM_SYMLINK… — is preserved because the
 // self-heal needs it). Used by the install smoke-test: prove that the wrapper

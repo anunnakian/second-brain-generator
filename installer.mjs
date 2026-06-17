@@ -41,6 +41,7 @@ import {
   buildNodeRunnerCmd,
   nodeHookCommand,
   minimalPathEnv,
+  buildRagInstallInvocation,
 } from "./scripts/lib/rag-launcher.mjs";
 import { DEMO_BY_LOCALE, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
 import {
@@ -643,7 +644,12 @@ if (rl) rl.close();
 // ── 6. RAG engine install ────────────────────────────────────────────────────
 step("7/9 · Installing the RAG engine (npm install)");
 const rag = join(TARGET, "rag");
-const install = run(NPM, ["install", "--silent"], { cwd: rag, stdio: "inherit" });
+// Build the native binding (better-sqlite3) UNDER the launcher's self-heal PATH —
+// i.e. the exact Node that rag/launch.sh will later resolve at runtime — so the
+// binary is moulded for the runtime Node, not the installer's shell Node (which
+// may differ on a multi-Node machine → ABI skew). See ADR 0020 / rag-launcher.mjs.
+const ragInstall = buildRagInstallInvocation(process.platform);
+const install = run(ragInstall.command, ragInstall.args, { cwd: rag, stdio: "inherit" });
 if (install.ok) ok("RAG dependencies installed");
 else {
   err("npm install failed in rag/ — re-run: cd rag && npm install");

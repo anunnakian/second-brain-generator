@@ -1,0 +1,110 @@
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- STATUS: 🗺️ ACTION PLAN (created 2026-06-17) — to execute, step-by-step, in TDD. -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+# Action plan — Native-dep ABI skew: align the install-time Node with the runtime Node (A) + self-heal rebuild on mismatch (B)
+
+> **STATUS: 🗺️ ACTION PLAN** (created 2026-06-17). **To execute in TDD** (skill `tdd-discipline`).
+> **Folds into v3.1.0** (same tag as node-compat + import) so a single tag cures both *install* and *runtime*.
+> **Branch:** continue on `node-compat` (already carries node-compat + import).
+
+---
+
+## 🎯 Why — the field problem (in plain terms)
+
+`better-sqlite3` is a **native** module: a binary moulded for **one** Node ABI. Field signal (several
+colleagues, 2026-06-17): after install, the RAG fails with "native module broken / binary not compiled".
+
+Root cause = an **ABI skew**, distinct from the node-compat bug (which was "Node too new → build refused"):
+- The **installer** runs `npm install` in `rag/` with **its own shell Node** (e.g. Node 26 → ABI 137).
+- The **runtime** launches the MCP server via `rag/launch.sh`, which rebuilds a **self-heal PATH**
+  (`pathPrependSh()`) and resolves **whatever Node lands first** there (e.g. a Homebrew `node@22` → ABI 127).
+- Binary moulded for 26, loaded by 22 → **mismatch**. Only bites **multi-Node machines** (mono-Node = no skew).
+- See memory [[node-abi-skew-not-fixed-by-node-compat]].
+
+**Decision (Thomas, 2026-06-17): do B + A** (belt and braces), fold into v3.1.0. Reject C (replace the
+native dep with a pure-JS store — oversized for a risk we can heal).
+
+---
+
+## 📐 Design (frozen)
+
+- **A — Build at install with the SAME Node the launcher will use.** Route the `rag/` `npm install` through
+  the **same self-heal PATH** as `launch.sh` (reuse `pathPrependSh()`/`pathPrependCmd()` — single source of
+  truth). The binary is then moulded for exactly the Node that will load it. Pure seam:
+  `buildRagInstallInvocation(platform)` → `{command, args}` (the OS-right shell + the embedded self-heal
+  block + `npm install`). Installer wires `rag/` install through it (replaces the bare `run(NPM, …)`).
+- **B — Self-heal rebuild at runtime on ABI mismatch.** When loading `better-sqlite3` throws an ABI error,
+  run `npm rebuild better-sqlite3` under the **current** Node, then retry once. Robust forever (survives a
+  Node change *after* install). Pure seam `isNativeAbiError(err)` (detect the `NODE_MODULE_VERSION` /
+  "compiled against a different Node.js version" / `ERR_DLOPEN_FAILED` family) + a thin loader that rebuilds
+  and re-requires. Lives in `rag/` (where better-sqlite3 is used) → ships to the fleet via `update-engine`
+  `replace` bucket; cross-platform (ADR 0015); deterministic (ADR 0009).
+- **Reach the fleet:** A touches `installer.mjs` (new installs) + the seam in `scripts/lib/` (carried).
+  B lives in `rag/src/**` (already in the `replace` bucket) → existing ≥ 3.0.0 brains pick it up on
+  `update-engine`. The cure for "I bumped Node and my binding broke" is then **B** (auto-rebuild) +
+  re-install for A.
+- **No machine path baked**, existence-tested prepends only (like the existing launchers).
+
+---
+
+## 📋 Tracking
+
+- [x] **0. Re-read** the seam files + memory before coding _(done 2026-06-17)_ — `rag-launcher.mjs`
+  (`pathPrependSh/Cmd`), `installer.mjs` (rag install at L644-651), `rag/src/lib/vector-store.ts`.
+- [x] **1. A — pure seam `buildRagInstallInvocation(platform)` (TDD)** _(done 2026-06-17, in `rag-launcher.mjs`)_
+  - [x] 1a. RED→GREEN posix: `{command:"/bin/sh", args:["-c", "<pathPrependSh()>\nexec npm install --silent"]}`.
+  - [x] 1b. Triangulate win32: `{command:"cmd", args:["/c", "<pathPrependCmd()>\r\nnpm install --silent"]}`.
+  - [x] 1c. Refactor: reuses `pathPrependSh/Cmd` (no copy). 2 tests, rag-launcher suite 15/15.
+- [x] **2. A — wire the installer** _(done 2026-06-17)_ — `installer.mjs` step 7/9 now runs the rag install via
+  `buildRagInstallInvocation(process.platform)`, fail-loud kept. Sanity: the sh invocation resolves node+npm
+  under the self-heal PATH (ABI 141 here). Harness 268/268.
+- [x] **3. B — pure seam `isNativeAbiError(err)` (rag/, TDD)** _(done 2026-06-17, `rag/src/lib/native-deps.ts`)_
+  - [x] 3a. true on `NODE_MODULE_VERSION`; true on "Could not locate the bindings file" (missing/unbuilt);
+    **false** on an unrelated error (SQLITE_CORRUPT/ENOENT → never rebuild blindly). 3 tests.
+- [x] **4. B — self-heal loader** `loadNativeWithRebuild` (try → on `isNativeAbiError` rebuild once → retry,
+  else propagate ; at most one rebuild, no loop) ; routed `vector-store.ts` through it _(done 2026-06-17)_.
+  - [x] 4a. Unit-tested with an **injected** rebuild fn (fail-once-then-ok → rebuild called once → success).
+  - [x] 4b. Guards: unrelated error → no rebuild + propagates ; still-broken after rebuild → fails loud
+    (one rebuild). 6 tests total. **native-deps suite green ; tsc clean.**
+  - [x] 4c. **🐛 BUG caught by the empirical step & fixed:** the ABI error fires on `new Database()`, NOT on
+    `require("better-sqlite3")` (binding loads lazily in the ctor). Wrapping the `require` would never heal →
+    `vector-store.ts` now wraps the **construction** (`openDatabase`). Unit-green code would have shipped broken.
+- [x] **5. Suites green** _(done 2026-06-17)_ — harness **268/268**, rag **147/147**, `tsc` clean.
+- [~] **6. Empirical proof — a real two-Node skew** _(IN PROGRESS — resume HERE)_
+  - [x] 6a. Fetched an isolated Node 22 (ABI 127) tarball → `~/sbg-abi-proof/node-v22.12.0-darwin-arm64/bin`
+    (path also in `~/sbg-abi-proof/.n22path`); current node = 25 (ABI 141). **No brew/system change.**
+  - [x] 6b. **Bug reproduced (RED):** `~/sbg-abi-proof/repro` has better-sqlite3@12 built under node25;
+    `new Database()` under node22 → `NODE_MODULE_VERSION 141 requires 127 / ERR_DLOPEN_FAILED`. The exact screen.
+  - [x] 6d. **B heals it (end-to-end):** under node22 against the node25 binary → mismatch caught → real
+    `npm rebuild better-sqlite3` under node22 → retry → DB operational (`{x:7}`). Proven via `~/sbg-abi-proof/repro/heal.mjs`.
+  - [ ] 6c. **A heals it (principle):** install with node22 first on PATH → binary ABI 127 → loads under node22
+    with **no** rebuild (aligning install-node to runtime-node removes the skew). ← **NEXT ACTION.**
+  - [ ] 6e. Clean up: `rm -rf ~/sbg-abi-proof`.
+- [ ] **7. ADR + docs** — extend ADR 0020 (or new ADR) with the **skew** dimension (install-node ≡ runtime-node
+  by construction + runtime self-heal) ; SETUP note (auto-rebuild on first run after a Node change). Flip
+  [[node-abi-skew-not-fixed-by-node-compat]] → fixed.
+- [ ] **8. Ship** — folded into the `node-compat` → v3.1.0 PR ; `/code-review` ; manual QA ; merge + tag.
+  Tick this plan _(date · commit)_ and **archive** it ([[plan-done-equals-archived]]).
+
+> Cocher `- [x]` _(date · commit)_ à chaque étape terminée — mémoire qui survit aux `/clear`.
+
+---
+
+## 🧭 État pour reprise (après `/clear`)
+
+- **➡️ PROCHAINE ACTION = étape 6c** (prouver le principe de A), puis **6e** (nettoyage `rm -rf ~/sbg-abi-proof`),
+  puis **7** (ADR/docs) et **8** (ship sur feu vert Thomas). **A+B sont CODÉS + VERTS + COMMITÉS** (voir commit
+  ci-dessous) ; B est **prouvé end-to-end** (6d) ; reste juste la démo de A + la doc.
+- **Pour 6c** (tout est déjà en place dans `~/sbg-abi-proof/`) : Node 22 isolé = `$(cat ~/sbg-abi-proof/.n22path)`
+  (ABI 127) ; `~/sbg-abi-proof/repro` a un better-sqlite3@12. Faire un install **avec le bin node22 en tête de
+  PATH** (ce que fait A via `pathPrependSh`) → binaire ABI 127 → charge sous node22 **sans rebuild**. C'est la
+  démo « aligner install-node sur runtime-node supprime le skew ».
+- **Repo** `~/Dev/second-brain-generator`, branche **`node-compat`** (porte déjà node-compat + import).
+- **Discipline TDD** : seams purs d'abord (A: `buildRagInstallInvocation` ; B: `isNativeAbiError` + loader
+  avec rebuild **injecté** pour le test) → pas besoin du 2ᵉ Node pour le cœur ; 2ᵉ Node seulement à l'étape 6.
+- **Réutiliser** : `pathPrependSh/Cmd` de `rag-launcher.mjs` (NE PAS recopier le bloc self-heal).
+- **Garde-fous** : pas de chemin machine en dur ; un seul rebuild (pas de boucle) ; fail-loud ; ne PAS
+  rebuild sur une erreur non-ABI ; Mac + Windows (ADR 0015) ; déterministe (ADR 0009).
+- **Mémoires liées** : [[node-abi-skew-not-fixed-by-node-compat]], [[run-node-self-heal-design]],
+  [[node-compat-then-import-plans]], [[release-gate-demos-done]], [[prefer-deterministic-adr-0009]].

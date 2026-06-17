@@ -1,8 +1,45 @@
-import Database from "better-sqlite3";
+// better-sqlite3 is the only ABI-bound dep. Import it as a TYPE ONLY (erased at
+// compile time → NO module load here): a static value import would crash the
+// whole server at startup on an ABI mismatch, before we could self-heal. The
+// constructor is loaded lazily in getDb() through loadNativeWithRebuild.
+import type Database from "better-sqlite3";
 import { mkdirSync } from "fs";
-import { dirname } from "path";
+import { dirname, resolve } from "path";
+import { fileURLToPath } from "url";
+import { createRequire } from "module";
+import { execFileSync } from "child_process";
 import { DB_PATH } from "./config.js";
+import { loadNativeWithRebuild } from "./native-deps.js";
 import type { EmbedderIdentity } from "./embedder.js";
+
+const nodeRequire = createRequire(import.meta.url);
+
+// rag/ root, from rag/src/lib/vector-store.ts → ../../ (where package.json lives).
+function ragRoot(): string {
+  return resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+}
+
+// Rebuilds the native binding under the CURRENT Node (the one running the
+// server), so the binary matches the runtime ABI. npm resolves via the launcher's
+// self-heal PATH (rag/launch.sh). Inherits stdio so the one-off cost is visible.
+function rebuildBetterSqlite(): void {
+  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+  execFileSync(npm, ["rebuild", "better-sqlite3"], { cwd: ragRoot(), stdio: "inherit" });
+}
+
+// Opens a better-sqlite3 database, self-healing a binding-ABI mismatch
+// (install-Node ≠ runtime-Node on a multi-Node machine) by rebuilding once.
+// IMPORTANT: the native binding loads lazily INSIDE `new Database()`, not at
+// `require` time — so the ABI error only fires on construction. The self-heal
+// must therefore wrap the construction (wrapping the require would never catch
+// it). After a rebuild the failed dlopen was never cached → the retry reloads
+// the freshly-built binary.
+function openDatabase(path: string): Database.Database {
+  return loadNativeWithRebuild(() => {
+    const Database = nodeRequire("better-sqlite3");
+    return new Database(path);
+  }, rebuildBetterSqlite);
+}
 
 export type { EmbedderIdentity };
 
@@ -117,7 +154,7 @@ export function readIndexIdentity(
 function getDb(): Database.Database {
   if (!db) {
     mkdirSync(dirname(DB_PATH), { recursive: true });
-    db = new Database(DB_PATH);
+    db = openDatabase(DB_PATH);
     db.pragma("journal_mode = WAL");
     applySchema(db);
   }
