@@ -41,6 +41,7 @@ import {
   buildNodeRunnerCmd,
   nodeHookCommand,
   minimalPathEnv,
+  buildRagInstallInvocation,
 } from "./scripts/lib/rag-launcher.mjs";
 import { DEMO_BY_LOCALE, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
 import {
@@ -53,6 +54,7 @@ import { openEnvInEditor } from "./scripts/lib/open-env.mjs";
 import { buildHandoff } from "./scripts/lib/install-handoff.mjs";
 import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
 import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
+import { checkNode, NODE_WINDOW } from "./scripts/lib/node-compat.mjs";
 
 // ROOT = the LAUNCHER (this cloned repo). READ-ONLY, reusable source: the
 // installer NEVER writes to it. It CREATES a brain folder elsewhere (TARGET),
@@ -143,13 +145,19 @@ function run(cmd, args, opts = {}) {
 step("1/9 · Checking prerequisites");
 let missing = false;
 
-// Node: we are already running inside it, version readable directly.
-const nodeMajor = Number(process.versions.node.split(".")[0]);
-if (nodeMajor >= 18) {
-  ok(`node found (v${process.versions.node})`);
-} else {
-  err(`Node ${nodeMajor} too old — Node ≥ 18 required: https://nodejs.org`);
+// Node: we are already running inside it, version readable directly. Compare it
+// to the engine's native-dep window (better-sqlite3@12) BEFORE `npm install`, so a
+// too-old Node fails loud here with an actionable message instead of cryptically
+// failing to build the binding later (ADR 0009/0020).
+const nodeVerdict = checkNode(process.versions.node, NODE_WINDOW);
+if (!nodeVerdict.ok) {
+  err(nodeVerdict.message);
   missing = true;
+} else if (nodeVerdict.warn) {
+  ok(`node found (v${process.versions.node})`);
+  warn(nodeVerdict.message);
+} else {
+  ok(`node found (v${process.versions.node})`);
 }
 
 const git = run("git", ["--version"]);
@@ -636,7 +644,12 @@ if (rl) rl.close();
 // ── 6. RAG engine install ────────────────────────────────────────────────────
 step("7/9 · Installing the RAG engine (npm install)");
 const rag = join(TARGET, "rag");
-const install = run(NPM, ["install", "--silent"], { cwd: rag, stdio: "inherit" });
+// Build the native binding (better-sqlite3) UNDER the launcher's self-heal PATH —
+// i.e. the exact Node that rag/launch.sh will later resolve at runtime — so the
+// binary is moulded for the runtime Node, not the installer's shell Node (which
+// may differ on a multi-Node machine → ABI skew). See ADR 0020 / rag-launcher.mjs.
+const ragInstall = buildRagInstallInvocation(process.platform);
+const install = run(ragInstall.command, ragInstall.args, { cwd: rag, stdio: "inherit" });
 if (install.ok) ok("RAG dependencies installed");
 else {
   err("npm install failed in rag/ — re-run: cd rag && npm install");
@@ -655,7 +668,12 @@ if (embedderIsReady) {
   if (providerKey === "in-process") {
     console.log("  (1st time fully-local: downloading the model weights ~28 s, then offline.)");
   }
-  const idx = run(NPM, ["run", "--silent", "index"], { cwd: rag, stdio: "inherit" });
+  const idx = run(NPM, ["run", "--silent", "index"], {
+    cwd: rag,
+    stdio: "inherit",
+    // No OS toast during install (the notify seam honours SBG_NO_NOTIFY).
+    env: { ...process.env, SBG_NO_NOTIFY: "1" },
+  });
   if (idx.ok) ok("example vault indexed");
   else warn("Indexing interrupted (quota/key/endpoint?) — it will resume the next time Claude Code starts.");
 } else if (embedderCfg.needsGeminiKey) {
@@ -691,6 +709,9 @@ try {
       args: srv.args ?? [],
       cwd: srv.cwd ?? TARGET,
       expectTools: EXPECT_TOOLS,
+      // No OS toast during the post-flight (the MCP auto-reindex would otherwise
+      // pop one); the notify seam honours SBG_NO_NOTIFY.
+      env: { SBG_NO_NOTIFY: "1" },
       // In-process reloads an ONNX session in the smoke's MCP process → we
       // allow more headroom (the fallback stays 30 s for network embedders).
       timeoutMs: providerKey === "in-process" ? 60000 : 30000,

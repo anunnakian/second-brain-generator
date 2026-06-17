@@ -57,60 +57,75 @@ vault, shows a **safe plan**, **confirms**, copies (never overwriting), reindexe
 
 ## 📋 Tracking
 
-- [ ] **0. ADR 0019 written & accepted** _(done 2026-06-15)_ — re-read it before coding; it freezes the
+- [x] **0. ADR 0019 written & accepted** _(done 2026-06-15)_ — re-read it before coding; it freezes the
   guardrails and the "Kenjaku ≠ trigger" rule.
-- [ ] **1. Pure core `scripts/lib/import-vault.mjs` (TDD, baby-steps)**
-  - [ ] 1a. **`planImport` — source resolution.** RED→GREEN: a `source` that is a brain root resolves to
+- [x] **1. Pure core `scripts/lib/import-vault.mjs` (TDD, baby-steps)** _(done 2026-06-15 · local, branch `node-compat`)_
+  - [x] 1a. **`planImport` — source resolution.** RED→GREEN: a `source` that is a brain root resolves to
     `<source>/vault`; a `source` that is already a vault dir is used as-is; a non-existent/empty source
     throws a clear error; `source === dest` throws.
-  - [ ] 1b. **`planImport` — classification.** Triangulate: a brand-new note → `notes`; a note whose relpath
+  - [x] 1b. **`planImport` — classification.** Triangulate: a brand-new note → `notes`; a note whose relpath
     already exists in `dest` vault → `collisions`; an example note (`tags: [exemple]`) → `skippedExamples`;
     nested subfolders + accented filenames preserved in the relpaths.
-  - [ ] 1c. **`planImport` — attachments & hidden.** A non-`.md` attachment under the vault → imported
+  - [x] 1c. **`planImport` — attachments & hidden.** A non-`.md` attachment under the vault → imported
     (travels with notes); hidden/system entries (`.obsidian`, `.git`, dotfiles) → ignored.
-  - [ ] 1d. **`applyImport` — copy, structure-preserving, non-destructive.** Copies planned files under
+  - [x] 1d. **`applyImport` — copy, structure-preserving, non-destructive.** Copies planned files under
     `dest` vault keeping subfolders; a collision is **skipped** (never overwritten) and reported.
-  - [ ] 1e. **Refactor** + re-read the suite green.
-- [ ] **2. CLI entry `scripts/import-brain.mjs` (thin)**
-  - [ ] 2a. Parse `<source> [--apply]`; print plan (counts + sample); with `--apply` run + print result.
-  - [ ] 2b. Fail-loud, non-zero exit on error (relay the core's message). Smoke-test it on a temp fixture.
-- [ ] **3. Skill `.claude/skills/import/SKILL.md` (EN) — the keyword-driven driver**
-  - [ ] 3a. `description` packed with the **functional** triggers (import/migrate/transport/recover/second
-    brain, EN+FR). Verify mentally that *"importe mes anciennes notes depuis X"* and *"migrate my old
-    brain"* both match — and that **no JJK word is required**.
-  - [ ] 3b. Body: when-to-use · **OPT-IN, confirm before write** · touches/NEVER-touches table · "run the
+  - [x] 1e. **Refactor** + re-read the suite green _(harness 245/245)_.
+- [x] **2. CLI entry `scripts/import-brain.mjs` (thin)** _(done 2026-06-15 · local)_
+  - [x] 2a. Parse `<source> [--apply]`; print plan (counts + sample); with `--apply` run + print result.
+  - [x] 2b. Fail-loud, non-zero exit on error (relay the core's message). Smoke-test it on a temp fixture
+    _(end-to-end subprocess test in `import-brain-cli.test.mjs`; realpath `isMain` guard for symlinked $TMPDIR)_.
+- [x] **3. Skill `.claude/skills/import/SKILL.md` (EN) — the keyword-driven driver** _(done 2026-06-15)_
+  - [x] 3a. `description` packed with the **functional** triggers (import/migrate/transport/recover/second
+    brain, EN+FR). *"importe mes anciennes notes depuis X"* and *"migrate my old brain"* both match —
+    **no JJK word required**.
+  - [x] 3b. Body: when-to-use · **OPT-IN, confirm before write** · touches/NEVER-touches table · "run the
     core, then reindex" · the **Kenjaku flavour note** explicitly tagged as optional lore ("you never need
     to say this word").
-- [ ] **4. FR overlay `templates/fr/.claude/skills/import/SKILL.md`** — mirror the EN skill in French
-  (same triggers, same guardrails), like the existing `update-engine` FR overlay.
-- [ ] **5. Manifest wiring (`engine-manifest.json`) + self-carry**
-  - [ ] 5a. Add `.claude/skills/import/**` to **`merge`** (like the other skills) and
-    `scripts/import-brain.mjs` to **`replace`** (the libs are already covered by `scripts/lib/**`).
-  - [ ] 5b. Update `engine-manifest.test.mjs` accordingly; confirm **self-carry** (a future `update-engine`
-    carries the import core + skill forward — same invariant as [[update-engine-must-self-carry-libs]]).
-- [ ] **6. Ships into the brain (install path)** — confirm the import files are **NOT** dev-only excluded
-  (they must travel via `filterCopyable`): `scripts/import-brain.mjs`, `scripts/lib/import-vault.mjs`,
-  `.claude/skills/import/**` all land in a generated brain. Add a `tracked-files` assertion if useful.
-- [ ] **7. Docs**
-  - [ ] 7a. **README** — a "Already have a brain from before v3.0.0?" section: install 3.1.0 → new rooted
-    conversation → *"importe mes anciennes notes depuis `<chemin>`"*; the **footgun in bold** (copy the
-    *vault content*, not the whole folder); note attachments travel, constitution = manual; the Kenjaku
-    marketing line as flavour.
-  - [ ] 7b. **SETUP.md** — the same flow + caveats (first reindex takes a few minutes on a big vault;
-    re-do `.env` / re-wire connectors).
-- [ ] **8. Suites green** — `node --test scripts/lib/*.test.mjs` (harness) ; `npm test --prefix rag` ;
-  `(cd rag && npx tsc --noEmit)`. **On ne commit que du vert** ([[commit-only-green-todo-gate]]).
-- [ ] **9. Empirical proof — a real import**
-  - [ ] 9a. Build a **fake "old brain"**: a fresh install, then drop **many** real notes into its `vault/`
-    (incl. subfolders, accents, an attachment, and leave a demo note in to prove it's skipped).
-  - [ ] 9b. Build a **fresh 3.1.0 brain**; from a NEW rooted conversation run the import (or `node
-    scripts/import-brain.mjs <old> --apply`).
-  - [ ] 9c. **Verify**: imported notes are searchable from the vault; **one** import commit; **no**
-    overwrite; demo note **skipped**; attachments present; structure preserved.
-  - [ ] 9d. Clean up the test brains.
-- [ ] **10. Ship** — PR from `import-brain`, `/code-review`, manual QA, merge; **tag `v3.1.0`** on merge
-  (ADR 0017). Tick this plan _(date · commit)_ and **archive** it in `maintainers/plans/archived/`
-  ([[plan-done-equals-archived]]). Verify existing ≥ 3.0.0 brains pick up `import` via `update-engine`.
+- [x] **4. FR overlay `templates/fr/.claude/skills/import/SKILL.md`** _(done 2026-06-15)_ — mirrors the EN
+  skill in French (same triggers, same guardrails), like the `update-engine` FR overlay.
+- [x] **5. Manifest wiring (`engine-manifest.json`) + self-carry** _(done 2026-06-15)_
+  - [x] 5a. Added `.claude/skills/import/**` to **`merge`** and `scripts/import-brain.mjs` to **`replace`**
+    (libs already covered by `scripts/lib/**`).
+  - [x] 5b. Added a **self-carry** test in `engine-manifest.test.mjs` (core + skill named → carried by
+    a future `update-engine`; same invariant as [[update-engine-must-self-carry-libs]]).
+- [x] **6. Ships into the brain (install path)** _(done 2026-06-15)_ — `filterCopyable` keeps the import
+  files (no dev-only prefix strands them); EN skill travels with `.claude/`, FR via locale overlay.
+  Two `tracked-files` assertions added (core+CLI, skill).
+- [x] **7. Docs** _(done 2026-06-15)_
+  - [x] 7a. **README** — "🧬 Already have a brain from before v3.0.0? Bring your notes over" section:
+    install 3.1.0 → new rooted conversation → *"importe mes anciennes notes depuis `<chemin>`"*; the
+    **footgun in bold**; attachments travel, constitution = manual; the Kenjaku flavour line.
+  - [x] 7b. **SETUP.md** — new **§11** with the same flow + caveats (first reindex; constitution manual;
+    re-wire `.env` / connectors) + the technical run-it-yourself commands.
+- [x] **8. Suites green** _(done 2026-06-15)_ — harness **253/253** ; rag **141/141** ; `tsc --noEmit`
+  clean. **On ne commit que du vert** ([[commit-only-green-todo-gate]]).
+- [x] **9. Empirical proof — a real import** _(done 2026-06-16 · local, branch `node-compat`)_
+  - [x] 9a. Build a **fake "old brain"**: a `vault/` with real notes — accented filename
+    (`projets/zorbïfex.md`, canary `Quibrillon-7742`/`Crépiçon`), a daily note, an attachment
+    (`attachments/diagramme.png`), a real **demo** note (`tags: [exemple]`) to prove skip, a
+    differing `README.md` to prove the collision, and a hidden `.obsidian/` to prove it's ignored.
+  - [x] 9b. Build a **fresh 3.1.0 brain** (`installer.mjs --embedder in-process`, post-flight OK);
+    ran `node scripts/import-brain.mjs <old>` then `--apply` **from inside the brain**.
+  - [x] 9c. **Verified**: plan = 3 import / 1 collision / 1 demo-skip; after apply → 3 notes copied,
+    **subfolders preserved**, **accented filename** intact, **attachment bytes identical** (`cmp`),
+    `.obsidian` ignored, **README NOT overwritten** (collision skipped), **flemmr demo absent**;
+    **one** import commit (3 files, README untouched); after `npm run reindex` (9 indexed) the
+    **imported canary is searchable via the MCP `search_vault` tool** — both `Quibrillon-7742` and
+    `Crépiçon` retrieved from the imported note. ✅ End-to-end proven.
+  - [x] 9d. Cleaned up the test brains (`rm -rf ~/sbg-import-proof`).
+  - [x] 9e. **⚠️ FINDING (gates step 10): the import files MUST be committed to ship.** The installer
+    copies via `git ls-files -z` (tracked only) → today's **untracked** core/CLI did **not** land in a
+    fresh brain (only the FR skill did, via the locale fs-walk overlay; the EN skill didn't either).
+    The tracked-files tests (step 6) assume they're tracked at ship time → **committing the green
+    (step 10) is what makes the feature actually ship.** ✅ **Confirmed after commit `af64499`**: a
+    fresh install (164 files) now lands `scripts/import-brain.mjs` + `scripts/lib/import-vault.mjs` +
+    the EN `import` skill (FR via overlay on `--lang français`).
+- [~] **10. Ship** — **folded into the shared v3.1.0 ship via PR #11** (`node-compat → main` ; node-compat carries
+  import + ABI skew too). **➡️ Ship is now tracked in ONE place: step 8 of
+  `node-abi-skew-install-runtime-action.md`** (8a push+PR ✅ done · 8b `/code-review` ← next · 8c QA · 8d merge+tag
+  `v3.1.0` · 8e archive the 3 plans). PR: https://github.com/tpierrain/second-brain-generator/pull/11. On merge,
+  verify existing ≥ 3.0.0 brains pick up `import` via `update-engine`.
 - [ ] **11. Announce** — the follow-up post (pre-3.0.0 migrators) + README link; "first feature shipped on
   the v3 platform" angle.
 

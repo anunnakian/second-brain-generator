@@ -9,6 +9,7 @@
       "rag/package-lock.json",
       "rag/tsconfig.json",
       "scripts/update-engine.mjs",
+      "scripts/import-brain.mjs",
       "scripts/lib/**"
     ],
     "regenerate": [
@@ -27,6 +28,7 @@
       ".claude/skills/prepare-1-1/**",
       ".claude/skills/tdd-discipline/**",
       ".claude/skills/update-engine/**",
+      ".claude/skills/import/**",
       "scripts/auto-commit.mjs",
       "scripts/auto-push.mjs",
       "scripts/status-line.mjs",

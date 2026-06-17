@@ -2,6 +2,9 @@
   "name": "second-brain-rag",
   "version": "1.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc",
     "index": "tsx src/index.ts --once",
@@ -13,7 +16,7 @@
     "@google/genai": "^1.0.0",
     "@huggingface/transformers": "^4.2.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "better-sqlite3": "^11.0.0",
+    "better-sqlite3": "^12.0.0",
     "chokidar": "^5.0.0",
     "dotenv": "^16.4.0",
     "gray-matter": "^4.0.3",

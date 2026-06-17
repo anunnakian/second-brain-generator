@@ -4,7 +4,7 @@
 
 | Tool | Why | Installation |
 |---|---|---|
-| **Node.js ≥ 18** | Runs the RAG engine **and** the whole harness (installer + hooks are in Node, cross-OS) | https://nodejs.org (macOS: `brew install node` · Windows: `winget install OpenJS.NodeJS`) |
+| **Node.js ≥ 20** | Runs the RAG engine **and** the whole harness (installer + hooks are in Node, cross-OS). **Node 24/25/26 are covered since v3.1.0** — the engine's native deps (`better-sqlite3`) now declare the modern window, so you no longer need to downgrade Node. | https://nodejs.org (macOS: `brew install node` · Windows: `winget install OpenJS.NodeJS`) |
 | **git** | Versioning + portability across machines | https://git-scm.com |
 | **Claude Code** | The agent that queries the vault | https://claude.com/claude-code |
 | **Gemini key** *(optional)* | Embeddings — **only if you choose the Gemini embedder** (see note below) | https://aistudio.google.com/apikey |
@@ -311,13 +311,15 @@ changes from the other machine.
 
 | Symptom | Probable cause | Remedy |
 |---|---|---|
-| `npm install` fails in `rag/` | Node too old | Node ≥ 18 (`node -v`) |
+| `npm install` fails in `rag/` | Node too old (or, before v3.1.0, too new) | Node ≥ 20 (`node -v`); Node 24/25/26 are supported since v3.1.0. The installer now preflights this and tells you what to switch to (nvm/volta). |
 | `npm install` fails on **`better-sqlite3`** (Windows) | Native module without a prebuild for your Node version | Use an **LTS version** of Node (prebuilds available), or install the build tools: `npm install --global windows-build-tools` (old) or the *Visual Studio Build Tools* ("Desktop development with C++"). Then `cd rag && npm install`. |
+| RAG fails at startup with **`NODE_MODULE_VERSION` mismatch** / "compiled against a different Node.js version" / `ERR_DLOPEN_FAILED` | **Native-dep ABI skew** — `better-sqlite3` was built under one Node, then loaded by another (only happens on a machine with several Node versions, e.g. after switching Node). | **Self-heals since v3.1.0**: the engine detects the skew and runs **one automatic `npm rebuild better-sqlite3`** under the current Node on the next start, then retries — no action needed (the first start after a Node change just takes a few seconds longer). To force it manually: `cd rag && npm rebuild better-sqlite3`. |
 | Empty searches | Index not built / no key | `cd rag && npm run index` after setting the key |
 | `RESOURCE_EXHAUSTED` / 429 | Today's Gemini quota reached | auto-resume at reset (Pacific midnight), or raise `MAX_EMBED_REQUESTS_PER_DAY` |
 | RAG status "unavailable" at startup | RAG engine not yet installed / DB being written | `cd rag && npm install`; the status recovers once the index is built |
 | The MCP server doesn't appear | `.mcp.json` missing / wrong path | re-run `node installer.mjs`, accept the server in Claude Code |
 | **MCP smoke-test ❌** at the end of installation ("MCP connection KO") | `rag/` not installed, `.mcp.json` poorly generated, or `npx`/`tsx` unavailable | `cd rag && npm install` then re-run `node installer.mjs`; check that `.mcp.json` points to `npx tsx rag/src/index.ts` with the right `cwd`. Manual test: `npx tsx rag/src/index.ts` should start without crashing (the Gemini key is **not** required for this test). |
+| Memory feels tight with several brains open in **Claude Desktop** | Each open brain keeps **one warm search engine** in RAM (the MCP server lives with the parent session, not your typing) | Close the brain conversations you're not using. See the README's [**Notes for Claude Desktop users**](README.md#-notes-for-claude-desktop-users). |
 
 ## 9. Data privacy
 
@@ -426,3 +428,46 @@ offer** the update.
 > ```
 > Same deterministic core the skill drives; exits non-zero on failure. (Day to day you don't need
 > this — just ask your brain.)
+
+## 11. Importing a previous brain's notes (`import`)
+
+> 🆕 **New in v3.1.0.** If you had a second brain **before v3.0.0**, it has no built-in updater — the
+> way to v3 is to **install a fresh 3.1.0 brain and import your old notes into it.** The `import` skill
+> makes that a safe conversation instead of a manual copy-paste.
+
+### The flow
+
+1. **Install a fresh brain** (§2) — it's a 3.1.0 brain, shipping the `import` skill.
+2. **Open a NEW conversation rooted in the new brain** (§2 hand-off — Desktop folder chip, or `cd … &&
+   claude`). The import must run *inside* the new brain.
+3. **Ask in plain words:** *"importe mes anciennes notes depuis `<chemin>`"* / *"import my old second
+   brain from `<path>`"*. The skill shows a **plan** (no writes), you **confirm**, it copies, then
+   re-indexes.
+
+### What travels — and what never does
+
+- **Travels:** your notes (`.md`) and their **attachments**, with **subfolders + accented names
+  preserved**.
+- **Never travels:** the old **engine** (`rag/`, launchers, scripts), the source's `.git` / `.claude` /
+  `.obsidian` / dotfiles, and **demo/example notes** (`tags: [exemple]`).
+- **Never overwrites:** a note whose name already exists in your new vault is **skipped and reported**,
+  never clobbered.
+
+> ⚠️ **The footgun:** point the import at your **old brain folder** (or its `vault/`) — it copies the
+> *vault content only*. Don't hand-copy the whole old folder into the new brain.
+
+### Caveats
+
+- **First re-index** on a large vault takes a few minutes (the notes are encoded — nothing is lost).
+- **Constitution not merged (v1):** a personalised old `CLAUDE.md` is **not** auto-merged — fold wanted
+  bits in by hand.
+- **`.env` / connectors** belong to the new brain (set at install); re-wire any old keys/connectors here.
+
+> 🛠️ **Run it yourself** (technical, optional). From the new brain folder:
+> ```bash
+> node scripts/import-brain.mjs "<source>"          # prints the plan, writes nothing
+> node scripts/import-brain.mjs "<source>" --apply   # copies, never overwriting
+> npm run index --prefix rag                          # make the imported notes searchable
+> ```
+> Deterministic core (`scripts/import-brain.mjs` + `scripts/lib/import-vault.mjs`); exits non-zero on
+> failure. (Day to day you don't need this — just ask your brain.)
