@@ -60,8 +60,55 @@ export class GoldenSourceSync implements IGoldenSourceSync {
     return toSourceState(config, persisted);
   }
 
-  setupSource(_req: SetupRequest): Promise<SetupResult> {
-    return notImplemented('setupSource', 'Step 6');
+  /**
+   * Onboard a brand-new golden source (PRD §13). First it **tests the scope**: the connector's
+   * scoped enumeration must return the zone — an enumeration error reads as "auth/connection
+   * problem", and zero pages reads as "root not connected" (PRD §11.5/§12). Only once the scope
+   * is proven do we **declare** the source (config file = versioned source of truth, §20.2) and
+   * run the **first sync**. The token never travels through Claude's context — only its env-var
+   * name (`tokenEnv`) is stored (§11).
+   */
+  async setupSource(req: SetupRequest): Promise<SetupResult> {
+    const config = configFromRequest(req);
+    const connector = this.deps.connectorFor(config);
+
+    let items;
+    try {
+      items = await connector.listItems();
+    } catch (error) {
+      return {
+        name: req.name,
+        ok: false,
+        message:
+          `Could not reach the "${req.name}" zone: ${errorMessage(error)}. ` +
+          `Check that "${req.tokenEnv}" holds a valid Read-content token and that the root page ` +
+          `is connected to the integration in Notion (••• → Connections).`,
+      };
+    }
+
+    if (items.length === 0) {
+      return {
+        name: req.name,
+        ok: false,
+        message:
+          `The scoped search returned 0 pages for "${req.name}". The root page is not connected ` +
+          `to the integration yet: in Notion, open the root page → ••• → Connections → add your ` +
+          `integration, then run setup again. (Access cascades over the whole sub-tree.)`,
+      };
+    }
+
+    await this.deps.configStore.upsert(config);
+    const report = await this.sync(config.name);
+
+    return {
+      name: req.name,
+      ok: report.status !== 'failed',
+      message:
+        `Source "${req.name}" set up: scope confirmed (${items.length} page(s) in the zone), ` +
+        `first sync ${report.status} — ${report.written} written, ${report.unchanged} unchanged. ` +
+        `Files live under ${config.target_dir}/; the brain will index them and answer with ` +
+        `clickable citations.`,
+    };
   }
 
   /**
@@ -224,6 +271,25 @@ export function toSourceState(
 /** The source's stable Notion root page id — from prior state, else extracted from the URL. */
 function rootPageIdOf(config: GoldenSourceConfig, previous: PersistedState | null): string {
   return previous?.rootPageId ?? extractPageId(config.connector.config.root_page_url);
+}
+
+/** Assembles a declared config from the onboarding request — the token's env-var name only (§11). */
+function configFromRequest(req: SetupRequest): GoldenSourceConfig {
+  return {
+    name: req.name,
+    title: req.title,
+    description: req.description,
+    connector: {
+      type: 'notion',
+      config: { root_page_url: req.rootPageUrl, token_env: req.tokenEnv },
+    },
+    target_dir: `golden-sources/${req.name}`,
+  };
+}
+
+/** A readable message from a thrown value, never leaking a token (connectors name the env var). */
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function notImplemented(method: string, step: string): Promise<never> {

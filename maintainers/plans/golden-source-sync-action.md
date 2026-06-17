@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🚧 ACTIVE — Steps 0–5 done (skeleton + API port + MCP transport + VaultWriter + StateStore/watermark/delta + NotionConnector SPI + deletion reconciliation/guardrail). Branch: golden-source-sync. -->
+<!-- STATUS: 🚧 ACTIVE — Steps 0–6 done (skeleton + API port + MCP transport + VaultWriter + StateStore/watermark/delta + NotionConnector SPI + deletion reconciliation/guardrail + setup_source onboarding/FsConfigStore). Next: Step 7 (check_freshness/status/remove_source). Branch: golden-source-sync. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — `golden-source-sync`: synchronize golden-source content into the second brain's vault
@@ -126,10 +126,10 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
   - [x] **Guardrail §7**: delete a `.md` **only if** perimeter enumeration **fully succeeded**; on any error → **skip deletions**, mark `partial`, do not advance watermark (`freezeAsPartial`)
   - [x] Acceptance: rename → same file; deletion → `.md` removed; **enumeration error → ZERO deletion**; **empty perimeter over a non-empty corpus → ZERO deletion** (lost-scope guard); sub-page edit → watermark = max (covered in `sync-delta`)
   - [x] Robustness (§12) — the deletion-critical parts: **truncated pagination ⇒ throw ⇒ no reconciliation** (`NotionConnector`, `has_more`+no-cursor); **401 distinct from "0 pages"** (401 throws → freeze; genuine 0-pages on first sync = ok; 0-over-non-empty = frozen). _Deferred to gateway/integration hardening (Step 8/9): 429 backoff+jitter+cap and the per-source single-writer lock — the §7 guardrail already makes a 429 damage-free (partial + resume), and single-session local concurrency on the same source is not a proven risk._
-- [ ] **Step 6 — `setup_source` (onboarding)**
-  - [ ] Tool: root-page URL + token env name → test scope (scoped `search` returns only the zone; 0 pages ⇒ clear "root not connected" message)
-  - [ ] First sync + sidecar write + **writes the config file** (`golden-source-sync.config.json`, §20.2)
-  - [ ] Step-by-step explanation; token guided into env, **never through Claude's context**
+- [x] **Step 6 — `setup_source` (onboarding)** _(2026-06-17 · pending)_
+  - [x] Tool: root-page URL + token env name → test scope (scoped `search` returns only the zone; 0 pages ⇒ clear "root not connected" message; enumeration/401 error distinct from "0 pages") — domain `setupSource`, 3 acceptance tests at the API port
+  - [x] First sync + sidecar write + **writes the config file** (`golden-source-sync.config.json`, §20.2) — `FsConfigStore` SPI adapter (atomic temp+rename, `{schemaVersion:1, golden_sources:[...]}`, 6 tests on a real temp file)
+  - [x] Step-by-step explanation in `SetupResult.message`; token guided into env via `token_env` only, **never through Claude's context** (MCP `setup_source` tool takes `token_env`, never the token — Step 1). 43 green, `tsc --noEmit` exit 0
 - [ ] **Step 7 — `check_freshness` / `status` / `remove_source`**
   - [ ] `check_freshness`: watermark-only check (behind? by how much?) without pulling
   - [ ] `status`: last sync, watermark, item count, lag
@@ -149,8 +149,8 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
 
 ## Acceptance criteria (MVP — from PRD §17)
 
-- [ ] `setup_source` with a root-page **URL** + token env → tests scope, does 1st sync, explains steps.
-- [ ] Read-content scoped token → access to the sub-tree only (0 pages if root not connected).
+- [x] `setup_source` with a root-page **URL** + token env → tests scope, does 1st sync, explains steps. _(domain-proven, Step 6)_
+- [x] Read-content scoped token → access to the sub-tree only (0 pages if root not connected). _(0-pages "root not connected" message domain-proven, Step 6; real scope cascade = Step 9 real-vault QA)_
 - [ ] Sync produces `golden-sources/<name>/<pageId>.md`: frontmatter `source_url` + `last_edited_time` + `golden_source`; **atomic write**.
 - [ ] The existing FileWatcher indexes these files **with no RAG change**; the hook commits them.
 - [x] **Rename** of a Notion page → rewrites the same file (no duplicate/orphan). _(domain-proven, Step 5)_

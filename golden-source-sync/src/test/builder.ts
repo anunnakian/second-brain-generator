@@ -23,10 +23,14 @@ export function aGoldenSourceSync(): GoldenSourceSyncBuilder {
 class GoldenSourceSyncBuilder {
   private readonly declared: GoldenSourceConfig[] = [];
   private pages: StubPage[] = [];
+  /** When false, serving pages no longer auto-declares the default source (setup_source case). */
+  private autoDeclare = true;
   /** When set, the connector fails to enumerate the perimeter (PRD §7/§12 guardrail). */
   private enumerationError: string | undefined;
   /** Stable reference so tests can inspect the vault after build()/sync(). */
   private readonly vault = new RecordingVaultWriter();
+  /** Stable reference so tests can inspect what `setup_source` declared. */
+  private readonly configs = new InMemoryConfigStore(this.declared);
 
   /** Declare golden sources, as if already written to the config file. */
   withDeclaredSources(...configs: GoldenSourceConfig[]): this {
@@ -40,6 +44,16 @@ class GoldenSourceSyncBuilder {
    */
   withNotionPages(...pages: StubPage[]): this {
     this.pages.push(...pages);
+    return this;
+  }
+
+  /**
+   * The pages the connector serves WITHOUT declaring any source — the situation
+   * `setup_source` faces: a brand-new zone whose scope it must test before declaring it.
+   */
+  withConnectablePages(...pages: StubPage[]): this {
+    this.pages.push(...pages);
+    this.autoDeclare = false;
     return this;
   }
 
@@ -81,15 +95,17 @@ class GoldenSourceSyncBuilder {
     return this.vault.written;
   }
 
+  /** The sources currently declared (after a `setup_source`, the new one shows up here). */
+  async declaredSources(): Promise<GoldenSourceConfig[]> {
+    return this.configs.loadAll();
+  }
+
   build(): IGoldenSourceSync {
-    const declared =
-      this.declared.length > 0
-        ? this.declared
-        : this.pages.length > 0
-          ? [aNotionGoldenSource()]
-          : [];
+    if (this.declared.length === 0 && this.autoDeclare && this.pages.length > 0) {
+      this.declared.push(aNotionGoldenSource());
+    }
     return new GoldenSourceSync({
-      configStore: new InMemoryConfigStore(declared),
+      configStore: this.configs,
       stateStore: new InMemoryStateStore(),
       vaultWriter: this.vault,
       clock: new FixedClock(new Date('2026-06-17T00:00:00.000Z')),
