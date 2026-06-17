@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🚧 ACTIVE — Steps 0–3 done (skeleton + API port + MCP transport + VaultWriter/atomic write + StateStore/watermark/delta). Branch: golden-source-sync. -->
+<!-- STATUS: 🚧 ACTIVE — Steps 0–4 done (skeleton + API port + MCP transport + VaultWriter + StateStore/watermark/delta + NotionConnector SPI). Branch: golden-source-sync. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — `golden-source-sync`: synchronize golden-source content into the second brain's vault
@@ -117,10 +117,10 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
   - [x] `content-hash.ts` over the **produced markdown** (`sha256:` prefix, classic TDD, 2 tests); per-item persistence in the state map
   - [x] Delta: a 2nd sync with no upstream change = **no-op** (`written:0`, `unchanged:N`); watermark = **max of perimeter** (PRD §16 sub-page trap)
   - [x] Acceptance: idempotence + watermark-only-advances-on-full-success (a per-item fetch failure ⇒ `partial`, readable file kept, watermark frozen). 17 green, `tsc --noEmit` exit 0
-- [ ] **Step 4 — NotionConnector (SPI), read-only, tested alone**
-  - [ ] `ISourceConnector` + `NotionConnector`: `listItems` (scoped `search` + **full pagination**), `lastEditedTime`, `fetchContent` (`notion-to-md`)
-  - [ ] URL→pageId extraction; token from env var (`token_env`), never logged
-  - [ ] Unit-tested against a stubbed Notion HTTP layer (rate-limit/pagination/401 paths in Step 5/12)
+- [x] **Step 4 — NotionConnector (SPI), read-only, tested alone** _(2026-06-17 · 3dddb67)_
+  - [x] `ISourceConnector` + `NotionConnector`: `listItems` (scoped `search` + **full pagination** via cursor), title from the `title`-typed property, `lastEditedTime`, `fetchContent` (`notion-to-md`); non-page results skipped
+  - [x] URL→pageId extraction (`lib/notion-url.ts`, dashed UUID, 4 tests); token from env var (`token_env`) in `buildNotionConnector`, **never logged** (error names the var, not the token)
+  - [x] Unit-tested against a stubbed `NotionGateway` (mapping + pagination + delegation, 4 tests; factory env plumbing, 2 tests). Real SDK isolated in `adapters/notion-gateway.ts`. Robustness (429/401/truncation) deferred to Step 5/§12. 27 green, `tsc --noEmit` exit 0
 - [ ] **Step 5 — Deletion reconciliation + reliable-perimeter guardrail (riskiest, isolated)**
   - [ ] `reconcile.ts` pure: perimeter vs state map → writes/updates/deletes
   - [ ] **Guardrail §7**: delete a `.md` **only if** perimeter enumeration **fully succeeded**; on any error → **skip deletions**, mark `partial`, log, do not advance watermark
