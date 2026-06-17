@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 import { createRequire } from "module";
 import { execFileSync } from "child_process";
 import { DB_PATH } from "./config.js";
-import { loadNativeWithRebuild } from "./native-deps.js";
+import { loadNativeWithRebuild, buildRebuildInvocation } from "./native-deps.js";
 import type { EmbedderIdentity } from "./embedder.js";
 
 const nodeRequire = createRequire(import.meta.url);
@@ -21,10 +21,12 @@ function ragRoot(): string {
 
 // Rebuilds the native binding under the CURRENT Node (the one running the
 // server), so the binary matches the runtime ABI. npm resolves via the launcher's
-// self-heal PATH (rag/launch.sh). Inherits stdio so the one-off cost is visible.
+// self-heal PATH (rag/launch.sh). The invocation is platform-aware (Windows routes
+// through `cmd /c` — spawning `npm.cmd` directly throws EINVAL since Node's
+// April-2024 spawn hardening). Inherits stdio so the one-off cost is visible.
 function rebuildBetterSqlite(): void {
-  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-  execFileSync(npm, ["rebuild", "better-sqlite3"], { cwd: ragRoot(), stdio: "inherit" });
+  const { command, args } = buildRebuildInvocation(process.platform);
+  execFileSync(command, args, { cwd: ragRoot(), stdio: "inherit" });
 }
 
 // Opens a better-sqlite3 database, self-healing a binding-ABI mismatch

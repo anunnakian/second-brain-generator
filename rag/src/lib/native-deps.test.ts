@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { isNativeAbiError, loadNativeWithRebuild } from "./native-deps.js";
+import { isNativeAbiError, loadNativeWithRebuild, buildRebuildInvocation } from "./native-deps.js";
 
 const abiErr = () =>
   new Error("compiled against a different Node.js version using NODE_MODULE_VERSION 137");
@@ -25,6 +25,35 @@ test("isNativeAbiError: a missing/unbuilt binding ('Could not locate the binding
     "Could not locate the bindings file. Tried:\n → .../better_sqlite3.node",
   );
   assert.equal(isNativeAbiError(err), true);
+});
+
+test("isNativeAbiError: an arch mismatch (dlopen 'incompatible architecture') self-heals too", () => {
+  const err = new Error(
+    "dlopen(/b/rag/node_modules/better-sqlite3/build/Release/better_sqlite3.node, 0x0001): " +
+      "tried: '.../better_sqlite3.node' (mach-o file, but is an incompatible architecture " +
+      "(have 'x86_64', need 'arm64'))",
+  );
+  assert.equal(isNativeAbiError(err), true);
+});
+
+test("isNativeAbiError: a 'Module did not self-register' load failure self-heals too", () => {
+  const err = new Error(
+    "Module did not self-register: '/b/rag/node_modules/better-sqlite3/build/Release/better_sqlite3.node'.",
+  );
+  assert.equal(isNativeAbiError(err), true);
+});
+
+test("buildRebuildInvocation: posix runs npm directly", () => {
+  assert.deepEqual(buildRebuildInvocation("darwin"), {
+    command: "npm",
+    args: ["rebuild", "better-sqlite3"],
+  });
+});
+
+test("buildRebuildInvocation: win32 routes through cmd /c (never spawns npm.cmd directly → no EINVAL)", () => {
+  const inv = buildRebuildInvocation("win32");
+  assert.equal(inv.command, "cmd");
+  assert.deepEqual(inv.args, ["/c", "npm", "rebuild", "better-sqlite3"]);
 });
 
 test("loadNativeWithRebuild: ABI error → rebuild once → retry → returns the module", () => {

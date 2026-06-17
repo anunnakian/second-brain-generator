@@ -94,7 +94,28 @@ native dep with a pure-JS store — oversized for a risk we can heal).
     retitled **"v3.1.0 — The One With The Kenjaku-Style Import From Your Previous Brain (and Some Node Compatibility
     Bugfixes)"** with the simple Nouveauté/Corrections body. → https://github.com/tpierrain/second-brain-generator/pull/11
     *(No active CI on this repo — `ci.yml` shipped in the branch but GitHub Actions isn't wired, so don't wait on it.)*
-  - [ ] 8b. **`/code-review`** on PR #11 (read-only). ← **NEXT ACTION after `/clear`.**
+  - [x] 8b. **`/code-review`** on PR #11 (read-only) _(done 2026-06-17)_ — high-effort, 7 real findings.
+    **Pre-merge candidates (recommend fixing before the v3.1.0 tag):** (1) `rag/src/lib/vector-store.ts:27`
+    — the runtime self-heal spawns `npm.cmd` **without `shell:true`** → `EINVAL` on Windows (whole 20–26
+    window) → **Windows self-heal is dead** (breaks ADR 0015 parity + the ADR 0021 headline). Fix: route via
+    `cmd /c npm rebuild …` (mirror `buildRagInstallInvocation`) or `{shell:true}`. (2) `rag/src/lib/native-deps.ts:14`
+    — `isNativeAbiError` only matches `NODE_MODULE_VERSION` / "Could not locate the bindings file"; misses
+    arch/self-register family ("incompatible architecture", "Module did not self-register", dlopen "symbol not
+    found") → those rebuild-curable skews don't self-heal. **Non-blocking robustness:** (3) `import-vault.mjs:31`
+    source-is-a-file → cryptic ENOTDIR vs the friendly fail-loud message (add `statSync(...).isDirectory()`);
+    (4) `import-brain.mjs:52` "nothing was changed past this point" is false on a mid-copy failure; (5)
+    `import-vault.mjs:24` self-import guard bypassed by a relative/symlink source (data still safe via collisions
+    — `resolve()/realpathSync` both sides); (6) `import-brain.mjs:33` parseArgs silently drops a 2nd positional
+    (unquoted "My Notes" → wrong source); (7) `node-compat.mjs:17` `checkNode` on a malformed version → NaN →
+    silent `{ok:true}` (latent). **Verified NOT bugs:** runtime is `npx tsx src/` so `ragRoot()` rebuild cwd is
+    correct; the retry's module-cache is sane (a throwing `.node` require isn't cached → retry reloads the rebuilt
+    binary). **(1)+(2) fixed in TDD before QA — see 8b-fix below.**
+    - [x] **8b-fix. (1)+(2) fixed in TDD before QA** _(done 2026-06-17, Thomas's call "on corrige avant la QA")_:
+      (1) new pure seam `buildRebuildInvocation(platform)` in `rag/src/lib/native-deps.ts` (win32 → `cmd /c npm rebuild …`,
+      posix → `npm rebuild …`); `vector-store.ts` `rebuildBetterSqlite` routes through it → no more `npm.cmd` EINVAL on Windows.
+      (2) `isNativeAbiError` BINDING_FAILURE_SIGNS extended with `incompatible architecture` (arch skew) + `did not self-register`
+      (NAPI); the unrelated-error guard (SQLITE_CORRUPT/ENOENT → false) still holds. **RAG 151/151 (+4), harness 255/255,
+      tsc clean.** Findings #3–#7 left as documented non-blocking follow-ups.
   - [ ] 8c. **Manual QA** (Thomas drives the brain-rooted steps): fresh install on a modern Node, import a fake old
     brain (canaries searchable via RAG), confirm no skew / self-heal works.
   - [ ] 8d. **Merge PR #11 + annotated tag `v3.1.0`** with the codename + the release note (✨ import / 🐛 Node compat /
