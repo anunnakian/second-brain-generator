@@ -426,3 +426,46 @@ offer** the update.
 > ```
 > Same deterministic core the skill drives; exits non-zero on failure. (Day to day you don't need
 > this — just ask your brain.)
+
+## 11. Importing a previous brain's notes (`import`)
+
+> 🆕 **New in v3.1.0.** If you had a second brain **before v3.0.0**, it has no built-in updater — the
+> way to v3 is to **install a fresh 3.1.0 brain and import your old notes into it.** The `import` skill
+> makes that a safe conversation instead of a manual copy-paste.
+
+### The flow
+
+1. **Install a fresh brain** (§2) — it's a 3.1.0 brain, shipping the `import` skill.
+2. **Open a NEW conversation rooted in the new brain** (§2 hand-off — Desktop folder chip, or `cd … &&
+   claude`). The import must run *inside* the new brain.
+3. **Ask in plain words:** *"importe mes anciennes notes depuis `<chemin>`"* / *"import my old second
+   brain from `<path>`"*. The skill shows a **plan** (no writes), you **confirm**, it copies, then
+   re-indexes.
+
+### What travels — and what never does
+
+- **Travels:** your notes (`.md`) and their **attachments**, with **subfolders + accented names
+  preserved**.
+- **Never travels:** the old **engine** (`rag/`, launchers, scripts), the source's `.git` / `.claude` /
+  `.obsidian` / dotfiles, and **demo/example notes** (`tags: [exemple]`).
+- **Never overwrites:** a note whose name already exists in your new vault is **skipped and reported**,
+  never clobbered.
+
+> ⚠️ **The footgun:** point the import at your **old brain folder** (or its `vault/`) — it copies the
+> *vault content only*. Don't hand-copy the whole old folder into the new brain.
+
+### Caveats
+
+- **First re-index** on a large vault takes a few minutes (the notes are encoded — nothing is lost).
+- **Constitution not merged (v1):** a personalised old `CLAUDE.md` is **not** auto-merged — fold wanted
+  bits in by hand.
+- **`.env` / connectors** belong to the new brain (set at install); re-wire any old keys/connectors here.
+
+> 🛠️ **Run it yourself** (technical, optional). From the new brain folder:
+> ```bash
+> node scripts/import-brain.mjs "<source>"          # prints the plan, writes nothing
+> node scripts/import-brain.mjs "<source>" --apply   # copies, never overwriting
+> npm run index --prefix rag                          # make the imported notes searchable
+> ```
+> Deterministic core (`scripts/import-brain.mjs` + `scripts/lib/import-vault.mjs`); exits non-zero on
+> failure. (Day to day you don't need this — just ask your brain.)

@@ -448,6 +448,38 @@ otherwise your search keeps working untouched.
 The hands-on steps (and how to run it yourself, if you're technical) are in
 [SETUP §10](SETUP.md).
 
+## 🧬 Already have a brain from *before* v3.0.0? Bring your notes over
+
+> 🆕 **New in v3.1.0** — the **first feature delivered *on* the v3 platform.** Brains born **before
+> v3.0.0** have no built-in updater (the self-upgrade above only exists from v3.0.0 on), so the path
+> to v3 is: **install a fresh brain, then *import* your old notes into it.** That import is now a
+> conversation — no manual copy-paste, no footgun.
+
+**What you do — in plain words:**
+
+1. **Install a fresh brain** the normal way (the one-paste install above) — it's a **3.1.0** brain.
+2. **Open a NEW conversation rooted in it** (the install hand-off banner walks you through this).
+3. Say: **_"importe mes anciennes notes depuis `<chemin-de-mon-ancien-cerveau>`"_** (or *"import my old
+   second brain from `<path>`"*). Your brain shows a **safe plan**, asks you to **confirm**, copies your
+   notes, and re-indexes them.
+
+**It's safe by construction:** it copies your notes (and their attachments, with subfolders preserved)
+**only** — never the old engine — and it **never overwrites** an existing note (a name collision is
+*skipped* and reported). Demo notes don't travel.
+
+> ⚠️ **The one footgun, said plainly:** point it at your **old brain folder** — don't try to copy the
+> *whole* folder by hand into the new one (that's what used to clobber the new engine). The import
+> brings the **vault content**, nothing else.
+
+A couple of manual follow-ups it will remind you of: if your old brain had a **personalised
+`CLAUDE.md`** (constitution), that is *not* auto-merged in v1 — it'll offer to help you fold it in by
+hand; and your **`.env` keys / connectors** belong to the new brain (set up at install), so re-wire any
+old ones separately.
+
+> 🧬 *We nickname this the **Kenjaku** move — transplanting a mind into a new vessel. That's just
+> flavour: **you never need to say the word** — ordinary phrasing ("importe mes anciennes notes…")
+> triggers it.*
+
 ## And the privacy of my data?
 
 A fair question: your vault can be **confidential**. Depending on the search option you chose, **one

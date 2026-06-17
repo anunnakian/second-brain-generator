@@ -86,6 +86,20 @@ test("filterCopyable — KEEPS the brain-side update-engine SKILL (it must ship 
   assert.deepEqual(filterCopyable([skill, "README.md"]), [skill, "README.md"]);
 });
 
+test("filterCopyable — KEEPS the import core + CLI (the import feature must ship into every brain)", () => {
+  // ADR 0019 / plan Step 6: the import core travels into every brain so a migrant
+  // can re-home a previous brain. A future DEV_ONLY_PREFIX must never strand these.
+  const core = ["scripts/import-brain.mjs", "scripts/lib/import-vault.mjs"];
+  assert.deepEqual(filterCopyable(core), core);
+});
+
+test("filterCopyable — KEEPS the brain-side import SKILL (it must ship into every brain)", () => {
+  // The conversational driver (ADR 0019) ships like the other engine skills; the FR
+  // variant is layered on afterwards by the locale overlay (templates/fr/**).
+  const skill = ".claude/skills/import/SKILL.md";
+  assert.deepEqual(filterCopyable([skill, "README.md"]), [skill, "README.md"]);
+});
+
 test("filterCopyable — excludes install-handoff (launcher-only: the installer's end banner, no use in a brain)", () => {
   assert.deepEqual(
     filterCopyable([
