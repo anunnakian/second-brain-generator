@@ -118,3 +118,22 @@ test('fetchContent delegates to notion-to-md for that page', async () => {
   assert.equal(body, '# Body of page-9\n');
   assert.deepEqual(fetched, ['page-9']);
 });
+
+// B1: notion-to-md embeds Notion's short-lived presigned attachment URLs, whose signing params
+// rotate on every fetch. The connector canonicalizes them away so the body — and thus the content
+// hash that gates the (re)write — is stable across syncs (no churn on an unchanged page).
+test('fetchContent strips the rotating presigned-URL params from attachment links', async () => {
+  const gateway: NotionGateway = {
+    async search() {
+      return { results: [], has_more: false, next_cursor: null };
+    },
+    async pageToMarkdown() {
+      return '![pic](https://prod-files-secure.s3.amazonaws.com/k/pic.png?X-Amz-Signature=rotates)\n';
+    },
+  };
+  const connector = new NotionConnector(gateway);
+
+  const body = await connector.fetchContent({ id: 'p', title: 'X', url: 'u', lastEditedTime: 't' });
+
+  assert.equal(body, '![pic](https://prod-files-secure.s3.amazonaws.com/k/pic.png)\n');
+});

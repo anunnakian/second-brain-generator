@@ -6,6 +6,7 @@
 // so the §7 guardrail can freeze the source; 429 backoff/jitter is layered on the real gateway.
 
 import type { ISourceConnector, SourceItem } from '../domain/ports.js';
+import { stripVolatileUrlParams } from '../lib/strip-volatile-urls.js';
 
 /** A page as returned by Notion's `search` — the slice this adapter reads. */
 export interface NotionSearchPage {
@@ -57,8 +58,11 @@ export class NotionConnector implements ISourceConnector {
     return items;
   }
 
-  fetchContent(item: SourceItem): Promise<string> {
-    return this.gateway.pageToMarkdown(item.id);
+  // B1: Notion re-signs attachment URLs on every fetch, so notion-to-md's output churned even on
+  // unchanged pages. Canonicalize the rotating signing params away before the body reaches the
+  // content hash / vault writer — the asset path stays a stable identifier.
+  async fetchContent(item: SourceItem): Promise<string> {
+    return stripVolatileUrlParams(await this.gateway.pageToMarkdown(item.id));
   }
 }
 
