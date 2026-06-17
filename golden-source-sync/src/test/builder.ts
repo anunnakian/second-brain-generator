@@ -22,6 +22,9 @@ export function aGoldenSourceSync(): GoldenSourceSyncBuilder {
 
 class GoldenSourceSyncBuilder {
   private readonly declared: GoldenSourceConfig[] = [];
+  private readonly pages: StubPage[] = [];
+  /** Stable reference so tests can inspect the vault after build()/sync(). */
+  private readonly vault = new RecordingVaultWriter();
 
   /** Declare golden sources, as if already written to the config file. */
   withDeclaredSources(...configs: GoldenSourceConfig[]): this {
@@ -29,15 +32,52 @@ class GoldenSourceSyncBuilder {
     return this;
   }
 
+  /**
+   * The pages a sync will enumerate from the (single) source's connector. Adding
+   * pages without an explicit source auto-declares the default Notion source.
+   */
+  withNotionPages(...pages: StubPage[]): this {
+    this.pages.push(...pages);
+    return this;
+  }
+
+  /** The Markdown files written into the vault, by path — the sync outcome to assert. */
+  vaultFiles(): Map<string, string> {
+    return this.vault.written;
+  }
+
   build(): IGoldenSourceSync {
+    const declared =
+      this.declared.length > 0
+        ? this.declared
+        : this.pages.length > 0
+          ? [aNotionGoldenSource()]
+          : [];
     return new GoldenSourceSync({
-      configStore: new InMemoryConfigStore(this.declared),
+      configStore: new InMemoryConfigStore(declared),
       stateStore: new InMemoryStateStore(),
-      vaultWriter: new RecordingVaultWriter(),
+      vaultWriter: this.vault,
       clock: new FixedClock(new Date('2026-06-17T00:00:00.000Z')),
-      connectorFor: () => new EmptyConnector(),
+      connectorFor: () => new StubConnector(this.pages),
     });
   }
+}
+
+/** A source item plus its produced Markdown body — what a stubbed connector serves. */
+export interface StubPage extends SourceItem {
+  content: string;
+}
+
+/** A Notion page with sensible defaults (override per test). */
+export function aNotionPage(overrides: Partial<StubPage> = {}): StubPage {
+  const id = overrides.id ?? '304a2ca-page-1';
+  return {
+    id,
+    title: overrides.title ?? 'Chaintrust error catalog',
+    url: overrides.url ?? `https://www.notion.so/inqom/${id}`,
+    lastEditedTime: overrides.lastEditedTime ?? '2026-06-12T14:21:00.000Z',
+    content: overrides.content ?? '# Chaintrust error catalog\n\nWhen the API returns 402…\n',
+  };
 }
 
 /** A declared Notion golden source with sensible defaults (override per test). */
@@ -98,12 +138,13 @@ class RecordingVaultWriter implements IVaultWriter {
   }
 }
 
-class EmptyConnector implements ISourceConnector {
+class StubConnector implements ISourceConnector {
+  constructor(private readonly pages: StubPage[]) {}
   async listItems(): Promise<SourceItem[]> {
-    return [];
+    return this.pages.map(({ content: _content, ...item }) => item);
   }
-  async fetchContent(): Promise<string> {
-    return '';
+  async fetchContent(item: SourceItem): Promise<string> {
+    return this.pages.find((p) => p.id === item.id)?.content ?? '';
   }
 }
 

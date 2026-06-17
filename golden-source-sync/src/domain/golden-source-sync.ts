@@ -16,6 +16,7 @@ import type {
   IVaultWriter,
   PersistedState,
 } from './ports.js';
+import { toGoldenSourceMarkdown } from '../lib/markdown.js';
 
 /**
  * API port (driving side) — the domain contract, transport-independent (PRD §5).
@@ -59,8 +60,27 @@ export class GoldenSourceSync implements IGoldenSourceSync {
     return notImplemented('setupSource', 'Step 6');
   }
 
-  sync(_name: string): Promise<SyncReport> {
-    return notImplemented('sync', 'Step 2/3');
+  /**
+   * Step 2 — write each enumerated page as one Markdown note under the source's
+   * target dir. Delta/state/watermark and deletion reconciliation come in Steps 3/5;
+   * for now every page is (re)written and the report counts writes only.
+   */
+  async sync(name: string): Promise<SyncReport> {
+    const configs = await this.deps.configStore.loadAll();
+    const config = configs.find((c) => c.name === name);
+    if (!config) {
+      return { name, status: 'failed', written: 0, deleted: 0, unchanged: 0 };
+    }
+    const connector = this.deps.connectorFor(config);
+    const items = await connector.listItems();
+    let written = 0;
+    for (const item of items) {
+      const body = await connector.fetchContent(item);
+      const markdown = toGoldenSourceMarkdown(config.name, item, body);
+      await this.deps.vaultWriter.write(`${config.target_dir}/${item.id}.md`, markdown);
+      written += 1;
+    }
+    return { name, status: 'ok', written, deleted: 0, unchanged: 0 };
   }
 
   checkFreshness(_name: string): Promise<FreshnessReport> {
