@@ -11,7 +11,7 @@
 - **Associated implementation plan:** [`../plans/embedder-spi.md`](../plans/embedder-spi.md) (the
   `Embedder` port + the identity stamp) — this ADR **opens the "prior discussion"** that its §0.2
   required before any 2nd concrete impl.
-- **Study / watch:** [`../plans/etude-rag-local-criteres-et-veille.md`](../plans/etude-rag-local-criteres-et-veille.md)
+- **Study / watch:** [`../plans/prospective/etude-rag-local-criteres-et-veille.md`](../plans/prospective/etude-rag-local-criteres-et-veille.md)
   (range of profiles, embedder watch, detailed privacy scale).
 
 ## Context
@@ -158,7 +158,7 @@ That's the register that worked; we standardize it for the RAG.
    - **Preference stated by Thomas (2026-06-08):** **default = PURELY LOCAL adapter** if possible
      (product argument: "we don't send your data to a provider"). **Accepted decision method:** we
      settle it **AFTER** shipping the 3 adapters and running **tests together** (cf. action plan
-     [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md), Decision D1,
+     [`../plans/prospective/rag-embedder-plan-action.md`](../plans/prospective/rag-embedder-plan-action.md), Decision D1,
      which depends on Step 4 / measurement) — **not on intuition.** ⚠️ To weigh against the local's
      install friction (Ollama + model) and the "generic install" rule of `CLAUDE.md`. **Not settled
      to date.**
@@ -233,5 +233,5 @@ everything is the **tier**:
 One-sentence verdict: **"free" doesn't mean "private"; for an API key, paying a few cents is what
 makes your data private — and if you want truly-nothing-leaves for free, that's option 1.**
 
-> **Next:** Step 5 of the plan [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md)
+> **Next:** Step 5 of the plan [`../plans/prospective/rag-embedder-plan-action.md`](../plans/prospective/rag-embedder-plan-action.md)
 > implements this flow. D1 checked off.

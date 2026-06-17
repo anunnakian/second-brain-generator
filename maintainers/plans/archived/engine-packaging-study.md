@@ -1,7 +1,9 @@
 # Engine packaging — making the motor upgradable without touching the brain
 
-**STATUS: 🔬 STUDY — nothing enacted.** Reopens [`ADR 0003`](../decisions/0003-no-brain-capability-upgrade.md)
-on the trigger it named itself ("publication widens the user base"). Feeds a future ADR + action plan.
+**STATUS: ✅ ENACTED & SHIPPED — archived.** This study reopened [`ADR 0003`](../../decisions/0003-no-brain-capability-upgrade.md)
+on the trigger it named itself ("publication widens the user base"); it then fed ADRs 0012/0014 and the
+`engine-packaging-phase0/phase1` action plans, and the `update-engine` skill **shipped in v3.0.0** (PR #10).
+The study has served its role → moved to `archived/` _(2026-06-17)_.
 **Scope:** Installer + Second brain (runtime) — the launcher↔brain split of ADR 0001.
 
 > 🧱 **FOUNDING PRINCIPLE — extensibility, set by Thomas (2026-06-14), non-negotiable from day one.**
@@ -96,26 +98,26 @@ force-replaced, per ADR 0003).
 
 We are in a good position — several earlier decisions were quietly laying the groundwork:
 
-- **[ADR 0006](../decisions/0006-rag-mcp-is-stable-contract.md) — the MCP surface is a stable public
+- **[ADR 0006](../../decisions/0006-rag-mcp-is-stable-contract.md) — the MCP surface is a stable public
   contract.** `search_vault / get_document / list_documents / vault_stats / reindex` is the port the
   harness depends on; everything behind it is swappable. **An engine upgrade that preserves this port
   is invisible to the brain's constitution and skills.** This is the single most important enabler.
-- **[ADR 0007](../decisions/0007-three-embedder-adapters-privacy-scale.md) — embedder SPI + index
+- **[ADR 0007](../../decisions/0007-three-embedder-adapters-privacy-scale.md) — embedder SPI + index
   identity stamping.** The index already records *who* encoded it (provider/model/dimension) and a
   swap triggers a **confirm-gate → reindex**, never a silent mismatch. The machinery to detect
   "this index is incompatible with the current engine" **already exists** — we extend it, we don't
   invent it (see §5, the hard part).
-- **[ADR 0002 addendum (2026-06-14)](../decisions/0002-in-house-installer-vs-plugin.md)** already
+- **[ADR 0002 addendum (2026-06-14)](../../decisions/0002-in-house-installer-vs-plugin.md)** already
   sketches the target: the **"Hybrid (npm engine + plugin + thin scaffolder)"** — *not rejected, only
   deferred to publication.*
-- **[ADR 0009](../decisions/0009-prefer-deterministic-mechanisms.md)** — the posture to apply: prefer
+- **[ADR 0009](../../decisions/0009-prefer-deterministic-mechanisms.md)** — the posture to apply: prefer
   a deterministic, verifiable mechanism (a pinned version, a git condition, a stamped schema) over a
   probabilistic one.
 
 ## 3. What blocks it today (the coupling to break)
 
 The engine is **vendored inside the brain** at `rag/` and **assumes the brain's folder layout** via
-hardcoded relative paths — [`rag/src/lib/config.ts`](../../rag/src/lib/config.ts):
+hardcoded relative paths — [`rag/src/lib/config.ts`](../../../rag/src/lib/config.ts):
 
 ```ts
 const projectRoot = resolve(__dirname, "../../..");   // = brain root, by position
@@ -124,7 +126,7 @@ export const CACHE_DIR = resolve(__dirname, "../../.cache");
 const envPath = resolve(projectRoot, ".env");
 ```
 
-and the launch line — [`.mcp.json.template`](../../.mcp.json.template):
+and the launch line — [`.mcp.json.template`](../../../.mcp.json.template):
 `npx tsx rag/src/index.ts`, `cwd: {{PROJECT_ROOT}}`.
 
 Consequences for an upgrade:
@@ -135,7 +137,7 @@ Consequences for an upgrade:
 3. **`.mcp.json` mixes engine-owned and user-owned entries** (the `vault-rag` server vs the user's
    Slack/Drive/Notion connectors) with no marker separating them → naïve overwrite would clobber tools.
 4. **No manifest** says which files are "engine". The copy logic in
-   [`tracked-files.mjs`](../../scripts/lib/tracked-files.mjs) is an install-time allowlist, not an
+   [`tracked-files.mjs`](../../../scripts/lib/tracked-files.mjs) is an install-time allowlist, not an
    upgrade-time ownership map.
 
 None of these is hard individually. (1) and (2) are the cheap, reversible groundwork (Track D below).
@@ -216,7 +218,7 @@ no overwriting the user's vault/constitution/home-made skills/connectors).*
   `vault_stats`), env-inject the paths (defaults unchanged), write the `engine-manifest.json` ownership
   map, mark engine-vs-user entries in `.mcp.json`. Low risk, reversible, unblocks everything. *This is
   the only part worth doing before publication.*
-- **Phase 1 — NOW, proactively, *before* the mass deployment (Track A) — re-timed by [ADR 0014](../decisions/0014-ship-update-engine-before-mass-deployment.md):**
+- **Phase 1 — NOW, proactively, *before* the mass deployment (Track A) — re-timed by [ADR 0014](../../decisions/0014-ship-update-engine-before-mass-deployment.md):**
   ship an opt-in, manifest-driven `update-engine` that re-pulls from a pinned source and reindexes if the
   schema moved. Stays self-hosted (no registry), honours the invariant. **Why not wait for "stale"
   feedback** (the trigger this bullet originally carried): `update-engine` is a *brain-side* capability —

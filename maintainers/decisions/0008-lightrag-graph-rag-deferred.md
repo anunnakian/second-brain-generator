@@ -11,9 +11,9 @@
   (the current effort is about the swappable **embedder** — a different layer from LightRAG's),
   [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md) (the LLM that *answers*
   stays Claude → already bounds the privacy promise; LightRAG would add an LLM **at indexing**).
-- **Associated plan:** [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md)
+- **Associated plan:** [`../plans/prospective/rag-embedder-plan-action.md`](../plans/prospective/rag-embedder-plan-action.md)
   (Step 7 "big-machine profile", **conditional**, where this lead lands) and the study
-  [`../plans/etude-rag-local-criteres-et-veille.md`](../plans/etude-rag-local-criteres-et-veille.md)
+  [`../plans/prospective/etude-rag-local-criteres-et-veille.md`](../plans/prospective/etude-rag-local-criteres-et-veille.md)
   §4 (graph path; E2GraphRAG).
 
 ## Context

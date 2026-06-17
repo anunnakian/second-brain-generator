@@ -127,25 +127,34 @@
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
   embedders (Step 4). `node scripts/run-eval.mjs`. **Dev-only** (excluded from the generated brain).
 - **`plans/`** — implementation plans, each with a `STATUS` line at the **top**
-  (🗺️ ACTION PLAN / 🔬 STUDY / ⏳ PENDING / IN PROGRESS / ✅ SHIPPED / ABANDONED).
+  (🗺️ ACTION PLAN / 🔬 STUDY / 🔭 PROSPECTIVE / 💡 BACKLOG / ⏳ PENDING / IN PROGRESS / ✅ SHIPPED / ABANDONED).
+  Three buckets along a **past · present · future** axis:
+  - **root of `plans/` = present** — action plans **mid-flight** (currently none: everything shipped).
+  - [**`plans/prospective/`**](plans/prospective/) **= future** — not closed, forward-looking: living
+    studies/watch, backlogs, and **conditional/parked** tails of otherwise-shipped plans.
+  - [**`plans/archived/`**](plans/archived/) **= past** — shipped or closed plans (kept for the step detail).
   > **Definition of done = archived.** The moment a plan ships, in the **same change**: set its top
   > `STATUS` to ✅ (with the proof — commit SHAs / what was verified) **and `git mv` it into
   > [`plans/archived/`](plans/archived/)**. Never leave a shipped plan at the root, and never delete it
-  > (the archive keeps the step-by-step detail). Only plans still **open** — action plans mid-flight,
-  > living studies, pending fixes — stay at the root of `plans/`.
-  - **Active (root of `plans/`):**
-    - [`rag-embedder-plan-action.md`](plans/rag-embedder-plan-action.md) — **🗺️ action plan**
+  > (the archive keeps the step-by-step detail). A plan whose **core shipped but that still carries an
+  > open conditional/exploratory tail** goes to `plans/prospective/`, not `archived/`.
+  - **🔭 Prospective (`plans/prospective/`):**
+    - [`rag-embedder-plan-action.md`](plans/prospective/rag-embedder-plan-action.md) — **🗺️ action plan**
       that **orchestrates** the embedder effort into **self-contained steps** (port → eval-set →
       OpenAI-compatible adapter → measurement → onboarding → conditional levers), with a **progress
       table** to drive it session by session (a `/clear` between each). A layer above the SPI plan +
-      study + ADR 0007. **STATUS: 🗺️ ACTION PLAN** — Steps 1–5 shipped; Steps 6/7 (reranker /
-      big-machine graph-RAG) **conditional**, opened only if a quality ceiling is hit.
-    - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **study/watch**:
+      study + ADR 0007. **STATUS: 🔭 PROSPECTIVE** — D1 + Steps 1–5 **shipped** (in prod since
+      2026-06-09); Steps 6/7 (reranker / big-machine graph-RAG) **conditional**, never triggered →
+      parked. Also the **reference model** for the checkbox/Tracking convention.
+    - [`etude-rag-local-criteres-et-veille.md`](plans/prospective/etude-rag-local-criteres-et-veille.md) — **study/watch**:
       offer a **range of RAG alternatives according to people's needs/constraints** (privacy, budget,
       machine power, OS, install friction). Office / big-machine / API-endpoint profiles +
       **refreshed** watch (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **privacy scale by
       provider**, plain-language "embedder ≠ chat LLM", eval-first. **STATUS: 🔬 STUDY — nothing
       enacted.** *(feeds the SPI plan + ADR 0007)*
+    - [`post-v3.1.0-ux-backlog.md`](plans/prospective/post-v3.1.0-ux-backlog.md) — **💡 backlog** of
+      post-v3.1.0 UX ideas (custom notification icon, a `doctor` / "am I OK?" self-check…). Captured,
+      **not committed work** — promote one to a real `*-action.md` when it's picked up.
   - **`plans/archived/`** — shipped/closed plans (kept for the detail of the steps):
     - [`debounce-auto-push.md`](plans/archived/debounce-auto-push.md) — **debounce the auto-push**: keep
       per-edit local commits, but move `git push` out of the per-edit hook to a **`Stop` hook**

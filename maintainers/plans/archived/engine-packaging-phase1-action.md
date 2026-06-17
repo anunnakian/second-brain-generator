@@ -2,7 +2,7 @@
 
 **STATUS: ✅ DONE** on branch `engine-packaging` (PR #10, kept a **draft** — **no merge to `main` before
 the Mon/Tue client demos**, ADR 0012 / 0014; the maintainer merges after testing the whole restructuring
-locally). Enacts **Phase 1** of [`engine-packaging-study.md`](../engine-packaging-study.md) (Track A),
+locally). Enacts **Phase 1** of [`engine-packaging-study.md`](engine-packaging-study.md) (Track A),
 **re-timed to NOW by** [`ADR 0014`](../../decisions/0014-ship-update-engine-before-mass-deployment.md):
 the updater must ship **before** the mass deployment, or the first migration on a non-technical user's
 brain has no carrier.

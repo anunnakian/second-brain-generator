@@ -9,7 +9,7 @@
   (in-house installer + its hybrid addendum), [`0003`](0003-no-brain-capability-upgrade.md) (the deferral
   this lifts), [`0006`](0006-rag-mcp-is-stable-contract.md) (stable MCP port — what makes an engine swap
   invisible), [`0007`](0007-three-embedder-adapters-privacy-scale.md) (embedder SPI + index identity —
-  what makes a format change safe). Working detail: [`../plans/engine-packaging-study.md`](../plans/engine-packaging-study.md)
+  what makes a format change safe). Working detail: [`../plans/archived/engine-packaging-study.md`](../plans/archived/engine-packaging-study.md)
   and its Phase 0 action plan.
 
 ## Context

@@ -7,7 +7,7 @@
   ADR re-times — Phase 1 = Track A), [`0003`](0003-no-brain-capability-upgrade.md) (the sovereignty
   invariant kept: opt-in, non-destructive), [`0001`](0001-launcher-vs-brain.md) (the launcher↔brain
   link severed by construction — the coupling this re-introduces, explicitly and pinned),
-  [`engine-packaging-study.md` §6](../plans/engine-packaging-study.md) (the phasing this corrects), the
+  [`engine-packaging-study.md` §6](../plans/archived/engine-packaging-study.md) (the phasing this corrects), the
   Phase 0 deliverable [`engine-manifest.json`](../../engine-manifest.json) (the ownership map an update
   rides on).
 

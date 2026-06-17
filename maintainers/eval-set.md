@@ -5,8 +5,8 @@
 # RAG eval-set — measuring retrieval quality (judge = Claude)
 
 > **What it's for.** This is the **measurement instrument** of [Step 2 of the embedder
-> plan](plans/rag-embedder-plan-action.md): it turns "is this embedder good?" into a
-> **reproducible numeric score**. It establishes the **Gemini baseline**; in [Step 4](plans/rag-embedder-plan-action.md#step-4--wire-up-local--measure-vs-gemini-),
+> plan](plans/prospective/rag-embedder-plan-action.md): it turns "is this embedder good?" into a
+> **reproducible numeric score**. It establishes the **Gemini baseline**; in [Step 4](plans/prospective/rag-embedder-plan-action.md#step-4--wire-up-local--measure-vs-gemini-),
 > we replay the **same** harness on the local embedders (bge-m3, EmbeddingGemma) to compare them
 > **on real-world content**, not on English leaderboards.
 >

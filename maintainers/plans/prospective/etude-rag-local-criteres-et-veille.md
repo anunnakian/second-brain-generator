@@ -65,7 +65,7 @@ each addressing a set of constraints:
 > [`embedder-spi.md`](embedder-spi.md)) + the index identity stamp. It's what lets us
 > offer **several profiles** (office / big machine / API endpoint) without touching the
 > harness or the MCP contract (ADR
-> [`../decisions/0006-rag-mcp-is-stable-contract.md`](../decisions/0006-rag-mcp-is-stable-contract.md)).
+> [`../decisions/0006-rag-mcp-is-stable-contract.md`](../../decisions/0006-rag-mcp-is-stable-contract.md)).
 >
 > **🎯 The "OpenAI-compatible" adapter is the concrete impl with the highest leverage.** Since OpenAI's
 > embeddings API (`/v1/embeddings`) is the **de facto standard**, **a single** adapter with a
@@ -116,7 +116,7 @@ its filing under "big-machine profile, not the default" (§4).
 ### Honest framing — where privacy really stops
 
 The brain **runs in Claude** (ADR
-[`../decisions/0004-claude-only-for-now.md`](../decisions/0004-claude-only-for-now.md)).
+[`../decisions/0004-claude-only-for-now.md`](../../decisions/0004-claude-only-for-now.md)).
 So the layer that **answers** already sends questions + retrieved passages to Anthropic (cloud). **The
 only piece we can make 100% local is the RAG** (embeddings + index + search).
 
@@ -214,7 +214,7 @@ is not rebuilt from scratch.
 
 > **What was "to benchmark" above now is.** First real numbers under our
 > own harness (eval-set, judge = Claude) on the FR Flemmr vault, via Ollama + the
-> OpenAI-compatible adapter. Detail + repro: [`../eval-set.md`](../eval-set.md#step-4--measured-results-local-vs-gemini-2026-06-09).
+> OpenAI-compatible adapter. Detail + repro: [`../eval-set.md`](../../eval-set.md#step-4--measured-results-local-vs-gemini-2026-06-09).
 
 | Embedder | Location | Dim | **FR score** | Index 7 notes (warm) | Disk | RAM |
 |---|---|---|---|---|---|---|

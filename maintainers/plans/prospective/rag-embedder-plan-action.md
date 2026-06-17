@@ -1,15 +1,21 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🗺️ ACTION PLAN (created 2026-06-08) — orchestration, step-by-step execution. -->
+<!-- STATUS: 🔭 PROSPECTIVE — core delivered, conditional tail parked. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — RAG: make the embedder swappable (3 adapters) + measure + onboard
 
-> **STATUS: 🗺️ ACTION PLAN** (created 2026-06-08).
+> **STATUS: 🔭 PROSPECTIVE — core ✅ DELIVERED, conditional tail parked** (created 2026-06-08,
+> moved to `prospective/` 2026-06-17). **D1 + Steps 1→5 are all done and shipped** (swappable
+> 3-adapter embedder, adaptive install flow — in production since 2026-06-09). **Steps 6 (local
+> reranker) and 7 (big-machine profile) are conditional** ("only if a quality ceiling is observed")
+> and were **never triggered** → they remain parked here as forward-looking work, not pending work.
+> Kept out of `archived/` precisely because that tail is still open; this is also the **reference
+> model** for the checkbox/Tracking convention.
 > **Orchestration layer** on top of the docs already written — it doesn't replace them, it
 > **sequences** them:
-> - the *why* → ADR [`../decisions/0007-three-embedder-adapters-privacy-scale.md`](../decisions/0007-three-embedder-adapters-privacy-scale.md)
->   (+ [`../decisions/0006-rag-mcp-is-stable-contract.md`](../decisions/0006-rag-mcp-is-stable-contract.md));
-> - the *how* of the port → plan [`embedder-spi.md`](archived/embedder-spi.md) **(✅ DELIVERED — archived)**;
+> - the *why* → ADR [`../decisions/0007-three-embedder-adapters-privacy-scale.md`](../../decisions/0007-three-embedder-adapters-privacy-scale.md)
+>   (+ [`../decisions/0006-rag-mcp-is-stable-contract.md`](../../decisions/0006-rag-mcp-is-stable-contract.md));
+> - the *how* of the port → plan [`embedder-spi.md`](../archived/embedder-spi.md) **(✅ DELIVERED — archived)**;
 > - the *what to measure* → study [`etude-rag-local-criteres-et-veille.md`](etude-rag-local-criteres-et-veille.md).
 
 ## How to use this plan (mandatory reading)
@@ -17,7 +23,7 @@
 - **One step = one session.** Do a **`/clear` between each step**. Each step is **self-contained**:
   it says which files to load, what to do, and how to know it's finished.
 - **At the start of each session**, tell Claude: *"We're tackling Step N of the plan
-  `maintainers/plans/rag-embedder-plan-action.md`"*. Claude reads **this file** + the files cited
+  `maintainers/plans/prospective/rag-embedder-plan-action.md`"*. Claude reads **this file** + the files cited
   by the step, and **nothing else is needed**.
 - **During** a step, Claude **ticks the sub-boxes as it goes** (you can follow along live in
   this file). **At the end**, it ticks the step's box + notes _(date · commit)_ — that's the **memory
@@ -37,7 +43,7 @@
 - [x] **D1 — Decide the install default** 🧭 *(Thomas's decision, **AFTER Steps 4 AND 4-bis**; depends on: 4, 4-bis)* — **DECIDED: option C (explicit 3-way choice), ADAPTIVE reco (16 GB+ → in-process ⭐ ; ≤ 8 GB or Intel Mac → API key ⭐)** _(2026-06-09)_
   - [x] Cross-testing the adapters **together** (Thomas + Claude), on the basis of the measurements (Steps 4 + 4-bis) _(2026-06-09)_
   - [x] Decide the default — **in-process "Gemma inside"** retained as the **recommended default** (viability proven Step 4-bis), presented in an **explicit 3-way choice** (option C): 1=in-process ⭐ / 2=API key (Gemini or enterprise endpoint) / 3=Ollama (advanced); Intel Mac guard-rail (option 1 hidden) _(2026-06-09)_
-  - [x] Record (ADR 0007 addendum) with the *why* + the **mandatory free/paid key framing** for option 2 → [`../decisions/0007-three-embedder-adapters-privacy-scale.md`](../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--default-embedder-at-install-settled) _(2026-06-09)_
+  - [x] Record (ADR 0007 addendum) with the *why* + the **mandatory free/paid key framing** for option 2 → [`../decisions/0007-three-embedder-adapters-privacy-scale.md`](../../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--default-embedder-at-install-settled) _(2026-06-09)_
 - [x] **Step 1 — `Embedder` port + safe index** 🧪 TDD *(depends on: —)* _(2026-06-08 · 2ac9698→bf2ead8)_
   - [x] `index_meta` stamp — round-trip (written at indexing, read back) _(2026-06-08 · 2ac9698)_
   - [x] Identity guard — divergent/absent identity → "stale index" signal, no false results _(2026-06-08 · 7e9fdec)_
@@ -49,8 +55,8 @@
 - [x] **Step 2 — Local eval-set (judge = Claude)** 🧪 *(depends on: —)* — **instrument + Gemini baseline 80% (8/10) DELIVERED** _(2026-06-09 · e64f2bb, 0448c03)_
   - [x] Representative vault chosen: **Flemmr example vault** (invented → public-safe, versioned, **replayable by all**). A richer corpus = deferred to Step 4 (decided with Thomas) _(2026-06-09)_
   - [x] Questions written: **10** (small Flemmr corpus → ~10 rather than 15-20; mix of easy + grep-resistant; 1st = `demo.mjs` canary) _(2026-06-09 · e64f2bb)_
-  - [x] "Search + Claude judgment" script → reproducible score: `scripts/run-eval.mjs` + tested pure core; `claude -p` judge **validated end-to-end** (PASS on relevant passage, FAIL on off-topic); **dev-only** (excluded from the brain); documented [`../eval-set.md`](../eval-set.md) _(2026-06-09 · e64f2bb, 0448c03)_
-  - [x] **Gemini baseline measured and recorded** ✅ — **80% (8/10)** on the Flemmr vault, recorded in [`../eval-set.md`](../eval-set.md#baseline-gemini--80-810-2026-06-09). The `claude -p` exit 1 block was indeed **environmental** (Claude quota/usage from the day before, reset) — not a code bug: `claude -p` works again, the eval ran from end to end. The 2 misses are **real retrieval failures** (answer present in the vault, insufficient passages) → honest baseline, we don't inflate it _(2026-06-09)_
+  - [x] "Search + Claude judgment" script → reproducible score: `scripts/run-eval.mjs` + tested pure core; `claude -p` judge **validated end-to-end** (PASS on relevant passage, FAIL on off-topic); **dev-only** (excluded from the brain); documented [`../eval-set.md`](../../eval-set.md) _(2026-06-09 · e64f2bb, 0448c03)_
+  - [x] **Gemini baseline measured and recorded** ✅ — **80% (8/10)** on the Flemmr vault, recorded in [`../eval-set.md`](../../eval-set.md#baseline-gemini--80-810-2026-06-09). The `claude -p` exit 1 block was indeed **environmental** (Claude quota/usage from the day before, reset) — not a code bug: `claude -p` works again, the eval ran from end to end. The 2 misses are **real retrieval failures** (answer present in the vault, insufficient passages) → honest baseline, we don't inflate it _(2026-06-09)_
 - [x] **Step 3 — OpenAI-compatible adapter (URL+key)** 🧪 TDD *(depends on: 1)* — **delivered, 98/98 green** _(2026-06-09 · d321365)_
   - [x] `OpenAiCompatibleEmbedder`: `{model,input}` → `data[].embedding`; `embedDocuments`/`embedQuery` (shared `embed()` helper; `fetch` injected to test the envelope without network) _(2026-06-09)_
   - [x] `identity` (provider/model/dimension) filled from config — `providerId="openai-compatible"`; dimension = invalidation key (read **before** any embed since stamped upstream) _(2026-06-09)_
@@ -62,7 +68,7 @@
   - [x] Wire up bge-m3 — `bge-m3` pulled, 1024-dim, score **90% (9/10)** _(2026-06-09)_
   - [x] Re-index the representative vault for each — DB purged + full reindex per model, distinct `index_meta` stamp (anti-fallback proof) _(2026-06-09)_
   - [x] Run the eval-set on each, vs Gemini (baseline re-measured same session = **80% (8/10)**, reproduced from yesterday) _(2026-06-09)_
-  - [x] Table of quantified results (FR quality + footprint/latency) → recorded [`../eval-set.md`](../eval-set.md#step-4--measured-results-local-vs-gemini-2026-06-09) _(2026-06-09)_
+  - [x] Table of quantified results (FR quality + footprint/latency) → recorded [`../eval-set.md`](../../eval-set.md#step-4--measured-results-local-vs-gemini-2026-06-09) _(2026-06-09)_
   - [~] **Office default decision**: measurement + **recorded reco** (local viable, lightweight EmbeddingGemma natural candidate); quantified answer to Dimitry written. **Final decision = D1 (Thomas)** — small corpus ⇒ fine decision EmbeddingGemma vs bge-m3 to be redone on a rich corpus before recording
 - [x] **Step 4-bis — Standalone RAG MCP "Gemma inside" (in-process embedder, WITHOUT a server)** 🧪 TDD *(depends on: 1, 4)* — **VIABLE as default: npm-only install Mac+Win, tenable latency, 90% quality = Ollama** _(2026-06-09 · 86ea386)_
   - [x] `InProcessEmbedder implements Embedder` via Transformers.js v4 (`@huggingface/transformers@4.2`) — `feature-extraction` pipeline, **EmbeddingGemma-300m-ONNX** (q8), `embedDocuments`/`embedQuery`, mean pooling + L2 normalization; **injectable** pipeline (logic tested **without** weights); **memoized** (loaded once) _(2026-06-09)_
@@ -70,11 +76,11 @@
   - [x] **V1 — cross-OS install**: `npm i @huggingface/transformers` → `onnxruntime-node@1.24.3` **bundles** the pre-built binaries `win32/x64+arm64`, `darwin/arm64`, `linux/x64+arm64`; `requirements=[]` everywhere (only remote CUDA GPU on Linux) → **nothing to compile or download, offline-friendly Mac+Win**. ⚠️ **Intel Mac (darwin/x64) not covered** by this version _(2026-06-09)_
   - [x] **V2 — CPU latency**: weights download ~28 s **once** (cached); cold start with cached weights **675 ms**; warm throughput **8–9 ms/text (~110/s)** without Metal GPU → tenable (one-off encoding) _(2026-06-09)_
   - [x] **V3 — quality re-measured (quantized)**: in-process q8 eval-set = **90% (9/10)** = EmbeddingGemma via Ollama, **> Gemini 80%**. **Parity confirmed, not assumed.** Discovery: the gap came from the **EmbeddingGemma task prompts** (raw q8 = 80%; q8 + prompts = 90%), not from quantization _(2026-06-09)_
-  - [x] Viability table + **verdict "VIABLE as default"** recorded [`../eval-set.md`](../eval-set.md#step-4-bis--viability-of-in-process-gemma-inside-without-ollama-2026-06-09) → feeds D1. `npm test` **green (109/109)**; MCP contract **unchanged** _(2026-06-09)_
+  - [x] Viability table + **verdict "VIABLE as default"** recorded [`../eval-set.md`](../../eval-set.md#step-4-bis--viability-of-in-process-gemma-inside-without-ollama-2026-06-09) → feeds D1. `npm test` **green (109/109)**; MCP contract **unchanged** _(2026-06-09)_
 - [x] **Step 4-ter — Embedding batch capping (in-process hardening)** 🧪 TDD *(depends on: 4-bis; **BLOCKING for option 1 delivered in Step 5**)* — **delivered: `EMBED_BATCH=4` (measured sweet-spot), 111/111 green, MCP contract unchanged** _(2026-06-09)_
   - [x] Bounded sub-batches in **`InProcessEmbedder.embedDocuments`** (constant `EMBED_BATCH` + configurable `batchSize?`) — placed in the adapter because the RAM constraint is **specific to in-process ONNX** (Gemini/OpenAI = network) → protects all callers; `embedQuery` unchanged _(2026-06-09)_
   - [x] **4/8/16** sweep on the dense corpus (264 notes): **counter-intuitive — the small batch wins on both axes** (batch 4 = ~3.2 GB in-proc peak / 5.3 min / 8.5 ch/s; batch 16 = 5.35 GB / 7.4 min). Quality unchanged. Constant **frozen at 4**; reusable script `rag/scripts/measure-batch.mts` (dev-only, excluded from the brain) _(2026-06-09)_
-  - [x] `npm test` green (rag 111/111; scripts 92/92); MCP contract unchanged; numbers + in-proc/OS RSS caveat recorded [`../eval-set.md`](../eval-set.md#balayage-du-plafond-4--8--16-2026-06-09); **note for Step 5: OS peak ~3.8-4 GB → D1 threshold to reconsider (12 GB or even 8 GB)** _(2026-06-09)_
+  - [x] `npm test` green (rag 111/111; scripts 92/92); MCP contract unchanged; numbers + in-proc/OS RSS caveat recorded [`../eval-set.md`](../../eval-set.md#balayage-du-plafond-4--8--16-2026-06-09); **note for Step 5: OS peak ~3.8-4 GB → D1 threshold to reconsider (12 GB or even 8 GB)** _(2026-06-09)_
 - [x] **Step 4-quater — Shared embedder (process memoization, in-process hardening)** 🧪 TDD *(depends on: 4-bis; **BLOCKING for option 1 delivered in Step 5**)* — **delivered: `createEmbedder()` memoized → 1 shared warm ONNX session, 112/112 green, MCP contract unchanged** _(2026-06-09)_
   - [x] **Discovery (probe `rag/scripts/measure-contention.mts`, dev-only)**: the MCP server reindexes INSIDE its process (startup auto-reindex + watcher) → search and indexing share the CPU. But `search_vault` called `createEmbedder()` **on every request** → fresh instance, empty `private` memoization → in-process: **ONNX session reloaded on every search (~440 ms at idle)** and **2 concurrent sessions** (search + indexing) over-reserve the cores → **search up to ×50 (25 s!)**. Gemini didn't show it (free client, embed = network, zero local CPU) _(2026-06-09)_
   - [x] **TDD fix (baby-step): `createEmbedder()` memoizes at module level** → search AND auto-reindex share the same warm instance/session. Provider frozen at the 1st selection (swap = restart Claude Code, already the case); Gemini key still read **lazily** at embed time (pasting the key afterwards still works) _(2026-06-09)_
@@ -99,7 +105,7 @@
 
 > **✅ RESOLVED (2026-06-09) → option C: explicit 3-way choice at install**, **recommended default
 > ADAPTIVELY based on the machine** (see below). Recorded in an **ADR 0007 addendum**
-> ([link](../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--default-embedder-at-install-settled)).
+> ([link](../../decisions/0007-three-embedder-adapters-privacy-scale.md#addendum-d1-2026-06-09--default-embedder-at-install-settled)).
 > The section below is kept as a **trace of the reasoning**. The implementation = **Step 5**.
 >
 > **🎚️ ADAPTIVE reco (Thomas's directive, 2026-06-09) — the install detects the machine:**
@@ -144,7 +150,7 @@
 > real impl** (+ a possible test `FakeEmbedder`). **Introduces NO 2nd real adapter.**
 
 - **Prerequisite:** none (it's the base).
-- **Load:** plan [`embedder-spi.md`](archived/embedder-spi.md) **in full** (it's self-contained) + the
+- **Load:** plan [`embedder-spi.md`](../archived/embedder-spi.md) **in full** (it's self-contained) + the
   files it cites (`rag/src/lib/embedder.ts`, `config.ts`, `vector-store.ts`, `index-manager.ts`,
   `tools/search-vault.ts`, `index.ts`, `tools/reindex.ts`, `embedder.test.ts`).
 - **Do:** execute the plan's TDD refactor map (`embedder-spi.md` §5), in order:
@@ -267,7 +273,7 @@
 > transcript = **78 chunks of ~2000 tokens**) creates a batch whose O(seq²)×batch attention **makes
 > onnxruntime explode** → **8.5 GB RSS and climbing, stall** (process killed at ~12 min, stuck). It's a
 > **MANDATORY fix**, not an edge-case: without it, the option 1 default crashes on a dense
-> user. Numbers recorded [`../eval-set.md`](../eval-set.md#step-4-ter--dense-corpus-batch-cap-2026-06-09).
+> user. Numbers recorded [`../eval-set.md`](../../eval-set.md#step-4-ter--dense-corpus-batch-cap-2026-06-09).
 
 - **Prerequisite:** **Step 4-bis delivered** (`InProcessEmbedder`).
 - **Load:** `rag/src/lib/in-process-embedder.ts` (`embedDocuments`); `rag/src/lib/indexer.ts`
@@ -365,7 +371,7 @@
 - **Prerequisite:** Steps 4 (+6) delivered and a persistent ceiling.
 - **Load:** study §3 (big Qwen3 / Nemotron-8B), §4 (**E2GraphRAG** — the graph route *without an LLM per
   chunk*, to prefer over LightRAG on a modest machine); ADR
-  [`../decisions/0008-lightrag-graph-rag-deferred.md`](../decisions/0008-lightrag-graph-rag-deferred.md)
+  [`../decisions/0008-lightrag-graph-rag-deferred.md`](../../decisions/0008-lightrag-graph-rag-deferred.md)
   (the *why* of deferring LightRAG / graph-RAG: LLM per chunk → cost + leak; to measure on the
   FR eval-set; E2GraphRAG preferred).
 - **Do:** wire up a "max quality" embedder (opt-in) and/or evaluate E2GraphRAG; **measure** vs the
