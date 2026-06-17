@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🚧 ACTIVE — Steps 0–2 done (skeleton + API port + MCP transport + VaultWriter/atomic write). Branch: golden-source-sync. -->
+<!-- STATUS: 🚧 ACTIVE — Steps 0–3 done (skeleton + API port + MCP transport + VaultWriter/atomic write + StateStore/watermark/delta). Branch: golden-source-sync. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — `golden-source-sync`: synchronize golden-source content into the second brain's vault
@@ -112,11 +112,11 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
   - [x] `markdown.ts`: mandatory frontmatter (`golden_source`, `source_id`, `title`, `source_url`, `last_edited_time`) via gray-matter — timestamps stay quoted strings
   - [x] Acceptance: a `sync` over stubbed page(s) writes `golden-sources/<name>/<pageId>.md` with frontmatter (+ triangulation: N pages → N files). 9 green, `tsc --noEmit` exit 0
   - [ ] Manual check: the live FileWatcher picks it up (deferred to Step 9 QA)
-- [ ] **Step 3 — StateStore + watermark + delta**
-  - [ ] `IStateStore` + `FsStateStore` on the sidecar (schema §10, `schemaVersion:1`)
-  - [ ] `content-hash.ts` over the **produced markdown**; per-item persistence
-  - [ ] Delta: a 2nd sync with no upstream change = **no-op** (no write); watermark = **max of perimeter**
-  - [ ] Acceptance: idempotence + watermark-only-advances-on-full-success
+- [x] **Step 3 — StateStore + watermark + delta** _(2026-06-17 · 2fb99de)_
+  - [x] `IStateStore` + `FsStateStore` on the sidecar (schema §10, `schemaVersion:1`) — atomic write (temp + rename), `load` returns null on ENOENT (3 tests on a real temp sidecar)
+  - [x] `content-hash.ts` over the **produced markdown** (`sha256:` prefix, classic TDD, 2 tests); per-item persistence in the state map
+  - [x] Delta: a 2nd sync with no upstream change = **no-op** (`written:0`, `unchanged:N`); watermark = **max of perimeter** (PRD §16 sub-page trap)
+  - [x] Acceptance: idempotence + watermark-only-advances-on-full-success (a per-item fetch failure ⇒ `partial`, readable file kept, watermark frozen). 17 green, `tsc --noEmit` exit 0
 - [ ] **Step 4 — NotionConnector (SPI), read-only, tested alone**
   - [ ] `ISourceConnector` + `NotionConnector`: `listItems` (scoped `search` + **full pagination**), `lastEditedTime`, `fetchContent` (`notion-to-md`)
   - [ ] URL→pageId extraction; token from env var (`token_env`), never logged
