@@ -36,6 +36,28 @@ This file is an **idea menu** to help you choose *what* to wire up based on *you
 
 ---
 
+## 🥇 Golden sources — *mirror* a live source into your vault (≠ a search connector)
+
+A **connector** lets the brain **reach out and search** an external source on the fly. A **golden
+source** does the opposite: it **mirrors** a chosen zone of an internal tool **into your vault** as
+Markdown, so the source's content becomes **first-class, indexed, citable notes** — *the central RAG
+you don't have yet, but local and right now.*
+
+- **Today: Notion.** You declare the **root page** of a zone (its whole sub-tree is in scope) and the
+  brain keeps `vault/golden-sources/<name>/` in sync with it — new/edited pages rewritten, deleted /
+  out-of-scope pages removed, delta-only (no noise).
+- **How:** the **`/golden-source` skill** drives it (onboard, sync, check freshness, status, remove);
+  the work runs in the built-in **`golden-source-sync`** MCP server. The Notion integration **token
+  lives only in `.env`**, never in the chat.
+- **When to prefer it over a Notion search connector:** when a body of reference docs is **the
+  authoritative answer** to recurring questions and you want it **always fresh, framed and cited**
+  inside the brain — not searched ad hoc, side by side.
+
+> Setup walk-through: ask your brain *"set up a golden source from Notion"* (or run `/golden-source`).
+> The skill explains each step and tests the scope before the first sync.
+
+---
+
 ## 🎙️ Meeting transcripts — a use case, not a connector
 
 This is the classic trap: people go looking for "the transcripts connector." **You don't need
