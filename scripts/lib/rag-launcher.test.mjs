@@ -12,6 +12,9 @@ import {
   buildNodeRunnerCmd,
   nodeHookCommand,
   buildRagInstallInvocation,
+  buildGoldenSourceShLauncher,
+  buildGoldenSourceCmdLauncher,
+  applyGoldenSourceLauncher,
 } from "./rag-launcher.mjs";
 
 // Reproduces installer.mjs's (gen) text substitution: .split().join() per key.
@@ -150,4 +153,47 @@ test("applyRagLauncher: rewrites the vault-rag command per OS, preserves cwd/env
   const win = applyRagLauncher(structuredClone(base), "win32");
   assert.equal(win.mcpServers["vault-rag"].command, "cmd");
   assert.deepEqual(win.mcpServers["vault-rag"].args, ["/c", "rag\\launch.cmd"]);
+});
+
+test("buildGoldenSourceShLauncher: sh shebang + self-heal + starts the server via npx tsx", () => {
+  const sh = buildGoldenSourceShLauncher();
+  assert.match(sh, /^#!\/bin\/sh/);
+  assert.match(sh, /\/opt\/homebrew\/bin/); // same PATH self-heal as the RAG launcher
+  assert.match(sh, /exec npx tsx golden-source-sync\/src\/server\.ts/);
+});
+
+test("buildGoldenSourceCmdLauncher: @echo off + Windows self-heal + starts the server", () => {
+  const cmd = buildGoldenSourceCmdLauncher();
+  assert.match(cmd, /@echo off/);
+  assert.match(cmd, /%ProgramFiles%\\nodejs/);
+  assert.match(cmd, /npx tsx golden-source-sync\/src\/server\.ts/);
+});
+
+test("applyGoldenSourceLauncher: rewrites the golden-source-sync command per OS, preserves cwd/env", () => {
+  const base = {
+    mcpServers: {
+      "golden-source-sync": {
+        type: "stdio",
+        command: "npx",
+        args: ["tsx", "golden-source-sync/src/server.ts"],
+        cwd: "/brain",
+        env: {},
+      },
+    },
+  };
+
+  const mac = applyGoldenSourceLauncher(structuredClone(base), "darwin");
+  assert.equal(mac.mcpServers["golden-source-sync"].command, "/bin/sh");
+  assert.deepEqual(mac.mcpServers["golden-source-sync"].args, ["golden-source-sync/launch.sh"]);
+  assert.equal(mac.mcpServers["golden-source-sync"].cwd, "/brain");
+
+  const win = applyGoldenSourceLauncher(structuredClone(base), "win32");
+  assert.equal(win.mcpServers["golden-source-sync"].command, "cmd");
+  assert.deepEqual(win.mcpServers["golden-source-sync"].args, ["/c", "golden-source-sync\\launch.cmd"]);
+});
+
+test("applyGoldenSourceLauncher: no golden-source-sync server → unchanged (no throw)", () => {
+  const base = { mcpServers: { "vault-rag": { command: "npx" } } };
+  const out = applyGoldenSourceLauncher(structuredClone(base), "darwin");
+  assert.equal(out.mcpServers["vault-rag"].command, "npx");
 });
