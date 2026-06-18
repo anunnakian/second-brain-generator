@@ -56,6 +56,18 @@ you don't have yet, but local and right now.*
 > Setup walk-through: ask your brain *"set up a golden source from Notion"* (or run `/golden-source`).
 > The skill explains each step and tests the scope before the first sync.
 
+> 🔑 **Need a Notion token?** Follow the click-by-click, screenshot guide:
+> **[Create a Notion token — step by step](docs/notion-token-setup.md)** (~3 min, no coding).
+
+**What gets mirrored — and what doesn't.** Only the **declared root page and its sub-tree** is pulled
+in: every page's **Notion text** becomes a searchable, citable note. Two limits to know up front:
+
+- **Links to other Notion spaces are not copied** — a page merely *linked* from the zone but living in
+  another tree stays a link, not a local note.
+- **Attached PDFs and Google Slides are not extracted** — only the page's Notion text is mirrored, not
+  the contents of embedded files. (Your brain flags this at use-time when a question would need them.)
+  If you need a PDF/Slides' key facts indexed, paste them into the Notion page as text.
+
 ### 🤔 Why a golden source — and when it's (not) worth it
 
 In an **ideal** world there would be a **central search platform**: one hosted index, plugged in real

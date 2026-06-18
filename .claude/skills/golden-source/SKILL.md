@@ -80,7 +80,8 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
    *(If no editor pops — headless / `SBG_NO_OPEN_ENV` — the command still prints the `.env` path; relay
    it so they can open it themselves.)*
 
-   **How to get that Notion token** (walk a non-dev through it):
+   **How to get that Notion token** (walk a non-dev through it; the full screenshot guide is
+   [`docs/notion-token-setup.md`](../../../docs/notion-token-setup.md) — point them there if they want pictures):
    1. Open <https://www.notion.so/my-integrations> → **New integration** → type **Internal** → give it
       a name (e.g. "second brain — PA/SC") → **Save**.
    2. Copy the **Internal Integration Secret** (it starts with `secret_` or `ntn_`) — that's the value
@@ -108,6 +109,11 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
 > in** — a link is just a link, not a local copy. So the user knows up front what their brain does and
 > does **not** hold. Don't let them assume "the whole HUB" includes everything it links to. (Multi-root
 > sources / following outbound links is a future option, not the MVP.)
+>
+> ⚠️ **Attached files aren't extracted.** Only the page's **Notion text** is mirrored — **embedded PDFs
+> and Google Slides are NOT extracted** into the vault. Say so at connection time, and flag it again at
+> use-time when a question would need a file's contents (the brain can't cite what it never indexed). If
+> the user needs those facts searchable, have them paste the key points into the Notion page as text.
 
 > The produced `.md` files land in `vault/golden-sources/<name>/`. The **existing FileWatcher** indexes
 > them and the **auto-commit hook** commits them — `golden-source-sync` is unaware of the RAG (PRD §7).
