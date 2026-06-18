@@ -7,6 +7,7 @@
 
 import type { ISourceConnector, SourceItem } from '../domain/ports.js';
 import { stripVolatileUrlParams } from '../lib/strip-volatile-urls.js';
+import { canonicalizeNotionUrl, canonicalizeNotionUrlsInMarkdown } from '../lib/notion-url.js';
 
 /** A page as returned by Notion's `search` — the slice this adapter reads. */
 export interface NotionSearchPage {
@@ -62,7 +63,10 @@ export class NotionConnector implements ISourceConnector {
   // unchanged pages. Canonicalize the rotating signing params away before the body reaches the
   // content hash / vault writer — the asset path stays a stable identifier.
   async fetchContent(item: SourceItem): Promise<string> {
-    return stripVolatileUrlParams(await this.gateway.pageToMarkdown(item.id));
+    const body = await this.gateway.pageToMarkdown(item.id);
+    // B1: strip rotating presigned-URL params (stable hash). F6: rewrite broken
+    // app.notion.com/p inline links to the clickable www.notion.so form.
+    return canonicalizeNotionUrlsInMarkdown(stripVolatileUrlParams(body));
   }
 }
 
@@ -70,7 +74,9 @@ function toSourceItem(page: NotionSearchPage): SourceItem {
   return {
     id: page.id,
     title: titleOf(page),
-    url: page.url,
+    // F6: rewrite app.notion.com/p share URLs (which 404 in the browser) to the stable
+    // www.notion.so form, so the citation source_url is always clickable.
+    url: canonicalizeNotionUrl(page.url),
     lastEditedTime: page.last_edited_time,
   };
 }

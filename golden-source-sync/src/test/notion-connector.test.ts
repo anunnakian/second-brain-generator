@@ -104,6 +104,26 @@ test('listItems throws on a truncated response (has_more but no cursor) rather t
   await assert.rejects(() => connector.listItems(), /pagination/i);
 });
 
+// F6: Notion's API hands back `app.notion.com/p/<slug>-<id32>` share URLs that 404 in the
+// browser, breaking the citation link. The connector canonicalizes the page URL to the stable
+// `www.notion.so/<id32>` form so the frontmatter source_url is always clickable.
+test('listItems canonicalizes a broken app.notion.com page URL to www.notion.so', async () => {
+  const { gateway } = aGatewayServing({
+    results: [
+      aSearchPage({
+        url: 'https://app.notion.com/p/Spec-304a2ca0b1c24d6e8f0a1b2c3d4e5f60',
+      }),
+    ],
+    has_more: false,
+    next_cursor: null,
+  });
+  const connector = new NotionConnector(gateway);
+
+  const items = await connector.listItems();
+
+  assert.equal(items[0].url, 'https://www.notion.so/304a2ca0b1c24d6e8f0a1b2c3d4e5f60');
+});
+
 test('fetchContent delegates to notion-to-md for that page', async () => {
   const { gateway, fetched } = aGatewayServing();
   const connector = new NotionConnector(gateway);
@@ -136,4 +156,23 @@ test('fetchContent strips the rotating presigned-URL params from attachment link
   const body = await connector.fetchContent({ id: 'p', title: 'X', url: 'u', lastEditedTime: 't' });
 
   assert.equal(body, '![pic](https://prod-files-secure.s3.amazonaws.com/k/pic.png)\n');
+});
+
+// F6: inline links to other Notion pages can also be broken app.notion.com/p share URLs.
+// fetchContent canonicalizes them in the body too, so no app.notion.com/p ever lands in the vault.
+test('fetchContent canonicalizes broken app.notion.com inline links in the body', async () => {
+  const gateway: NotionGateway = {
+    async search() {
+      return { results: [], has_more: false, next_cursor: null };
+    },
+    async pageToMarkdown() {
+      return 'See [Spec](https://app.notion.com/p/Spec-304a2ca0b1c24d6e8f0a1b2c3d4e5f60).\n';
+    },
+  };
+  const connector = new NotionConnector(gateway);
+
+  const body = await connector.fetchContent({ id: 'p', title: 'X', url: 'u', lastEditedTime: 't' });
+
+  assert.equal(body, 'See [Spec](https://www.notion.so/304a2ca0b1c24d6e8f0a1b2c3d4e5f60).\n');
+  assert.ok(!body.includes('app.notion.com/p/'), 'no app.notion.com/p link must ever be emitted');
 });

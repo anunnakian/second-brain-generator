@@ -3,6 +3,32 @@
 // (PRD §11.4). The id is always the FINAL 32-hex run of the slug, so anchoring at the end
 // is robust to a title prefix that happens to contain hex characters.
 
+// F6: Notion's API hands back share URLs of the form `app.notion.com/p/<slug>-<id32>` that
+// 404 in the browser, breaking inline links and citations. Rewrite those to the stable
+// `www.notion.so/<id32>` form. Everything else — already-stable `www.notion.so` links and any
+// non-Notion URL — is left untouched, and an un-parseable Notion link is returned verbatim
+// rather than throwing (URL rewriting must never crash a sync).
+export function canonicalizeNotionUrl(url: string): string {
+  if (!/^https?:\/\/app\.notion\.com\//i.test(url)) return url;
+  try {
+    const id = extractPageId(url).replace(/-/g, '');
+    return `https://www.notion.so/${id}`;
+  } catch {
+    return url;
+  }
+}
+
+// Markdown link/image targets live inside `](...)`. Rewrite every Notion target through
+// canonicalizeNotionUrl so broken `app.notion.com/p/` links in the body become clickable too.
+const LINK_TARGET = /\]\(([^)]+)\)/g;
+
+export function canonicalizeNotionUrlsInMarkdown(markdown: string): string {
+  return markdown.replace(LINK_TARGET, (whole, url: string) => {
+    const canonical = canonicalizeNotionUrl(url);
+    return canonical === url ? whole : `](${canonical})`;
+  });
+}
+
 export function extractPageId(urlOrId: string): string {
   const path = urlOrId.split(/[?#]/)[0];
   const hex = path.replace(/-/g, '').match(/[0-9a-fA-F]{32}$/)?.[0];
