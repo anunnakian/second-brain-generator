@@ -196,6 +196,51 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
 
 ---
 
+## Pre-release usability backlog — questions to answer SERIOUSLY before merge
+
+> Surfaced during the Step 9 QA (Thomas, 2026-06-18). These are **usability** improvements about how a
+> source is **registered** and **exploited**; to be decided (and the cheap ones implemented) **before
+> we merge/publish** this capability. Two intertwined topics.
+
+- [ ] **Topic 1 — Source routing by theme/keywords (register side + exploitation side).**
+  - **What exists today:** each source already carries a free-text `description` ("topics covered" — the
+    routing key, PRD §2). The `golden-source` skill routes on it ("if the question matches a source's
+    description, sync THAT source first, then search; never sync all of them"). So routing is **LLM-judgment
+    over the description**, harness-level (§8), not in the MCP.
+  - **Questions to settle:**
+    - [ ] Is the free-text `description` enough, or do we add **structured `keywords`/`topics`** to the
+          config for more deterministic routing? (Trade-off: structure = reliability vs. rigidity.)
+    - [ ] **Ambiguity policy:** a question matching **several** sources → sync all matching? A question
+          matching **none** → sync nothing, or fall back to `sync("all")`? (We now HAVE a contained
+          parallel `sync("all")`.)
+    - [ ] How reliable is the LLM routing in practice (measure on real questions)? Do we need a confidence
+          floor / an explicit "which source(s)?" confirmation when unsure?
+    - [ ] Carry `golden_source` (frontmatter) into **chunk metadata** so answers can **label/filter by
+          source** (RAG-side lever already noted) — does routing need it?
+- [ ] **Topic 2 — Background freshness without OS cron (the "naïve strategy to start with").**
+  - **Key insight (unblocks the naïve path):** ADR 0022 rejected **OS-level cron** (launchd / Task
+    Scheduler — cross-platform pain, separate process). But the MCP server is a **long-lived stdio
+    process** (lives while a brain window is open) → a simple **in-process `setInterval`** can, every N
+    minutes, run the cheap watermark-only `check_freshness` on each source and **catch up the behind ones
+    in the background**, with **no OS cron**, cross-platform for free. This is NOT what ADR 0022 forbade.
+  - **Questions to settle:**
+    - [ ] Is **refresh-on-question** (current Phase 2 design) **enough** for the MVP, or do we add the
+          in-process background timer?
+    - [ ] If timer: **interval default** (Thomas floated 3–5 min — likely too aggressive; pick a sane
+          default + make it configurable), **opt-in vs default-on**, and accept that it **only runs while a
+          brain window is open** (process lifetime). For a personal brain, is that acceptable?
+    - [ ] **API cost / rate limits / battery:** `check_freshness` hits Notion per source per tick even when
+          idle — debounce / backoff / "skip if synced < X ago".
+    - [ ] **Concurrency coupling (IMPORTANT):** a background timer **amplifies** the cross-process same-source
+          race (two windows auto-refreshing the same source) → this **reinforces** the deferred **single-writer
+          lock per source** (Step 5 deferral). Decide the lock together with the timer, not after.
+    - [ ] Where the timer lives (composition root / a `FreshnessScheduler` SPI à la `rag/`'s
+          `reindex-scheduler`) and how it's tested deterministically (injected clock + fake connector).
+  - **Decision principle:** prefer the **deterministic, in-process, fail-loud** option (ADR 0009) — start
+    naïve (interval + check_freshness + contained catch-up), measure, only then consider more.
+
+---
+
 ## Acceptance criteria (MVP — from PRD §17)
 
 - [x] `setup_source` with a root-page **URL** + token env → tests scope, does 1st sync, explains steps. _(domain-proven, Step 6)_
