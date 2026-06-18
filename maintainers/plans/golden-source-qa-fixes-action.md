@@ -50,7 +50,7 @@
 - [ ] **Step 7 — Fresh end-to-end validation + publish**
   - [ ] 7a. Fresh disposable-brain install from the branch; point a golden source at the **client zone**
         (title-heavy Notion = exactly the F8 case) → setup, sync, ask → cited + found
-  - [ ] 7b. Full suites green (harness + golden-source-sync + rag), `tsc` clean
+  - [x] 7b. Full suites green (harness **287** + golden-source-sync **74** + rag **172**), `tsc` clean _(2026-06-18)_
   - [ ] 7c. PR + `/code-review` + fix findings TDD
   - [ ] 7d. Merge + tag (codename "The One With…") + archive delivered plans
   - [ ] 7e. Purge `/tmp/gss-qa` + disposable brain(s)
