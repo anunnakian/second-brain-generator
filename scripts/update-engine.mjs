@@ -53,9 +53,9 @@ const npmExe = (platform) => (platform === "win32" ? "npm.cmd" : "npm");
 // ─── Default seams (the real CLI wiring; the Gate injects stubs instead) ──────
 async function defaultRunInstall({ ragDir, brainDir, platform }) {
   execFileSync(npmExe(platform), ["install"], { cwd: ragDir, stdio: "inherit" });
-  // golden-source-sync deps too, when the brain carries that package (pure JS →
+  // local-mirror deps too, when the brain carries that package (pure JS →
   // no native build, plain install; absent on pre-golden-source brains → skip).
-  const gssDir = join(brainDir, "golden-source-sync");
+  const gssDir = join(brainDir, "local-mirror");
   if (existsSync(join(gssDir, "package.json"))) {
     execFileSync(npmExe(platform), ["install"], { cwd: gssDir, stdio: "inherit" });
   }
@@ -71,8 +71,8 @@ async function defaultRunReindex({ brainDir, platform }) {
 async function defaultRegenerateLaunchers({ brainDir }) {
   writeFileSync(join(brainDir, "rag", "launch.sh"), buildShLauncher());
   writeFileSync(join(brainDir, "rag", "launch.cmd"), buildCmdLauncher());
-  writeFileSync(join(brainDir, "golden-source-sync", "launch.sh"), buildGoldenSourceShLauncher());
-  writeFileSync(join(brainDir, "golden-source-sync", "launch.cmd"), buildGoldenSourceCmdLauncher());
+  writeFileSync(join(brainDir, "local-mirror", "launch.sh"), buildGoldenSourceShLauncher());
+  writeFileSync(join(brainDir, "local-mirror", "launch.cmd"), buildGoldenSourceCmdLauncher());
   writeFileSync(join(brainDir, "scripts", "run-node.sh"), buildNodeRunnerSh());
   writeFileSync(join(brainDir, "scripts", "run-node.cmd"), buildNodeRunnerCmd());
 }
@@ -139,7 +139,7 @@ export async function updateEngine({
   const regenerated = plan.regenerate.length > 0;
   if (regenerated) await regenerateLaunchers({ brainDir, platform });
 
-  // 5. npm install in the brain's rag/ (+ golden-source-sync/ when present).
+  // 5. npm install in the brain's rag/ (+ local-mirror/ when present).
   await runInstall({ ragDir: join(brainDir, "rag"), brainDir, platform });
 
   // 6. Reindex IFF the index schema moved (else the existing index stays valid).

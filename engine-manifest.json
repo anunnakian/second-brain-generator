@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "engineVersion": { "rag": "1.1.0", "golden-source-sync": "0.1.0", "constitutionTemplate": "1.0.0", "scripts": "1.0.0" },
+  "engineVersion": { "rag": "1.1.0", "local-mirror": "0.1.0", "constitutionTemplate": "1.0.0", "scripts": "1.0.0" },
   "indexSchemaVersion": 1,
   "regimes": {
     "replace": [
@@ -8,10 +8,10 @@
       "rag/package.json",
       "rag/package-lock.json",
       "rag/tsconfig.json",
-      "golden-source-sync/src/**",
-      "golden-source-sync/package.json",
-      "golden-source-sync/package-lock.json",
-      "golden-source-sync/tsconfig.json",
+      "local-mirror/src/**",
+      "local-mirror/package.json",
+      "local-mirror/package-lock.json",
+      "local-mirror/tsconfig.json",
       "scripts/update-engine.mjs",
       "scripts/import-brain.mjs",
       "scripts/open-env.mjs",
@@ -20,8 +20,8 @@
     "regenerate": [
       "rag/launch.sh",
       "rag/launch.cmd",
-      "golden-source-sync/launch.sh",
-      "golden-source-sync/launch.cmd",
+      "local-mirror/launch.sh",
+      "local-mirror/launch.cmd",
       "scripts/run-node.sh",
       "scripts/run-node.cmd"
     ],
@@ -43,6 +43,6 @@
       "scripts/verify-rag.mjs"
     ]
   },
-  "engineMcpServers": ["vault-rag", "golden-source-sync"],
+  "engineMcpServers": ["vault-rag", "local-mirror"],
   "provenance": {}
 }

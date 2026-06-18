@@ -1,5 +1,5 @@
 {
-  "name": "golden-source-sync",
+  "name": "local-mirror",
   "version": "0.1.0",
   "private": true,
   "type": "module",

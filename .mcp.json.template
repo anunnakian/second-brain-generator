@@ -7,10 +7,10 @@
       "cwd": "{{PROJECT_ROOT}}",
       "env": {}
     },
-    "golden-source-sync": {
+    "local-mirror": {
       "type": "stdio",
       "command": "npx",
-      "args": ["tsx", "golden-source-sync/src/server.ts"],
+      "args": ["tsx", "local-mirror/src/server.ts"],
       "cwd": "{{PROJECT_ROOT}}",
       "env": {}
     }

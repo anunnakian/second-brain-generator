@@ -10,7 +10,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { IGoldenSourceSync } from './domain/golden-source-sync.js';
 
-const SERVER_NAME = 'golden-source-sync';
+const SERVER_NAME = 'local-mirror';
 
 /** Serialize any port result into the MCP text-content envelope. */
 function asText(result: unknown) {

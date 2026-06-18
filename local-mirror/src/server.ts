@@ -1,4 +1,4 @@
-// Composition root + stdio boot for the `golden-source-sync` MCP server.
+// Composition root + stdio boot for the `local-mirror` MCP server.
 //
 // This is the ONLY place that knows about concrete adapters: it wires the real
 // filesystem + Notion SPI implementations into the Domain Service, then exposes
@@ -31,10 +31,10 @@ async function main(): Promise<void> {
   const server = createMcpServer(buildApi());
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('[golden-source-sync] MCP server running on stdio');
+  console.error('[local-mirror] MCP server running on stdio');
 }
 
 main().catch((err) => {
-  console.error('[golden-source-sync] Fatal:', err);
+  console.error('[local-mirror] Fatal:', err);
   process.exit(1);
 });

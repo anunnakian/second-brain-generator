@@ -177,18 +177,18 @@ The RAG (`rag/`) splits each Markdown file into **chunks** (one per `#`/`##`/`##
 ### Golden sources — live internal zones mirrored into the vault (optional)
 
 A **golden source** is a zone of an internal tool (Notion today) you declared once; the
-`golden-source-sync` MCP server mirrors its pages into `vault/golden-sources/<name>/` as Markdown,
+`local-mirror` MCP server mirrors its pages into `vault/golden-sources/<name>/` as Markdown,
 which the RAG then indexes and cites like any other note. Set one up — or sync / inspect / remove one —
 with the **`/golden-source` skill** (the thin driver; the work runs in the MCP server).
 
 | Operation | Tool |
 |---|---|
-| **Declare / onboard a source** (URL + token env) | `mcp__golden-source-sync__setup_source` |
-| **Sync the delta + reconcile deletions** (one source or `"all"`) | `mcp__golden-source-sync__sync` |
-| **Is it behind?** (light, watermark-only) | `mcp__golden-source-sync__check_freshness` |
-| **State** (last sync, item count, lateness) | `mcp__golden-source-sync__status` |
-| **List declared sources** | `mcp__golden-source-sync__list_sources` |
-| **Remove a source** (opt-in `cleanup` deletes its files) | `mcp__golden-source-sync__remove_source` |
+| **Declare / onboard a source** (URL + token env) | `mcp__local-mirror__setup_source` |
+| **Sync the delta + reconcile deletions** (one source or `"all"`) | `mcp__local-mirror__sync` |
+| **Is it behind?** (light, watermark-only) | `mcp__local-mirror__check_freshness` |
+| **State** (last sync, item count, lateness) | `mcp__local-mirror__status` |
+| **List declared sources** | `mcp__local-mirror__list_sources` |
+| **Remove a source** (opt-in `cleanup` deletes its files) | `mcp__local-mirror__remove_source` |
 
 **Routing rule:** when a question is clearly **about a declared source's topic** (the `description`
 captured at setup), **`sync` that one source first** so the answer is fresh, then `search_vault`. Sync
