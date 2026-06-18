@@ -193,9 +193,18 @@ export class GoldenSourceSync implements IGoldenSourceSync {
     // here once `listItems()` resolved — a failed/incomplete enumeration never reaches this
     // point, so the non-negotiable §7/§12 guardrail (never delete on a doubtful perimeter) holds.
     let deleted = 0;
-    for (const stale of pagesToDelete(items, previous?.items ?? {})) {
-      await this.deps.vaultWriter.delete(stale.vaultPath);
-      deleted += 1;
+    for (const { id, ...stale } of pagesToDelete(items, previous?.items ?? {})) {
+      try {
+        await this.deps.vaultWriter.delete(stale.vaultPath);
+        deleted += 1;
+      } catch {
+        // A delete that fails (I/O/permission/transient) must NOT abort the sync after the
+        // page writes already landed, or the vault would diverge from the saved state. Freeze
+        // the run as `partial` (watermark frozen) and KEEP the page tracked, so the next sync
+        // retries its removal and state stays consistent with what is actually on disk.
+        allOk = false;
+        nextItems[id] = stale;
+      }
     }
 
     // The watermark advances to the perimeter max only on a fully successful sync; a partial

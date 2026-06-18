@@ -90,6 +90,16 @@ class GoldenSourceSyncBuilder {
     return this;
   }
 
+  /**
+   * Make the vault refuse to delete a given file (I/O error, permission, transient FS
+   * failure). A failing deletion must not abort the whole sync after the page writes
+   * already landed — it freezes the run as `partial` and keeps the page tracked for retry.
+   */
+  withFailingDeletionOf(vaultPath: string): this {
+    this.vault.failDeleteOf(vaultPath);
+    return this;
+  }
+
   /** The Markdown files written into the vault, by path — the sync outcome to assert. */
   vaultFiles(): Map<string, string> {
     return this.vault.written;
@@ -191,10 +201,16 @@ class InMemoryStateStore implements IStateStore {
 class RecordingVaultWriter implements IVaultWriter {
   readonly written = new Map<string, string>();
   readonly deleted: string[] = [];
+  private readonly failingDeletes = new Set<string>();
+  failDeleteOf(path: string): void {
+    this.failingDeletes.add(path);
+  }
   async write(path: string, content: string): Promise<void> {
     this.written.set(path, content);
   }
   async delete(path: string): Promise<void> {
+    // Throw BEFORE removing — a failed deletion leaves the file on disk.
+    if (this.failingDeletes.has(path)) throw new Error(`EACCES: cannot delete ${path}`);
     this.written.delete(path);
     this.deleted.push(path);
   }

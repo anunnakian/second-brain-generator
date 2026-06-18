@@ -50,6 +50,32 @@ test('a failed perimeter enumeration deletes nothing and freezes the watermark',
   assert.equal(source.lastSyncStatus, 'partial');
 });
 
+// A delete that FAILS (I/O, permission, transient FS error) must not abort the sync after the
+// page writes already landed — that would leave the vault diverged from the saved state (writes
+// on disk, state never persisted). Instead: the run is `partial` (watermark frozen), the page
+// stays tracked so the NEXT sync retries its removal, and the still-present file is untouched.
+test('a failing deletion does not abort the sync and keeps the page tracked for retry', async () => {
+  const harness = aGoldenSourceSync().withNotionPages(
+    aNotionPage({ id: 'page-1', content: 'Kept.\n' }),
+    aNotionPage({ id: 'page-2', content: 'Gone tomorrow.\n' }),
+  );
+  const gss = harness.build();
+  await gss.sync('pa-sc');
+
+  harness
+    .withoutPage('page-2')
+    .withFailingDeletionOf('golden-sources/pa-sc/page-2.md');
+  const report = await gss.sync('pa-sc'); // must NOT throw
+
+  assert.equal(report.status, 'partial'); // a failed delete is not a clean sync
+  assert.equal(report.deleted, 0); // the delete did not succeed
+  assert.ok(harness.vaultFiles().has('golden-sources/pa-sc/page-1.md'));
+  assert.ok(harness.vaultFiles().has('golden-sources/pa-sc/page-2.md')); // still on disk
+  const [source] = await gss.listSources();
+  assert.equal(source.itemCount, 2); // page-2 kept tracked → next sync retries the delete
+  assert.equal(source.lastSyncStatus, 'partial');
+});
+
 // A rename in Notion keeps the page id (the `.md` is keyed by id, not title — PRD §6), so it
 // must rewrite the SAME file with no duplicate or orphan, and reconcile no deletion.
 test('renaming a page rewrites the same .md without orphaning a file', async () => {

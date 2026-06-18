@@ -28,5 +28,5 @@ test('a tracked page absent from the perimeter is returned for deletion', () => 
     'page-2': tracked('golden-sources/pa-sc/page-2.md'),
   });
 
-  assert.deepEqual(deletions, [tracked('golden-sources/pa-sc/page-2.md')]);
+  assert.deepEqual(deletions, [{ id: 'page-2', ...tracked('golden-sources/pa-sc/page-2.md') }]);
 });
