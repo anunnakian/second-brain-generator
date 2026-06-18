@@ -78,7 +78,7 @@ one-off/live/now → native connector. Only ask when genuinely ambiguous.
       `prd-golden-source-sync.md` = history, Thomas's no-rewrite rule). Added the *optional* forward-note
       line in **ADR 0022** (renamed `golden-source-sync` → `local-mirror`); ADR body kept verbatim.
 - [ ] **Ship** (on Thomas's green light)
-  - [ ] update **PR #12** title/body with the release codename (EN; pre-flight EN check)
+  - [x] update **PR #12** title/body with the release codename (EN; pre-flight EN check) *(2026-06-18)*
   - [ ] `/code-review` → fix findings TDD, commit-only-green
   - [ ] manual QA on a fresh disposable brain installed from the branch
   - [ ] merge → tag **v3.2.0** → archive this plan (`git mv` to `archived/` + STATUS ✅ with proof) →
