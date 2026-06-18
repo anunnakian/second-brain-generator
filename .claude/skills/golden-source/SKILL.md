@@ -26,8 +26,11 @@ Load this whenever the user wants to work with a golden source, in any language:
 - *"remove / disconnect the `<name>` golden source"* — → `remove_source`
 
 > Routing (the harness's job, not the MCP's — PRD §8): when a question is clearly **about a declared
-> source's topic** (the `description` you captured at setup), it is good practice to **`sync` that one
-> source first** so the answer is fresh, then search. Sync only the relevant source, never all of them.
+> source's topic** (the `description` you captured at setup), stay **local-first** — exactly like the
+> rest of the brain (Slack/Drive/Calendar): **answer NOW from the local RAG**, and verify freshness
+> **in the background**, never block the answer on a network sync. See "Local-first routing" below for
+> the exact pattern and wording. Sync only the relevant source, never all of them — and only when a
+> background freshness check actually reports `behind`.
 
 ## Terminology — what to call it when speaking to the user
 
@@ -51,7 +54,7 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
    - `description` — the **topics** this source covers, in natural language. This is the **routing
      key**: it's how you'll later know which question should refresh which source.
    - `root_page_url` — the URL of the **root Notion page** of the zone to mirror (its whole sub-tree
-     is in scope; pages outside it are not).
+     is in scope; pages outside it are not — see the perimeter disclaimer below).
    - `token_env` — the **name** of the env var that will hold the integration token (e.g.
      `NOTION_TOKEN_PASC`). One token/scope per source.
 2. **Guide the token into `.env`** (only if it isn't set yet): tell the user to open `.env` and add a
@@ -68,7 +71,16 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
    source of truth) and the sidecar state, and returns a step-by-step `message`.
 4. **Report** what came back. A **0-pages** result means "the integration is not connected to the root
    page yet" → have the user share it, then re-run. An **enumeration/401 error** is distinct from
-   "0 pages" — relay it as-is, do not pretend it synced.
+   "0 pages" — relay it as-is, do not pretend it synced. **In the recap, restate the perimeter**: e.g.
+   *"27 pages mirrored — the whole sub-tree under \<root>. Pages linked out to other Notion spaces are
+   not included (see below)."*
+
+> ⚠️ **Perimeter disclaimer — say this clearly at connection time (and again in the recap).** Only the
+> **declared root page and everything beneath it** (its sub-tree of sub-pages) is mirrored. **Pages
+> merely *linked* from inside the zone but living in another Notion space / another tree are NOT pulled
+> in** — a link is just a link, not a local copy. So the user knows up front what their brain does and
+> does **not** hold. Don't let them assume "the whole HUB" includes everything it links to. (Multi-root
+> sources / following outbound links is a future option, not the MVP.)
 
 > The produced `.md` files land in `vault/golden-sources/<name>/`. The **existing FileWatcher** indexes
 > them and the **auto-commit hook** commits them — `golden-source-sync` is unaware of the RAG (PRD §7).
@@ -115,23 +127,57 @@ don't rely on it there — just check whether the tools respond.)*
 - **`remove_source <name>`** — de-registers it from the config. Pass `cleanup: true` to also delete the
   synced `.md` files and the sidecar state (the notes leave the vault → the RAG de-indexes them).
 
-## Exploit the sync, and never give a confident false negative (important)
+## Local-first routing — answer NOW, verify freshness in the background (important)
 
-The sync result tells you exactly what just landed — **use it**, don't sync then search blind:
+A golden source is **local-first like every other source in the brain**. On an in-perimeter question,
+**never** run a blocking `sync` before answering — that reintroduces exactly the latency the brain's
+whole design avoids (Phase 2 doctrine: *answer from local immediately, sync sources in the background*).
+The pattern, in order:
 
-- **After a sync, name what changed.** Report the **titles** of the pages written/updated (and removed),
-  not just counts — e.g. *"I pulled in 2 updated pages: **Naxos**, **Onboarding checklist**."* The user
-  recognizes their content and trusts the mirror.
-- **Before concluding "there's nothing on this in your vault", stop.** A golden source you just synced
-  may not be searchable **yet**: the FileWatcher reindexes the new files a moment after they hit disk, so
-  the index can briefly **lag the disk**. So:
+1. **Announce the local-first move.** e.g. *"Je te réponds tout de suite avec le local, et je vérifie
+   en parallèle."*
+2. **Fire `check_freshness <name>` in the background — NOT `sync`.** It is watermark-only (cheap, pulls
+   no content), so the answer stays near-instant. Narrate it with the validated 🔄 wording:
+   *"🔄 Je lance en tâche de fond un check de fraîcheur sur \<source> (delta Notion) — je complète si ça
+   change quelque chose."*
+3. **Answer right away from the local RAG.** Don't wait on the network.
+4. **Close with a freshness line.** If `check_freshness` reports the delta is empty:
+   *"🔄 Mise à jour fraîcheur : \<source> n'a pas bougé, ces infos sont à jour côté source."* Only **if it
+   reports `behind`** do you then run `sync <name>` and **amend** the answer with what changed
+   (*"🔄 Mise à jour : j'ai trouvé du neuf — …"*).
+
+> Blocking is reserved for the **explicit** case where the user asks for freshness itself ("is it up to
+> date?", "resync first"). It is **never** the default. And **don't re-sync a source you connected or
+> synced earlier in this same session** — if it was just `setup_source`'d or synced, treat it as fresh
+> and skip even the background check unless the user signals otherwise.
+
+**Cap the RAG passes.** On a precise question, do **one targeted** local search (by title/keywords) and
+answer. Don't stack 3–4 sequential searches "to be sure" by default — widen to extra/parallel passes
+**only** if that first pass comes back thin. Over-searching is the second latency sink after blocking sync.
+
+### Exploit the sync result, and never give a confident false negative
+
+When you *do* sync (because freshness came back `behind`, or the user asked), the result tells you
+exactly what landed — **use it**:
+
+- **Name what changed.** Report the **titles** of the pages written/updated (and removed), not just
+  counts — e.g. *"I pulled in 2 updated pages: **Naxos**, **Onboarding checklist**."* The user recognizes
+  their content and trusts the mirror.
+- **Before concluding "there's nothing on this in your vault", stop.** A golden source just synced may
+  not be searchable **yet**: the FileWatcher reindexes a moment after files hit disk, so the index can
+  briefly **lag the disk**. This safeguard is **cheap and local** — keep it, but decoupled from any
+  blocking sync:
   - **List the perimeter titles** (cheap — `status` / the just-synced report, or a quick look at
     `vault/golden-sources/<name>/`) before declaring absence. The page may be right there, freshly
     written, just not embedded yet.
   - **Search by the actual title/keywords**, not only by theme — a page titled "Naxos" won't surface
     under "Greek islands" if only its body is matched (and titles are now indexed precisely for this).
-  - **Temper confidence**: say *"I just synced it; the index may need a moment — the page **Naxos** is in
-    the perimeter"* rather than a flat *"nothing found"*. A confident false negative is the worst outcome.
+  - **Temper confidence**: say *"the index may need a moment — the page **Naxos** is in the perimeter"*
+    rather than a flat *"nothing found"*. A confident false negative is the worst outcome.
+- **Flag when a link leaves the mirrored perimeter.** If the answer would rely on a page that is only
+  **linked** from the zone but lives outside the declared sub-tree, say so — *"this page is linked from
+  the HUB but lives outside the mirrored perimeter, so I don't hold it locally"* — instead of silently
+  returning nothing. Same anti-false-negative principle: name the boundary rather than hide it.
 
 ## What it touches vs NEVER touches
 
