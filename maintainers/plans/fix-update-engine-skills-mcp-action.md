@@ -105,6 +105,11 @@
       pre-existing frontmatter test was the fail-first; green after the engine wiring.
 - [x] `npm audit` → **0 vulnerabilities**. RAG suite **178/178**, `tsc` clean.
 - [x] Bumped `rag` engine version `1.1.0 → 1.1.1` (`rag/package.json` + `engine-manifest.json`).
+- [x] **`local-mirror` carried the same advisories** (mcp-sdk→hono, gray-matter→js-yaml). Same fix:
+      audit fix + js-yaml `^4.2.0` override; a js-yaml-4 engine (`parse`+`stringify` via `load`/`dump`)
+      in `markdown.ts` (its `stringify` write path is exercised across the acceptance suite), with a
+      `parseLocalMirrorMarkdown` reader the round-trip test now uses. `local-mirror` **84/84**, `tsc`
+      clean, **0 vulnerabilities**. Bumped `local-mirror` `0.1.0 → 0.1.1`.
 
 ## Lot Ship
 

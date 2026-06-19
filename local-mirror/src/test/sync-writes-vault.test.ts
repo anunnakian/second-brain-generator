@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import matter from 'gray-matter';
+import { parseLocalMirrorMarkdown } from '../lib/markdown.js';
 import { aLocalMirror, aNotionPage } from './builder.js';
 
 // Acceptance test at the API port (ILocalMirror), driven by the Builder with a
@@ -23,7 +23,7 @@ test('syncing a source writes one local-mirror .md per page, with mandatory fron
   assert.equal(report.written, 1);
   const file = harness.vaultFiles().get('mirrors/pa-sc/abc123.md');
   assert.ok(file, 'expected a .md written at mirrors/pa-sc/abc123.md');
-  const { data, content } = matter(file);
+  const { data, content } = parseLocalMirrorMarkdown(file);
   assert.equal(data.source_url, 'https://www.notion.so/inqom/abc123');
   assert.equal(data.last_edited_time, '2026-06-12T14:21:00.000Z');
   assert.equal(data.mirror, 'pa-sc');
