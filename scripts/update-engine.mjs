@@ -28,6 +28,8 @@ import {
   readTargetManifest,
 } from "./lib/engine-fetch.mjs";
 import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
+import { matchesAny } from "./lib/glob-match.mjs";
+import { reconcileMcpServers } from "./lib/mcp-reconcile.mjs";
 import { needsReindex } from "./lib/reindex-trigger.mjs";
 import { reseedProvenance } from "./lib/engine-source.mjs";
 import { listFilesRelPosix } from "./lib/fs-walk.mjs";
@@ -80,15 +82,23 @@ async function defaultRegenerateLaunchers({ brainDir }) {
 // Human summary the brain-side `update-engine` skill shows the user (Step 6, ADR
 // 0016). Pure so the wording is unit-tested; the CLI entry only wires the I/O.
 export function formatReport(report) {
-  const { ref, engineVersion, copied, regenerated, reindexed } = report;
+  const { ref, engineVersion, copied, regenerated, reindexed, installedSkills = [], mcpServersAdded = [] } = report;
   const lines = [
     `✅ Engine updated to ${ref} (rag ${engineVersion?.rag}).`,
     `   • ${copied.length} engine file(s) swapped` + (regenerated ? " + launchers regenerated" : ""),
     reindexed
       ? `   • reindexed — the index format changed (your notes were re-encoded, nothing lost)`
       : `   • index format unchanged — no reindex needed`,
-    `   Your notes, .env, constitution, settings and custom skills were left untouched.`,
   ];
+  // Surface newly-delivered engine skills / MCP servers (ADR 0025) — the whole point
+  // of an additive update: an upgrader must SEE they finally have the feature.
+  if (installedSkills.length > 0) {
+    lines.push(`   • new engine skill(s) installed: ${installedSkills.join(", ")}`);
+  }
+  if (mcpServersAdded.length > 0) {
+    lines.push(`   • new MCP server(s) registered: ${mcpServersAdded.join(", ")}`);
+  }
+  lines.push(`   Your notes, .env, constitution, settings and custom skills were left untouched.`);
   return lines.join("\n");
 }
 
@@ -128,12 +138,42 @@ export async function updateEngine({
   //    (`regenerate`) are NOT copied — they are rebuilt below. Self-replacement mid-run
   //    is safe: Node caches imported modules, so overwriting the .mjs on disk never
   //    perturbs this process.
+  const sourceFiles = listFilesRelPosix(sourceDir);
   const copyGlobs = [...plan.overwrite, ...plan.replaceScripts];
-  const copied = selectEngineFilesToCopy({
-    sourceFiles: listFilesRelPosix(sourceDir),
-    copyGlobs,
-  });
+  const copied = selectEngineFilesToCopy({ sourceFiles, copyGlobs });
   for (const rel of copied) copyInto(sourceDir, brainDir, rel);
+
+  // 3.bis Install engine-declared skills the brain is MISSING (ADR 0025): additive,
+  //    install-if-absent at the SKILL-DIR level. A skill dir that already exists
+  //    (possibly user-customized, e.g. prepare-1-1) is left byte-identical; a
+  //    brand-new engine skill (e.g. local-mirror) is copied in so upgraders get it.
+  //    Non-declared / custom skills are never in `installSkills` → untouchable.
+  const installedSkills = [];
+  for (const skillGlob of plan.installSkills) {
+    const skillDir = skillGlob.replace(/\/\*\*?$/, ""); // ".../local-mirror/**" → ".../local-mirror"
+    if (existsSync(join(brainDir, skillDir))) continue; // present → preserve, never overwrite
+    for (const rel of sourceFiles.filter((f) => matchesAny([skillGlob], f))) copyInto(sourceDir, brainDir, rel);
+    installedSkills.push(skillDir.split("/").pop()); // the skill name, for the report
+  }
+
+  // 3.ter Reconcile .mcp.json against the manifest's engineMcpServers (ADR 0025):
+  //    register a newly-shipped engine server (e.g. local-mirror) the brain is
+  //    MISSING, taking its definition from the fetched .mcp.json.template with
+  //    {{PROJECT_ROOT}} substituted to this brain dir. Existing servers (engine OR
+  //    user-added) are preserved; absent template → nothing to reconcile.
+  const engineServerIds = target.engineMcpServers ?? [];
+  const templatePath = join(sourceDir, ".mcp.json.template");
+  const brainMcpPath = join(brainDir, ".mcp.json");
+  const mcpServersAdded = [];
+  if (engineServerIds.length > 0 && existsSync(templatePath) && existsSync(brainMcpPath)) {
+    const projectRoot = brainDir.split("\\").join("/"); // {{PROJECT_ROOT}} is posix (cf. installer toPosix)
+    const templateMcp = JSON.parse(readFileSync(templatePath, "utf8").split("{{PROJECT_ROOT}}").join(projectRoot));
+    const brainMcp = JSON.parse(readFileSync(brainMcpPath, "utf8"));
+    const before = new Set(Object.keys(brainMcp.mcpServers ?? {}));
+    const reconciled = reconcileMcpServers({ brainMcp, templateMcp, engineServerIds });
+    writeFileSync(brainMcpPath, JSON.stringify(reconciled, null, 2) + "\n");
+    mcpServersAdded.push(...Object.keys(reconciled.mcpServers).filter((id) => !before.has(id)));
+  }
 
   // 4. Regenerate the launchers (both halves, ADR 0015).
   const regenerated = plan.regenerate.length > 0;
@@ -168,7 +208,7 @@ export async function updateEngine({
   };
   writeFileSync(manifestPath, JSON.stringify(updated, null, 2) + "\n");
 
-  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed };
+  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, installedSkills, mcpServersAdded };
 }
 
 // ── CLI entry (the command the brain-side `update-engine` skill runs) ─────────

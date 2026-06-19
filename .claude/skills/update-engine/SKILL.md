@@ -41,7 +41,8 @@ code on disk and may trigger a reindex; it must always be a conscious, accepted 
 | `rag/launch.*`, `scripts/run-node.*` launchers | `.env` (your keys) |
 | engine scripts (`auto-commit`, `auto-push`, `status-line`, `verify-rag`) | `CLAUDE.md` (your constitution) |
 | `update-engine` itself (it self-updates) | `.claude/settings.json` |
-|  | your custom `.claude/skills/**` |
+| **missing** engine skills (e.g. `local-mirror`) — _added if absent_ (ADR 0025) | your custom skills **and any engine skill you already have** (`.claude/skills/**`) |
+| **missing** engine MCP servers in `.mcp.json` — _added if absent_ (ADR 0025) | any server you added yourself to `.mcp.json` |
 
 ## Procedure
 
@@ -80,3 +81,9 @@ exactly the engine-owned files, regenerates the launchers, runs `npm install`, r
   half-applied past the failure.
 - **Already up to date** → re-pulling the same version is harmless; the engine is swapped
   again and, since the index format didn't move, **no reindex** runs.
+- **A new engine skill/server doesn't appear after a single update on a pre-3.2.1 brain**
+  (ADR 0025) → expected. The apply runs from the brain's **installed** code, and the skill/MCP
+  install logic only landed *during* this update. Simply **run the update once more** (or it
+  arrives on the brain's next update): run 1 lays down the new engine code, run 2 executes it
+  and installs the missing skill + registers the server. This affects only brains installed
+  **before v3.2.1**; from v3.2.1 on, a new engine skill/server lands in a single update.

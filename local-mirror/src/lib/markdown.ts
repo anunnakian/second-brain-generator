@@ -3,7 +3,22 @@
 // writes*, not a RAG requirement. Frontmatter via gray-matter (js-yaml under the hood).
 
 import matter from 'gray-matter';
+import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
 import type { SourceItem } from '../domain/ports.js';
+
+// gray-matter 4.x defaults to js-yaml 3's `safeLoad`/`safeDump`, both removed in
+// js-yaml 4. We force the patched js-yaml >=4.2.0 (GHSA-h67p-54hq-rp68 DoS, all
+// <=4.1.1 vulnerable, no patched 3.x) and route gray-matter's YAML through js-yaml
+// 4's `load`/`dump` — safe by default. `stringify` (write) is the production path;
+// `parse` (read) backs the round-trip assertions in tests.
+const YAML_ENGINE = {
+  engines: {
+    yaml: {
+      parse: (input: string) => yamlLoad(input) as object,
+      stringify: (obj: object) => yamlDump(obj),
+    },
+  },
+} as const;
 
 /** The frontmatter stamped on every produced note (PRD §6). */
 export interface LocalMirrorFrontmatter {
@@ -29,5 +44,11 @@ export function toLocalMirrorMarkdown(
     source_url: item.url,
     last_edited_time: item.lastEditedTime,
   };
-  return matter.stringify(body, frontmatter);
+  return matter.stringify(body, frontmatter, YAML_ENGINE);
+}
+
+/** Read back a local-mirror note (frontmatter + body) using the same js-yaml-4 engine. */
+export function parseLocalMirrorMarkdown(raw: string): { data: Record<string, unknown>; content: string } {
+  const { data, content } = matter(raw, YAML_ENGINE);
+  return { data, content };
 }

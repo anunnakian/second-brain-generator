@@ -74,6 +74,24 @@ test("formatReport — schema unchanged → states no reindex was needed (never 
   assert.doesNotMatch(out, /reindexed —/);
 });
 
+// Finding A (ADR 0025 fix QA): an upgrader must SEE that the update delivered the
+// flagship engine skill + registered its MCP server — that is the whole point of
+// v3.2.1. Silent delivery leaves the user unaware they finally have the feature.
+test("formatReport — names the engine skill(s) it installed and the MCP server(s) it registered", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: ["local-mirror"],
+    mcpServersAdded: ["local-mirror"],
+  });
+  assert.match(out, /local-mirror/);
+  assert.match(out, /skill/i);
+  assert.match(out, /server|mcp/i);
+});
+
 function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
@@ -409,6 +427,214 @@ test("gate — F1/F2: dev-only files never land, and the brain keeps its install
     brainLocaleFr,
     "F2: update-engine must not overwrite the brain's locale-owned demo-locale.mjs (fr→en regression)",
   );
+});
+
+// ── Lot A (ADR 0025): an engine update INSTALLS a missing engine-declared skill
+//    (additive, install-if-absent) so the flagship local-mirror skill reaches
+//    upgraders — while never touching a non-declared / custom skill.
+test("gate — installs a MISSING engine-declared skill (install-if-absent); custom skill stays untouched", async (t) => {
+  const brainDir = buildBrain(); // ships zzz-mine (custom), NO local-mirror skill
+  const sourceDir = mkdtempSync(join(tmpdir(), "sbg-source-skill-"));
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  const before = snapshotSacred(brainDir);
+
+  // The fetched launcher carries the engine files (vB) + a NEW engine skill, and its
+  // manifest declares that skill path as engine-owned (under `merge`).
+  for (const [rel, content] of Object.entries(flat(engineFiles("vB")))) writeFile(sourceDir, rel, content);
+  const skillBody = "---\nname: local-mirror\n---\nMirror a Notion zone into the vault.\n";
+  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", skillBody);
+  writeFile(
+    sourceDir,
+    "engine-manifest.json",
+    JSON.stringify(
+      {
+        manifestVersion: 1,
+        engineVersion: { rag: "1.1.0", constitutionTemplate: "1.0.0", scripts: "1.0.0" },
+        indexSchemaVersion: 1,
+        regimes: {
+          replace: ["rag/src/**", "rag/package.json"],
+          regenerate: ["rag/launch.sh", "rag/launch.cmd", "scripts/run-node.sh", "scripts/run-node.cmd"],
+          merge: [
+            "CLAUDE.md",
+            ".claude/settings.json",
+            ".claude/skills/local-mirror/**", // the NEW engine skill, declared engine-owned
+            "scripts/auto-commit.mjs",
+            "scripts/auto-push.mjs",
+            "scripts/status-line.mjs",
+            "scripts/verify-rag.mjs",
+            "scripts/update-engine.mjs",
+          ],
+        },
+        engineMcpServers: ["vault-rag"],
+        source: { repo: "https://example.test/launcher.git", ref: "v1.1.0" },
+        provenance: {},
+      },
+      null,
+      2,
+    ),
+  );
+
+  assert.equal(
+    existsSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md")),
+    false,
+    "precondition: the brain must lack the engine skill before the update",
+  );
+
+  const { report } = await runUpdate({ brainDir, sourceDir, platform: "posix" });
+
+  // The engine installed the missing skill from the fetched source…
+  assert.equal(
+    readFileSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md"), "utf8"),
+    skillBody,
+    "a missing engine-declared skill must be installed on update (so upgraders get local-mirror)",
+  );
+  // …and the report names it (so the user SEES they got the feature, finding A).
+  assert.deepEqual(
+    report.installedSkills,
+    ["local-mirror"],
+    "the report must name the engine skill(s) it installed",
+  );
+  // …and the user's custom skill + every sacred file stayed byte-identical.
+  assertSacredUntouched(brainDir, before);
+});
+
+test("gate — an ALREADY-PRESENT engine skill is preserved byte-identical (never clobbered, install-if-absent)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = mkdtempSync(join(tmpdir(), "sbg-source-skill2-"));
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  // The brain already carries a USER-CUSTOMIZED local-mirror skill.
+  const customized = "---\nname: local-mirror\n---\nMY OWN tweaks — do not overwrite.\n";
+  writeFile(brainDir, ".claude/skills/local-mirror/SKILL.md", customized);
+  const beforeHash = sha256(join(brainDir, ".claude/skills/local-mirror/SKILL.md"));
+
+  // The fetched launcher carries a DIFFERENT version of the same skill + declares it.
+  for (const [rel, content] of Object.entries(flat(engineFiles("vB")))) writeFile(sourceDir, rel, content);
+  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", "---\nname: local-mirror\n---\nEngine default.\n");
+  writeFile(
+    sourceDir,
+    "engine-manifest.json",
+    JSON.stringify(
+      {
+        manifestVersion: 1,
+        engineVersion: { rag: "1.1.0", constitutionTemplate: "1.0.0", scripts: "1.0.0" },
+        indexSchemaVersion: 1,
+        regimes: {
+          replace: ["rag/src/**", "rag/package.json"],
+          regenerate: ["rag/launch.sh", "rag/launch.cmd", "scripts/run-node.sh", "scripts/run-node.cmd"],
+          merge: [".claude/skills/local-mirror/**", "scripts/update-engine.mjs"],
+        },
+        engineMcpServers: ["vault-rag"],
+        source: { repo: "https://example.test/launcher.git", ref: "v1.1.0" },
+        provenance: {},
+      },
+      null,
+      2,
+    ),
+  );
+
+  await runUpdate({ brainDir, sourceDir, platform: "posix" });
+
+  assert.equal(
+    sha256(join(brainDir, ".claude/skills/local-mirror/SKILL.md")),
+    beforeHash,
+    "a present (customized) engine skill must be preserved byte-identical — install-if-absent never overwrites",
+  );
+});
+
+// ── Lot B (ADR 0025): an engine update RECONCILES .mcp.json against the manifest's
+//    engineMcpServers — registering a newly-shipped engine server (local-mirror) from
+//    the fetched .mcp.json.template (cwd → the brain dir), while preserving every
+//    existing server (vault-rag + any user-added one) and staying idempotent.
+test("gate — registers a missing engine MCP server in .mcp.json (from the template), preserving existing servers", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = mkdtempSync(join(tmpdir(), "sbg-source-mcp-"));
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  // The brain's .mcp.json: only vault-rag + a user-added server (must both survive).
+  writeFile(
+    brainDir,
+    ".mcp.json",
+    JSON.stringify(
+      {
+        mcpServers: {
+          "vault-rag": { type: "stdio", command: "npx", args: ["tsx", "rag/src/index.ts"], cwd: brainDir, env: {} },
+          "my-tool": { type: "stdio", command: "node", args: ["my-tool.js"], cwd: brainDir, env: {} },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // The fetched launcher: engine files (vB) + a .mcp.json.template declaring both
+  // engine servers with the {{PROJECT_ROOT}} placeholder + a manifest listing them.
+  for (const [rel, content] of Object.entries(flat(engineFiles("vB")))) writeFile(sourceDir, rel, content);
+  writeFile(
+    sourceDir,
+    ".mcp.json.template",
+    JSON.stringify(
+      {
+        mcpServers: {
+          "vault-rag": { type: "stdio", command: "npx", args: ["tsx", "rag/src/index.ts"], cwd: "{{PROJECT_ROOT}}", env: {} },
+          "local-mirror": { type: "stdio", command: "npx", args: ["tsx", "local-mirror/src/server.ts"], cwd: "{{PROJECT_ROOT}}", env: {} },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  writeFile(
+    sourceDir,
+    "engine-manifest.json",
+    JSON.stringify(
+      {
+        manifestVersion: 1,
+        engineVersion: { rag: "1.1.0", constitutionTemplate: "1.0.0", scripts: "1.0.0" },
+        indexSchemaVersion: 1,
+        regimes: {
+          replace: ["rag/src/**", "rag/package.json"],
+          regenerate: ["rag/launch.sh", "rag/launch.cmd", "scripts/run-node.sh", "scripts/run-node.cmd"],
+          merge: ["scripts/update-engine.mjs"],
+        },
+        engineMcpServers: ["vault-rag", "local-mirror"],
+        source: { repo: "https://example.test/launcher.git", ref: "v1.1.0" },
+        provenance: {},
+      },
+      null,
+      2,
+    ),
+  );
+
+  const { report } = await runUpdate({ brainDir, sourceDir, platform: "posix" });
+
+  const mcp = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8"));
+  // The missing engine server is now registered, with its cwd pointing at THIS brain.
+  assert.ok(mcp.mcpServers["local-mirror"], "the missing engine server must be registered on update");
+  // The report names only the server it actually ADDED (vault-rag was already there).
+  assert.deepEqual(
+    report.mcpServersAdded,
+    ["local-mirror"],
+    "the report must name the MCP server(s) it registered (only the newly-added one)",
+  );
+  assert.equal(mcp.mcpServers["local-mirror"].cwd, brainDir, "{{PROJECT_ROOT}} must resolve to the brain dir");
+  assert.deepEqual(
+    mcp.mcpServers["local-mirror"].args,
+    ["tsx", "local-mirror/src/server.ts"],
+    "the server definition must come from the fetched template",
+  );
+  // Existing servers — engine AND user-added — are preserved untouched.
+  assert.ok(mcp.mcpServers["vault-rag"], "the existing vault-rag server must be preserved");
+  assert.ok(mcp.mcpServers["my-tool"], "the user-added server must be preserved");
 });
 
 test("gate — no tag resolvable (offline / no semver tag) → fall back to the pinned ref, update still applies", async (t) => {
