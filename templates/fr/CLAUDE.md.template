@@ -124,6 +124,10 @@ Référencer d'autres notes avec `[[chemin/relatif/sans-extension]]` :
 - `[[daily/2026-04-15#Section]]` (lien vers une section)
 - `[[topics/capacity-management]]`
 
+> **Notes issues d'un miroir local** (`vault/mirrors/…`) : quand tu en cites une, présente **deux**
+> liens — 🧠 la **copie locale** (ouvre la note dans le cerveau) **et** 🔗 la **source** (la page
+> Notion d'origine). La sortie de `search_vault` te les fournit déjà tout faits ; relaie-les tels quels.
+
 ### Append-only pour les dailies
 
 Une daily note, une fois écrite, n'est **jamais éditée rétroactivement** — on ajoute une nouvelle daily le lendemain. Les corrections passent par des notes de topics ou des décisions. Les fiches `people/` et `topics/` sont au contraire **vivantes** : on y append des sections datées.

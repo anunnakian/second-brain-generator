@@ -15,6 +15,8 @@ export interface ParsedDocument {
   type: string;
   tags: string[];
   title: string;
+  /** Clickable source link for mirror notes (Notion); null for plain notes. */
+  sourceUrl: string | null;
 }
 
 const TYPE_BY_PREFIX: [string, string][] = [
@@ -64,5 +66,7 @@ export function parseDocument(raw: string, relativePath: string): ParsedDocument
     ? frontmatter.tags.map(String)
     : [];
   const title = extractTitle(content, relativePath, frontmatter);
-  return { frontmatter, content, type, tags, title };
+  const sourceUrl =
+    typeof frontmatter.source_url === "string" ? frontmatter.source_url : null;
+  return { frontmatter, content, type, tags, title, sourceUrl };
 }
