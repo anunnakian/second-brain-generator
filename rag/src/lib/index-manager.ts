@@ -131,6 +131,7 @@ async function runReindex(
         type: parsed.type,
         tags: parsed.tags,
         hash,
+        sourceUrl: parsed.sourceUrl,
         chunks: chunks.map((c) => ({
           section: c.section,
           content: c.content,
@@ -171,7 +172,8 @@ async function runReindex(
             content: c.content,
             chunkIndex: c.chunkIndex,
             embedding: embeddings[i],
-          }))
+          })),
+          doc.sourceUrl ?? null
         ),
     },
     reporter,

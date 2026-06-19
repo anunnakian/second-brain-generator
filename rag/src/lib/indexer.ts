@@ -13,6 +13,8 @@ export interface PreparedDoc {
   tags: string[];
   hash: string;
   chunks: PreparedChunk[];
+  /** Clickable source link for mirror notes (Notion); null/absent for plain notes. */
+  sourceUrl?: string | null;
 }
 
 /** Injected dependencies — decouple the orchestration from the API and SQLite. */
