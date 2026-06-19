@@ -18,7 +18,7 @@
 - [x] **Lot 0 — Investigation & design decisions** _(2026-06-19 · branch created; decisions below + ADR 0025)_
 - [x] **Lot A — Install engine-declared skills on update** (TDD) _(2026-06-19 · commit pending)_
 - [x] **Lot B — Reconcile `.mcp.json` from `engineMcpServers`** (TDD) _(2026-06-19 · commit pending)_
-- [ ] **Lot C — Self-heal path for already-broken v3.2.0 brains** (decided in Lot 0)
+- [x] **Lot C — Self-heal path for already-broken ≤v3.2.0 brains** (doc only, decided in Lot 0) _(2026-06-19)_
 - [ ] **Lot D — npm vulnerability remediation** (TDD where it touches behavior)
 - [ ] **Lot Ship — verify green, `/code-review`, merge, tag v3.2.1, archive, re-run QA §3**
 
@@ -87,11 +87,11 @@
 
 ## Lot C — Self-heal for already-broken v3.2.0 brains
 
-- [ ] Based on Q1: if apply runs from fetched code → confirm self-heal is automatic (add a test that
-      simulates the broken→fixed transition). If it runs from installed code → implement a one-shot
-      idempotent heal in the v3.2.1 update, **or** document a manual heal for the few v3.2.0 early
-      adopters (re-install toward a fresh brain, or copy the skill + add the MCP entry).
-- [ ] Record the chosen path in the plan + ADR.
+- [x] Q1 resolved: apply runs from **installed** code → no automatic one-cycle self-heal possible for
+      the existing cohort. **Chosen path: two-cycle self-heal, documented** (no extra code): run 1 lays
+      down the new engine logic, run 2 executes it. Tiny reachable cohort → acceptable.
+- [x] Documented in the brain-side `update-engine` skill (new edge case + the touches table now lists
+      additive skill/MCP install) and in ADR 0025 ("Rejected alternatives" covers re-exec-from-fetched).
 
 ## Lot D — npm vulnerability remediation
 
