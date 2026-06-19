@@ -58,3 +58,6 @@ local-mirror/dist/
 *.log
 .cache/
 tmp/
+
+# QA feedback dumps that may contain confidential source data — never commit
+maintainers/qa/_private/
