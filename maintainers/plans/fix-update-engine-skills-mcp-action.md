@@ -19,7 +19,7 @@
 - [x] **Lot A — Install engine-declared skills on update** (TDD) _(2026-06-19 · commit pending)_
 - [x] **Lot B — Reconcile `.mcp.json` from `engineMcpServers`** (TDD) _(2026-06-19 · commit pending)_
 - [x] **Lot C — Self-heal path for already-broken ≤v3.2.0 brains** (doc only, decided in Lot 0) _(2026-06-19)_
-- [ ] **Lot D — npm vulnerability remediation** (TDD where it touches behavior)
+- [x] **Lot D — npm vulnerability remediation** (TDD where it touches behavior) _(2026-06-19 · commit pending)_
 - [ ] **Lot Ship — verify green, `/code-review`, merge, tag v3.2.1, archive, re-run QA §3**
 
 ---
@@ -95,11 +95,16 @@
 
 ## Lot D — npm vulnerability remediation
 
-- [ ] `npm audit fix` in `rag/` for the **non-breaking** ones (`hono`, `protobufjs`); re-run audit.
-- [ ] `gray-matter` 1.x→2.x (js-yaml fix) is **breaking** → bump behind the **full RAG test suite**
-      (frontmatter parsing is core); fix any fallout, tests green.
-- [ ] Re-run `npm audit` → confirm clean (or document any residual + rationale).
-- [ ] Bump `rag` engine version + manifest accordingly.
+- [x] `npm audit fix` (non-breaking) in `rag/` → patched **hono** (high) + **protobufjs** (moderate)
+      via the lock (4 → 2 vulns); `package.json` untouched by it.
+- [x] **js-yaml** DoS (GHSA-h67p-54hq-rp68, all `<=4.1.1`; **no patched 3.x** exists). The plan's
+      "downgrade gray-matter" was wrong (it's at `^4.0.3`; `audit fix --force` would drop it to 2.0.1).
+      Instead: **`overrides: { js-yaml: ^4.2.0 }`** + js-yaml as a direct dep. The **full RAG suite
+      caught** that gray-matter 4.x calls the removed `yaml.safeLoad` → fixed by routing gray-matter's
+      YAML through js-yaml 4's safe `load` (`frontmatter-parser.ts`, `GRAY_MATTER_OPTIONS`). The
+      pre-existing frontmatter test was the fail-first; green after the engine wiring.
+- [x] `npm audit` → **0 vulnerabilities**. RAG suite **178/178**, `tsc` clean.
+- [x] Bumped `rag` engine version `1.1.0 → 1.1.1` (`rag/package.json` + `engine-manifest.json`).
 
 ## Lot Ship
 

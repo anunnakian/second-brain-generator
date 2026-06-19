@@ -1,4 +1,13 @@
 import matter from "gray-matter";
+import { load as yamlLoad } from "js-yaml";
+
+// gray-matter 4.x defaults to js-yaml 3's `safeLoad`, removed in js-yaml 4. We force
+// the patched js-yaml >=4.2.0 (GHSA-h67p-54hq-rp68: quadratic-complexity DoS in merge
+// keys, all <=4.1.1 vulnerable, no patched 3.x) and route YAML through `load`, which
+// is safe by default in js-yaml 4 — so frontmatter parsing keeps working, patched.
+const GRAY_MATTER_OPTIONS = {
+  engines: { yaml: (input: string) => yamlLoad(input) as object },
+} as const;
 
 export interface ParsedDocument {
   frontmatter: Record<string, unknown>;
@@ -49,7 +58,7 @@ function extractTitle(
 }
 
 export function parseDocument(raw: string, relativePath: string): ParsedDocument {
-  const { data: frontmatter, content } = matter(raw);
+  const { data: frontmatter, content } = matter(raw, GRAY_MATTER_OPTIONS);
   const type = detectType(relativePath, frontmatter);
   const tags = Array.isArray(frontmatter.tags)
     ? frontmatter.tags.map(String)
