@@ -2,6 +2,21 @@ import { resolve } from "path";
 import type { SearchResult } from "./vector-store.js";
 
 /**
+ * Make a URL safe to drop inside a CommonMark `<…>` link destination. The angle
+ * brackets already neutralize parentheses, but a raw `<` / `>` (the `>` closes the
+ * destination early) and any whitespace are still illegal there. We percent-encode
+ * exactly those characters — leaving `(`, `)` and the rest of a normal URL intact —
+ * so any `source_url` (incl. hand-written / imported notes, which `parseDocument`
+ * never validates) stays a single clickable link.
+ */
+function escapeAngleDestination(url: string): string {
+  return url.replace(
+    /[<> \t\n\r]/g,
+    (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")
+  );
+}
+
+/**
  * Renders search results as the deterministic `search_vault` citation block.
  *
  * Every result carries a clickable 🧠 LOCAL link to the copy in the vault, via
@@ -27,8 +42,10 @@ export function formatSearchCitations(
       // can't terminate the markdown link early. The obsidian link is already
       // percent-encoded, but wrapping both keeps the rule uniform.
       const links =
-        `🧠 [local copy](<${localLink}>)` +
-        (r.sourceUrl ? ` · 🔗 [Notion source](<${r.sourceUrl}>)` : "");
+        `🧠 [local copy](<${escapeAngleDestination(localLink)}>)` +
+        (r.sourceUrl
+          ? ` · 🔗 [Notion source](<${escapeAngleDestination(r.sourceUrl)}>)`
+          : "");
       return (
         `### ${i + 1}. ${r.title} — ${r.section}\n` +
         `**Path:** \`vault/${r.path}\` | **Type:** ${r.type} | **Score:** ${r.score.toFixed(3)}\n` +

@@ -45,6 +45,19 @@ test("the Notion link is angle-bracket wrapped so a ')' in the URL can't break t
   assert.ok(text.includes("(<https://www.notion.so/a(b)c>)"), text);
 });
 
+test("a '>' or space in the Notion url is percent-encoded so it can't break the <…> destination", () => {
+  // parseDocument reads source_url from ANY note's frontmatter without validation
+  // (hand-written / imported notes), so the renderer — the robust boundary — must
+  // also survive characters that '<…>' wrapping alone doesn't: '>' closes the
+  // destination early, and a raw space is illegal inside it.
+  const text = formatSearchCitations(
+    [result({ sourceUrl: "https://www.notion.so/a>b c" })],
+    "/brain/vault"
+  );
+
+  assert.ok(text.includes("(<https://www.notion.so/a%3Eb%20c>)"), text);
+});
+
 test("a non-mirror note renders only the local link, no Notion link", () => {
   const text = formatSearchCitations([result()], "/brain/vault");
 
