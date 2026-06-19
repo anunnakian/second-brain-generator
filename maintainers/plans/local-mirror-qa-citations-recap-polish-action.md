@@ -28,13 +28,13 @@ as their Obsidian vault). Obsidian is the brain's default viewer (memory `obsidi
 
 ## Tracking
 
-- [ ] **Lot 1 — B1+F1: clickable dual-link citations (engine-side, TDD)**
-  - [ ] 1a. Schema: add nullable `source_url TEXT` column to `documents` + out-of-band `ALTER` migration
-  - [ ] 1b. `indexDocument`: accept + persist `sourceUrl` (upsert)
-  - [ ] 1c. Indexing path threads `source_url` from frontmatter into `PreparedDoc`
-  - [ ] 1d. `SearchResult` + `searchSimilar` SQL: select & return `sourceUrl`
-  - [ ] 1e. Citation renderer in `search_vault`: clickable 🧠 local (obsidian://) + 🔗 Notion (when present)
-  - [ ] 1f. (new installs only) constitution template citation convention mentions the dual link
+- [x] **Lot 1 — B1+F1: clickable dual-link citations (engine-side, TDD)** _(2026-06-19)_
+  - [x] 1a. Schema: add nullable `source_url TEXT` column to `documents` + out-of-band `ALTER` migration _(vector-store, commit on branch)_
+  - [x] 1b. `indexDocument`: accept + persist `sourceUrl` (upsert) _(via `indexDocumentIn` seam)_
+  - [x] 1c. Indexing path threads `source_url` from frontmatter into `PreparedDoc` _(`ParsedDocument.sourceUrl`)_
+  - [x] 1d. `SearchResult` + `searchSimilar` SQL: select & return `sourceUrl` _(via `searchSimilarIn` seam)_
+  - [x] 1e. Citation renderer in `search_vault`: clickable 🧠 local (obsidian://) + 🔗 Notion (when present) _(`formatSearchCitations`; removed dead duplicate `tools/search-vault.ts`)_
+  - [x] 1f. (new installs only) constitution template citation convention mentions the dual link _(`templates/fr/CLAUDE.md.template`)_
 - [ ] **Lot 2 — F2: update-engine recap shows vault note count (+ reindex state)**
   - [ ] 2a. `updateEngine` returns `vaultNoteCount` (via an injectable seam, like `runReindex`)
   - [ ] 2b. `formatReport` adds a user-facing "N notes in your vault" line (+ "reindex running" when reindexed)
