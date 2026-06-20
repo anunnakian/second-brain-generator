@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runProbeChild } from "./health-probe-run.mjs";
+import { runProbeChild, toBannerVerdict } from "./health-probe-run.mjs";
 
 // runProbeChild (ADR 0028, F7, baby-step 4) is the DETACHED probe child's pure
 // orchestration: it runs the health probes, persists the fresh verdict, and fires
@@ -44,6 +44,27 @@ test("runProbeChild — a capability broke since last check → notifies for tha
   await runProbeChild(args);
   assert.equal(calls.notified.length, 1);
   assert.equal(calls.notified[0].capability, "rag");
+});
+
+// toBannerVerdict maps the runner's per-module result onto the persisted shape
+// formatHealthBanner reads. It must carry the STRUCTURED `checks` through (not only a
+// flattened `detail`), otherwise the banner can't give per-cause actionable gestures
+// (ADR 0030 F7-ter, baby-step 5) and would fall back to a generic restart hint.
+test("toBannerVerdict — preserves the per-module structured checks for the banner", () => {
+  const verdict = toBannerVerdict([
+    {
+      module: "vault-rag",
+      status: "broken",
+      checks: [
+        { name: "index", status: "broken", detail: "index empty" },
+        { name: "embedder", status: "ok", detail: "in-process ready" },
+      ],
+    },
+  ]);
+  assert.equal(verdict[0].capability, "vault-rag");
+  assert.equal(verdict[0].status, "broken");
+  assert.ok(Array.isArray(verdict[0].checks), "checks array carried through");
+  assert.deepEqual(verdict[0].checks[0], { name: "index", status: "broken", detail: "index empty" });
 });
 
 test("runProbeChild — a still-broken capability does NOT re-nag (already broken last time)", async () => {

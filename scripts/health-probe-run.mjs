@@ -39,14 +39,17 @@ export async function runProbeChild({ runProbes, readPriorVerdict, writeVerdict,
 // mirroring engine-seams.mjs's npm handling (ADR 0015).
 const npxExe = (platform) => (platform === "win32" ? "npx.cmd" : "npx");
 
-// Map the runner's per-module verdict onto the persisted shape formatHealthBanner +
-// session-health.mjs read ({ capability, status, detail }) — kept stable so those two
-// stay untouched. `detail` summarises the non-ok checks (or the bare status).
-function toBannerVerdict(modules) {
+// Map the runner's per-module verdict onto the persisted shape session-health.mjs +
+// formatHealthBanner read ({ capability, status, detail }). The structured `checks` are
+// carried through too (ADR 0030 F7-ter, baby-step 5) so the banner can name each cause +
+// its corrective gesture; `detail` keeps the flattened summary for the notification text
+// and any legacy reader.
+export function toBannerVerdict(modules) {
   return modules.map((m) => {
-    const bad = (m.checks ?? []).filter((ch) => ch.status !== "ok");
+    const checks = m.checks ?? [];
+    const bad = checks.filter((ch) => ch.status !== "ok");
     const detail = bad.length ? bad.map((ch) => `${ch.name}: ${ch.detail}`).join("; ") : m.status;
-    return { capability: m.module, status: m.status, detail };
+    return { capability: m.module, status: m.status, detail, checks };
   });
 }
 
