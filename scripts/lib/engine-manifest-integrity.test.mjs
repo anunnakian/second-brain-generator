@@ -35,3 +35,28 @@ test("engine-manifest — every `replace`/`merge` glob resolves to a real tracke
   const dead = globs.filter((glob) => !trackedFiles.some((file) => matchesAny([glob], file)));
   assert.deepEqual(dead, [], `manifest globs matching no tracked file (renamed/removed?): ${dead.join(", ")}`);
 });
+
+// The reverse guard: an engine-owned script wired as a SessionStart hook but ABSENT
+// from the manifest is the "update-engine must self-carry its libs" bug class — the
+// brain runs it, yet an upgrade never refreshes it (settings.json is sacred/merge, so
+// the hook stays wired, pointing at a stale script). Every SessionStart hook script
+// must be carried (declared in replace/regenerate; merge would be wrong for these).
+test("engine-manifest — every SessionStart hook script is carried to upgraders (declared in replace/regenerate)", () => {
+  const settings = JSON.parse(
+    readFileSync(join(repoRoot, ".claude", "settings.json.template"), "utf8"),
+  );
+  const hookScripts = [
+    ...new Set(
+      (settings.hooks?.SessionStart ?? [])
+        .flatMap((entry) => entry.hooks.map((h) => h.command))
+        .flatMap((cmd) => cmd.match(/scripts\/[\w.-]+\.mjs/g) ?? []),
+    ),
+  ];
+  const carryGlobs = [...(manifest.regimes.replace ?? []), ...(manifest.regimes.regenerate ?? [])];
+  const undeclared = hookScripts.filter((rel) => !carryGlobs.some((glob) => matchesAny([glob], rel)));
+  assert.deepEqual(
+    undeclared,
+    [],
+    `SessionStart hook scripts not carried by the manifest (upgraders keep stale copies): ${undeclared.join(", ")}`,
+  );
+});
