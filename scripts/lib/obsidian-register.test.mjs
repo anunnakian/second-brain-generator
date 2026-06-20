@@ -61,6 +61,26 @@ test("addVaultToObsidianConfig — re-registering preserves the existing ts (tru
   assert.deepEqual(twice, once);
 });
 
+test("addVaultToObsidianConfig — a path already registered under Obsidian's OWN random id is not duplicated (#7)", () => {
+  // The user opened the brain folder via Obsidian's "Open folder as vault" → Obsidian
+  // stored it under its own random id, not our deterministic SHA id. Re-registering must
+  // detect the SAME PATH and no-op, never add a second switcher entry for the same vault.
+  const existing = { vaults: { "9f3c1ea7b2d04c81": { path: "/home/u/brain/vault", ts: 7 } } };
+  const result = addVaultToObsidianConfig(existing, "/home/u/brain/vault");
+  assert.equal(Object.values(result.vaults).length, 1, "no duplicate entry for the same path");
+  assert.deepEqual(result.vaults["9f3c1ea7b2d04c81"], { path: "/home/u/brain/vault", ts: 7 });
+});
+
+test("registerVaultInObsidian — vault already registered under Obsidian's own id → already-registered, no write (#7)", () => {
+  const cfg = "/Users/u/Library/Application Support/obsidian/obsidian.json";
+  const pre = { vaults: { "abcd1234deadbeef": { path: "/Users/u/brain/vault", ts: 3 } } };
+  const seams = makeSeams({ files: { [cfg]: JSON.stringify(pre) } });
+  const result = registerVaultInObsidian("/Users/u/brain/vault", seams);
+  assert.deepEqual(result, { registered: true, reason: "already-registered" });
+  assert.equal(seams._writes.length, 0);
+  assert.equal(seams._backups.length, 0);
+});
+
 test("shouldRegisterObsidian — plain desktop session → true", () => {
   assert.equal(shouldRegisterObsidian({}, "darwin"), true);
 });

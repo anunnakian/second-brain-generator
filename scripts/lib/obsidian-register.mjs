@@ -16,14 +16,22 @@ function vaultIdFor(vaultPath) {
   return createHash("sha256").update(vaultPath).digest("hex").slice(0, 16);
 }
 
+// Normalise a vault path for equality: drop any trailing slash/backslash so
+// ".../vault" and ".../vault/" are the same registration.
+const normalizeVaultPath = (p) => String(p ?? "").replace(/[\\/]+$/, "");
+
 // Pure: return a NEW obsidian.json object with `vaultPath` registered. Never
-// mutates the input, never clobbers other vaults. Already-registered → keeps the
-// existing entry verbatim (preserves its `ts`), so re-registering is a true
-// no-op the I/O wrapper can detect and skip writing.
+// mutates the input, never clobbers other vaults. Dedup is by PATH, not only by our
+// SHA-derived id: the user may already have registered this very folder via Obsidian's
+// "Open folder as vault", which stores it under Obsidian's OWN random id — adding our
+// id-keyed entry would then show the vault twice in the switcher. If ANY existing entry
+// already points at this path, the config is returned verbatim (preserving its id + ts),
+// so re-registering is a true no-op the I/O wrapper can detect and skip writing.
 export function addVaultToObsidianConfig(json, vaultPath, { ts = 0 } = {}) {
   const vaults = { ...(json.vaults ?? {}) };
-  const id = vaultIdFor(vaultPath);
-  if (!vaults[id]) vaults[id] = { path: vaultPath, ts };
+  const target = normalizeVaultPath(vaultPath);
+  const alreadyByPath = Object.values(vaults).some((v) => normalizeVaultPath(v?.path) === target);
+  if (!alreadyByPath) vaults[vaultIdFor(vaultPath)] = { path: vaultPath, ts };
   return { ...json, vaults };
 }
 
