@@ -108,20 +108,23 @@ export async function reconcileBrain({
     mcpServersAdded.push(...Object.keys(reconciled.mcpServers).filter((id) => !before.has(id)));
   }
 
-  // 2.quater Seed the engine-owned health-check note on UPGRADERS (ADR 0026 amended,
-  //    decision B): the ONE narrow, nominative carve-out to the vault-sacred invariant.
-  //    At a REAL update (sourceDir !== brainDir) only, write-if-absent the single note
-  //    `vault/engine-health/health-check.md` from the source — NEVER overwrite, NEVER
-  //    delete, NEVER any other vault path. New installs already get it via the install
-  //    bulk-copy; self-heal runs with sourceDir === brainDir → nothing to copy from.
-  let seededHealthNote = false;
+  // 2.quater Ensure the engine-owned health-check note is present AND indexed on
+  //    UPGRADERS (ADR 0026 amended, decision B): the ONE narrow, nominative carve-out to
+  //    the vault-sacred invariant. At a REAL update (sourceDir !== brainDir) only,
+  //    write-if-absent the single note `vault/engine-health/health-check.md` from the
+  //    source — NEVER overwrite, NEVER delete, NEVER any other vault path. New installs
+  //    already get it via the install bulk-copy; self-heal runs with sourceDir === brainDir
+  //    → nothing to copy from. We key the index pairing (step 5) off the note's ON-DISK
+  //    PRESENCE, not a one-shot "just copied" flag: if a prior update seeded the note but
+  //    crashed before indexing it (flaky npm / ABI hiccup), the next run still finds it
+  //    present-but-maybe-unindexed and re-pairs the (cheap, incremental) reindex → the
+  //    canary can never become a permanent false `broken` (finding #6).
+  let healthNotePresent = false;
   if (resolve(sourceDir) !== resolve(brainDir)) {
     const srcNote = join(sourceDir, HEALTH_NOTE);
     const destNote = join(brainDir, HEALTH_NOTE);
-    if (existsSync(srcNote) && !existsSync(destNote)) {
-      copyInto(sourceDir, brainDir, HEALTH_NOTE);
-      seededHealthNote = true;
-    }
+    if (existsSync(srcNote) && !existsSync(destNote)) copyInto(sourceDir, brainDir, HEALTH_NOTE);
+    healthNotePresent = existsSync(destNote);
   }
 
   // 3. Regenerate the launchers (both halves, ADR 0015).
@@ -131,14 +134,19 @@ export async function reconcileBrain({
   // 4. npm install in the brain's rag/ (+ local-mirror/ when present).
   await runInstall({ ragDir: join(brainDir, "rag"), brainDir, platform });
 
-  // 5. Reindex IFF the index schema moved OR we just seeded the health-check note. The
-  //    reindex is incremental (the index-manager skips unchanged docs → only the one new
-  //    note is encoded). ⚠️ Mandatory pairing: a seeded-but-unindexed note → 0 index hits
-  //    → a FALSE `broken` from `health_check` (ADR 0026, decision B). `reindexReason`
-  //    lets the report stay honest: a schema move re-encodes every note; a seed does not.
-  const reindexReason = needsReindex({ local, target }) ? "schema" : seededHealthNote ? "health-note-seed" : null;
+  // 5. Reindex IFF the index schema moved (a FULL re-encode of every note) OR an
+  //    upgrader's health-check note is present (a cheap INCREMENTAL pass — the
+  //    index-manager skips every already-indexed note via its content-hash cache, so a
+  //    re-run where the note is already in the index is a fast no-op, while a seeded-but-
+  //    unindexed note finally gets encoded). The index is its OWN membership oracle, so no
+  //    separate "indexed" marker can drift. ⚠️ Mandatory pairing (ADR 0026, decision B): a
+  //    present-but-unindexed note → 0 index hits → a FALSE `broken` from `health_check`.
+  //    `reindexReason` keeps the report honest: a schema move re-encodes everything; the
+  //    health pairing does not.
+  const schemaMoved = needsReindex({ local, target });
+  const reindexReason = schemaMoved ? "schema" : healthNotePresent ? "health-note-seed" : null;
   const reindexed = reindexReason !== null;
-  if (reindexed) await runReindex({ brainDir, platform });
+  if (reindexed) await runReindex({ brainDir, platform, mode: schemaMoved ? "full" : "incremental" });
 
   // 6. Count the notes the brain holds, for the user-facing recap (F2). Read after
   //    any reindex so it reflects the current vault.

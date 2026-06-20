@@ -91,7 +91,7 @@ function buildSource() {
 // Inject all four I/O seams; record their side effects. regenerateLaunchers writes
 // the launcher files (mirrors the real builder) so existence can be asserted.
 function seams() {
-  const calls = { install: [], reindex: [], regenerate: [] };
+  const calls = { install: [], reindex: [], reindexMode: [], regenerate: [] };
   return {
     calls,
     regenerateLaunchers: async ({ brainDir, platform }) => {
@@ -101,7 +101,10 @@ function seams() {
       }
     },
     runInstall: async ({ ragDir }) => calls.install.push(ragDir),
-    runReindex: async ({ brainDir }) => calls.reindex.push(brainDir),
+    runReindex: async ({ brainDir, mode = "full" }) => {
+      calls.reindex.push(brainDir);
+      calls.reindexMode.push(mode);
+    },
     countVaultNotes: async () => 0,
   };
 }
@@ -222,6 +225,7 @@ test("reconcileBrain — index schema moved → reindex runs and is reported", a
   const report = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s });
 
   assert.deepEqual(calls.reindex, [brainDir], "schema moved → reindex must run once in the brain");
+  assert.deepEqual(calls.reindexMode, ["full"], "a schema move re-encodes every note → FULL reindex");
   assert.equal(report.reindexed, true);
 });
 
@@ -372,13 +376,20 @@ test("reconcileBrain — seeds the engine-health note on an upgrader (absent) an
   assert.equal(readFileSync(join(brainDir, HEALTH_NOTE), "utf8"), noteBody, "the health-check note must be seeded");
   // The paired incremental reindex ran so the note is findable — no false `broken`.
   assert.deepEqual(calls.reindex, [brainDir], "seeding the note must trigger a paired reindex");
+  assert.deepEqual(calls.reindexMode, ["incremental"], "the seed pairing is INCREMENTAL (only the one note), never a full re-encode");
   assert.equal(report.reindexed, true);
 });
 
-// ── Test 8: IDEMPOTENCE of the seed (ADR 0026, decision B safety invariant). Once the
-//    health-check note is present, a second update-time reconcile must NOT re-write it and
-//    must NOT reindex — write-if-absent only, zero churn (auto-finalize / repeated updates).
-test("reconcileBrain — does not re-seed an already-present health note, and does not reindex", async (t) => {
+// ── Test 8: WRITE-IF-ABSENT + the index is its own membership oracle (ADR 0026,
+//    decision B + finding #6). Once the health-check note is present, a later update-time
+//    reconcile must NEVER re-write it (write-if-absent, a user may have edited it). It DOES
+//    re-pair a cheap INCREMENTAL reindex though: keying the index pass off the note's
+//    on-disk PRESENCE (not a one-shot "just copied" flag) is what makes a seeded-but-
+//    unindexed note — left by a prior update that crashed before indexing — self-heal on
+//    the next run, with no durable false `broken`. The incremental pass skips every
+//    already-indexed note via its content-hash cache, so this is a fast no-op, never a
+//    full re-encode of the user's notes.
+test("reconcileBrain — never re-writes an existing health note, but re-pairs a cheap incremental reindex", async (t) => {
   const brainDir = buildBrain();
   const sourceDir = buildSource();
   t.after(() => {
@@ -389,15 +400,15 @@ test("reconcileBrain — does not re-seed an already-present health note, and do
   // The brain already carries its OWN health note (a user could even have edited it).
   writeFile(brainDir, HEALTH_NOTE, "---\ntitle: mine\n---\nQuibblethorne (brain copy, kept).\n");
   const target = manifest();
-  const local = manifest({ ragVersion: "1.0.0" }); // same schema → reindex only if re-seeded
+  const local = manifest({ ragVersion: "1.0.0" }); // same schema → only the incremental health pairing
   const noteHash = sha256(join(brainDir, HEALTH_NOTE));
 
   const { calls, ...s } = seams();
   const report = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s });
 
   assert.equal(sha256(join(brainDir, HEALTH_NOTE)), noteHash, "an existing health note must never be overwritten");
-  assert.deepEqual(calls.reindex, [], "no re-seed → no reindex (zero churn)");
-  assert.equal(report.reindexed, false);
+  assert.deepEqual(calls.reindexMode, ["incremental"], "an upgrader's present health note re-pairs a CHEAP incremental pass, never a full re-encode");
+  assert.equal(report.reindexed, true);
 });
 
 // ── Test 9: the carve-out is SCOPED to a single path (ADR 0026, decision B safety
@@ -442,6 +453,49 @@ test("reconcileBrain — self-heal mode never seeds the health note (sourceDir =
 
   assert.equal(existsSync(join(brainDir, HEALTH_NOTE)), false, "self-heal must not seed (nothing to copy from)");
   assert.deepEqual(calls.reindex, [], "self-heal seeds nothing → no reindex");
+});
+
+// ── Test 11: finding #6 — a seeded-but-unindexed note can NEVER become a permanent
+//    false `broken`. The seed (2.quater) precedes runInstall/runReindex; if either throws
+//    AFTER the note was copied (a flaky npm install in the fresh update process, an ABI
+//    hiccup), the note is on disk but was never indexed. The reconciler must key its index
+//    pass off the note's ON-DISK PRESENCE so a RETRY re-pairs the (incremental) reindex and
+//    the canary becomes findable — not off a one-shot "did I just copy it" flag that the
+//    retry can never re-arm. RED before the fix: run 2 sees the note present, does NOT
+//    reindex, and the canary stays invisible forever.
+test("reconcileBrain — a note seeded by an update that then crashed pre-index is reindexed on the retry (#6)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  writeFile(sourceDir, HEALTH_NOTE, "---\ntitle: health\n---\nQuibblethorne — engine-owned.\n");
+  const target = manifest();
+  const local = manifest({ ragVersion: "1.0.0" }); // same schema → no schema-driven reindex
+
+  // Run 1: the note is seeded, then the fresh process's npm install throws → the whole
+  // reconcile rejects AFTER the note already landed on disk (the partial-failure window).
+  const s1 = seams();
+  s1.runInstall = async () => {
+    throw new Error("npm install failed in the fresh update process (flaky network)");
+  };
+  await assert.rejects(
+    reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s1 }),
+    /npm install failed/,
+    "run 1 must surface the install failure (fail-loud in the reconciler)",
+  );
+  assert.ok(existsSync(join(brainDir, HEALTH_NOTE)), "the note was seeded before the crash — it is on disk, unindexed");
+  assert.deepEqual(s1.calls.reindex, [], "run 1 crashed before the reindex → the note is NOT indexed yet");
+
+  // Run 2 (the user re-runs update-engine as instructed): the note is present-but-unindexed.
+  // The reconciler must STILL reindex it (incremental) so it becomes findable.
+  const s2 = seams();
+  const report = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s2 });
+
+  assert.deepEqual(s2.calls.reindex, [brainDir], "the retry must reindex the present-but-unindexed note");
+  assert.deepEqual(s2.calls.reindexMode, ["incremental"], "the retry's pairing is incremental (only the one note)");
+  assert.equal(report.reindexed, true, "the canary can never stay a permanent false `broken`");
 });
 
 // Tiny indirection so the helpers above read cleanly; resolves the lazily-loaded export.

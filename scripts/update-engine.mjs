@@ -43,13 +43,14 @@ export { defaultCountVaultNotes };
 // 0016). Pure so the wording is unit-tested; the CLI entry only wires the I/O.
 export function formatReport(report) {
   const { ref, engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills = [], mcpServersAdded = [] } = report;
-  // Honest reindex line: a schema move re-encodes EVERY note; a health-note seed (ADR
-  // 0026 decision B, upgraders) only adds + indexes the one engine-owned note — never
-  // claim "the index format changed" in that case.
+  // Honest reindex line: a schema move re-encodes EVERY note; the health-note pairing (ADR
+  // 0026 decision B, upgraders) only makes sure the one engine-owned note is present and
+  // indexed (incremental — your other notes are untouched) — never claim "the index format
+  // changed" in that case.
   const reindexLine = !reindexed
     ? `   • index format unchanged — no reindex needed`
     : reindexReason === "health-note-seed"
-      ? `   • added the engine health-check note and indexed it (incremental — your other notes were not re-encoded)`
+      ? `   • ensured the engine health-check note is present and indexed (incremental — your other notes were not re-encoded)`
       : `   • reindexed — the index format changed (your notes were re-encoded, nothing lost)`;
   const lines = [
     `✅ Engine updated to ${ref} (rag ${engineVersion?.rag}).`,

@@ -32,8 +32,14 @@ export async function defaultRunInstall({ ragDir, brainDir, platform }) {
   }
 }
 
-export async function defaultRunReindex({ brainDir, platform }) {
-  execFileSync(npmExe(platform), ["run", "reindex"], { cwd: join(brainDir, "rag"), stdio: "inherit" });
+// Reindex the brain's vault. `mode: "full"` (the default — a schema move) re-encodes
+// every note via `npm run reindex` (--force). `mode: "incremental"` (the health-note
+// pairing, finding #6) runs `npm run index` (--once): the index-manager skips every
+// already-indexed note via its content-hash cache, so it's a fast no-op unless a note
+// is genuinely missing from the index — exactly the seeded-but-unindexed canary.
+export async function defaultRunReindex({ brainDir, platform, mode = "full" }) {
+  const script = mode === "incremental" ? "index" : "reindex";
+  execFileSync(npmExe(platform), ["run", script], { cwd: join(brainDir, "rag"), stdio: "inherit" });
 }
 
 // How many notes the brain holds, for the user-facing recap (F2). The lightest
