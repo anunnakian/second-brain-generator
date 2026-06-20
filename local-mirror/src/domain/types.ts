@@ -85,3 +85,21 @@ export interface RemoveResult {
   removed: boolean;
   cleanedUp: boolean;
 }
+
+/** One named sub-check inside a module's standard health report (ADR 0030). */
+export interface HealthCheckEntry {
+  name: string;
+  status: 'ok' | 'broken' | 'unknown';
+  detail: string;
+}
+
+/**
+ * The standard per-module health contract (ADR 0030): the CHECK belongs to the
+ * module, the POLICY to the caller. `unknown` means "couldn't determine / nothing
+ * configured" and NEVER triggers an alarm — only `broken` does. For this OPTIONAL
+ * mirror, "no source declared yet" is `unknown`, never `broken`.
+ */
+export interface HealthReport {
+  status: 'ok' | 'broken' | 'unknown';
+  checks: HealthCheckEntry[];
+}
