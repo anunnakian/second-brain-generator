@@ -221,6 +221,73 @@ test("reconcileBrain — index schema moved → reindex runs and is reported", a
   assert.equal(report.reindexed, true);
 });
 
+// ── Test 4: THE EXTENSIBILITY INVARIANT (the project's promise — users may grow
+//    their harness). A user's CUSTOM (non-declared) skill, their own MCP server, and
+//    any directory/file they added are NEVER perturbed by a reconcile — even when the
+//    same reconcile installs a brand-new ENGINE skill + server. Run TWICE to also cover
+//    the auto-finalize child (same code path): both extensions survive byte-identical
+//    AND the engine still does its additive job. If a future change ever broke the
+//    write-allowlist for user territory, this fails fail-first.
+test("reconcileBrain — never disturbs a user's custom skill / MCP server / added files, even while installing engine ones", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  // The user has grown their harness: a private skill, a personal MCP server, and a
+  // top-level folder of their own — none of it declared by the engine manifest.
+  const myskill = "---\nname: my-private\n---\nMy own private skill — hands off.\n";
+  writeFile(brainDir, ".claude/skills/my-private/SKILL.md", myskill);
+  writeFile(brainDir, "my-research/2026-notes.md", "# my own folder\nNot an engine path.\n");
+  writeFile(
+    brainDir,
+    ".mcp.json",
+    JSON.stringify({ mcpServers: { "vault-rag": { type: "stdio" }, "my-tool": { type: "stdio", command: "node" } } }, null, 2),
+  );
+
+  // The fetched engine ships a NEW engine skill + declares both engine MCP servers.
+  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", "---\nname: local-mirror\n---\nMirror.\n");
+  writeFile(
+    sourceDir,
+    ".mcp.json.template",
+    JSON.stringify(
+      { mcpServers: { "vault-rag": { type: "stdio", cwd: "{{PROJECT_ROOT}}" }, "local-mirror": { type: "stdio", cwd: "{{PROJECT_ROOT}}" } } },
+      null,
+      2,
+    ),
+  );
+  const target = manifest({
+    extraMerge: [".claude/skills/local-mirror/**"],
+    engineMcpServers: ["vault-rag", "local-mirror"],
+  });
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const myskillHash = sha256(join(brainDir, ".claude/skills/my-private/SKILL.md"));
+  const myfolderHash = sha256(join(brainDir, "my-research/2026-notes.md"));
+
+  // Run the reconciler TWICE (parent + auto-finalize child are the same code path).
+  let installed;
+  for (const pass of [1, 2]) {
+    const { ...s } = seams();
+    const report = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s });
+    if (pass === 1) installed = report;
+  }
+
+  // The engine DID its additive job (pass 1 installed the new engine skill + server)…
+  assert.deepEqual(installed.installedSkills, ["local-mirror"], "the engine skill is still installed");
+  assert.deepEqual(installed.mcpServersAdded, ["local-mirror"], "the engine MCP server is still registered");
+  assert.ok(existsSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md")));
+
+  // …WITHOUT ever perturbing the user's territory, across both passes.
+  assert.equal(sha256(join(brainDir, ".claude/skills/my-private/SKILL.md")), myskillHash, "a custom skill must stay byte-identical");
+  assert.equal(sha256(join(brainDir, "my-research/2026-notes.md")), myfolderHash, "a user-added folder must be untouched");
+  const mcp = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8"));
+  assert.ok(mcp.mcpServers["my-tool"], "a user-added MCP server must be preserved");
+  assert.equal(mcp.mcpServers["my-tool"].command, "node", "the user's MCP server definition must be intact");
+});
+
 // Tiny indirection so the helpers above read cleanly; resolves the lazily-loaded export.
 async function reconcile(args) {
   const reconcileBrain = await loadReconciler();
