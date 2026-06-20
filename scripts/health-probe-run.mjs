@@ -1,21 +1,27 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-// health-probe-run.mjs — the DETACHED probe child (ADR 0028, F7). Spawned by
-// session-health.mjs at SessionStart, it runs the functional health probes with
-// the REAL seams (a live canary search, the vector store, the engine MCP handshake),
-// persists the fresh verdict to engine-health.json, and OS-notifies the moment a
-// capability becomes NEWLY broken. Runs in the background → session start never waits.
+// health-probe-run.mjs — the DETACHED probe child (ADR 0028 + 0030, F7/F7-bis).
+// Spawned by session-health.mjs at SessionStart, it asks every ACTIVATED engine
+// module its standard MCP `health_check` (the SAME runner the installer post-flight
+// and verify-rag use — "one definition of operational, three reactions"), persists
+// the fresh verdict to engine-health.json, and OS-notifies the moment a capability
+// becomes NEWLY broken. Runs in the background → session start never waits.
+//
+// This is a real `health_check` round-trip per module (revises the F7 baby-step-4b
+// presence-only choice: presence ≠ function — a registered-but-dead server, or a
+// RAG that answers nothing, is now caught, not just a vanished launch entry).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { runHealthProbes } from "./lib/health-probe.mjs";
+import { runActivatedHealthChecks } from "./lib/health-check-runner.mjs";
+import { buildHealthCheckCaller } from "./lib/health-check-wiring.mjs";
 
 export async function runProbeChild({ runProbes, readPriorVerdict, writeVerdict, notify }) {
-  const verdict = runProbes();
+  const verdict = await runProbes();
   // Notify ONLY on a NEWLY broken capability (broken now AND not broken before) so a
   // still-broken capability never re-nags every session; a fresh break is loud once.
   const wasBroken = new Set(
@@ -31,57 +37,22 @@ export async function runProbeChild({ runProbes, readPriorVerdict, writeVerdict,
 // mirroring engine-seams.mjs's npm handling (ADR 0015).
 const npxExe = (platform) => (platform === "win32" ? "npx.cmd" : "npx");
 
-// Total fail-open vitals: every field forces its seam to "unknown" (never a false
-// "broken") when the rag helper can't run at all (spawn/parse failure).
-const UNKNOWN_VITALS = {
-  embedderMode: "unknown",
-  keyConfigured: false,
-  embedderReady: false,
-  indexRows: -1,
-  canaryHits: 0,
-};
-
-// Run the rag-side headless vitals helper (it owns the embedder + vector store the
-// .mjs cannot import) and parse its single JSON line. Any failure → UNKNOWN_VITALS.
-function gatherRagVitals({ brainDir, platform }) {
-  try {
-    const out = spawnSync(npxExe(platform), ["tsx", "rag/src/health-vitals.ts"], {
-      cwd: brainDir,
-      encoding: "utf8",
-      windowsHide: true,
-    });
-    const parsed = JSON.parse((out.stdout ?? "").trim());
-    return parsed && !parsed.error ? { ...UNKNOWN_VITALS, ...parsed } : UNKNOWN_VITALS;
-  } catch {
-    return UNKNOWN_VITALS;
-  }
-}
-
-// Presence ping (Thomas's choice: presence, no live handshake) — an engine MCP server
-// is "reachable" when it's registered in .mcp.json AND the entry file its args point
-// at still exists on disk. A registered-but-vanished entry → not reachable → "broken".
-function makePresencePinger(brainDir) {
-  const mcpPath = join(brainDir, ".mcp.json");
-  let servers = {};
-  try {
-    servers = JSON.parse(readFileSync(mcpPath, "utf8")).mcpServers ?? {};
-  } catch {
-    servers = {};
-  }
-  return (id) => {
-    const def = servers[id];
-    if (!def) return false;
-    // The launch entry is the last arg that looks like a path into the brain
-    // (e.g. ["tsx", "rag/src/index.ts"]); if none, presence in .mcp.json is enough.
-    const entry = (def.args ?? []).find((a) => typeof a === "string" && a.includes("/"));
-    return entry ? existsSync(join(brainDir, entry)) : true;
-  };
+// Map the runner's per-module verdict onto the persisted shape formatHealthBanner +
+// session-health.mjs read ({ capability, status, detail }) — kept stable so those two
+// stay untouched. `detail` summarises the non-ok checks (or the bare status).
+function toBannerVerdict(modules) {
+  return modules.map((m) => {
+    const bad = (m.checks ?? []).filter((ch) => ch.status !== "ok");
+    const detail = bad.length ? bad.map((ch) => `${ch.name}: ${ch.detail}`).join("; ") : m.status;
+    return { capability: m.module, status: m.status, detail };
+  });
 }
 
 // ── main: wire the real I/O seams (deterministic glue, not unit-tested) ───────
-// Runs in the DETACHED background child (loading the embedder + searching takes
-// seconds) so session start never waits. Writes engine-health.json and OS-notifies
-// only on a newly-broken capability. Fail-open: ALWAYS exit 0.
+// Runs in the DETACHED background child (a real health_check round-trip per module
+// loads the embedder + searches → seconds) so session start never waits. Writes
+// engine-health.json and OS-notifies only on a newly-broken capability. Fail-open:
+// ALWAYS exit 0.
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const argv = process.argv.slice(2);
   const flag = (name) => {
@@ -93,26 +64,23 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const platform = flag("platform") ?? process.platform;
   const healthFile = join(brainDir, "engine-health.json");
   const manifest = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
+  const mcpServers = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8")).mcpServers ?? {};
 
-  const vitals = gatherRagVitals({ brainDir, platform });
-  const seams = {
-    // "embedder ran, found nothing" → broken; "embedder unavailable" → throw → unknown.
-    searchVault: () => {
-      if (!vitals.embedderReady) throw new Error("embedder unavailable");
-      return new Array(vitals.canaryHits);
-    },
-    indexRowCount: () => {
-      if (vitals.indexRows < 0) throw new Error("index unreadable");
-      return vitals.indexRows;
-    },
-    embedderMode: vitals.embedderMode,
-    weightsPresent: () => vitals.embedderReady,
-    keyConfigured: () => vitals.keyConfigured,
-    pingServer: makePresencePinger(brainDir),
-  };
+  const { isRegistered, callHealthCheck } = buildHealthCheckCaller({
+    mcpServers,
+    platform,
+    // Mute each module's startup auto-reindex toast (this probe fires its OWN notify,
+    // a separate child below, only on a newly-broken capability); generous headroom so
+    // a slow in-process ONNX reload is never mistaken for a break (false notify).
+    env: { SBG_NO_NOTIFY: "1" },
+    timeoutMs: 60000,
+  });
 
   runProbeChild({
-    runProbes: () => runHealthProbes({ manifest, seams }),
+    runProbes: async () => {
+      const { modules } = await runActivatedHealthChecks({ manifest, isRegistered, callHealthCheck });
+      return toBannerVerdict(modules);
+    },
     readPriorVerdict: () =>
       existsSync(healthFile) ? JSON.parse(readFileSync(healthFile, "utf8")).verdict ?? null : null,
     writeVerdict: (verdict) => writeFileSync(healthFile, JSON.stringify({ verdict }, null, 2) + "\n"),
