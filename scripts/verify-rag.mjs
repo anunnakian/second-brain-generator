@@ -82,7 +82,13 @@ try {
   process.exit(1);
 }
 
-const { isRegistered, callHealthCheck } = buildHealthCheckCaller({ mcpServers: mcp.mcpServers });
+const { isRegistered, callHealthCheck } = buildHealthCheckCaller({
+  mcpServers: mcp.mcpServers,
+  // Headroom for an in-process ONNX reload in the freshly-spawned server, and mute
+  // the startup auto-reindex toast (this is a deterministic verdict, not a session).
+  timeoutMs: 60000,
+  env: { SBG_NO_NOTIFY: "1" },
+});
 const verdict = await runActivatedHealthChecks({ manifest, isRegistered, callHealthCheck });
 const blockers = gateBlockers(verdict, manifest);
 

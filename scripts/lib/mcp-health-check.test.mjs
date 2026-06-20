@@ -35,6 +35,21 @@ test("a server that answers with a non-JSON verdict → unknown (cannot conclude
   assert.equal(result.status, "unknown");
 });
 
+test("timeoutMs and env are forwarded to the smoke seam (in-process headroom + no toast)", async () => {
+  let seen;
+  await callMcpHealthCheck({
+    server: SERVER,
+    timeoutMs: 60000,
+    env: { SBG_NO_NOTIFY: "1" },
+    smoke: async (opts) => {
+      seen = opts;
+      return { ok: true, tools: ["health_check"], probeText: JSON.stringify({ status: "ok", checks: [] }) };
+    },
+  });
+  assert.equal(seen.timeoutMs, 60000);
+  assert.deepEqual(seen.env, { SBG_NO_NOTIFY: "1" });
+});
+
 test("on Windows, an npx/npm server command gets the .cmd suffix (ADR 0015 parity)", async () => {
   let seenCommand;
   await callMcpHealthCheck({

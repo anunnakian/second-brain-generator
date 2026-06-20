@@ -34,3 +34,19 @@ test("callHealthCheck resolves the module's server config and forwards it (+plat
   assert.equal(seen.platform, "win32");
   assert.deepEqual(result, verdict);
 });
+
+test("timeoutMs and env are threaded through to the seam (loud gates mute the toast + add headroom)", async () => {
+  let seen;
+  const { callHealthCheck } = buildHealthCheckCaller({
+    mcpServers: MCP_SERVERS,
+    timeoutMs: 60000,
+    env: { SBG_NO_NOTIFY: "1" },
+    callHealthCheck: async (opts) => {
+      seen = opts;
+      return { status: "ok", checks: [] };
+    },
+  });
+  await callHealthCheck("vault-rag");
+  assert.equal(seen.timeoutMs, 60000);
+  assert.deepEqual(seen.env, { SBG_NO_NOTIFY: "1" });
+});

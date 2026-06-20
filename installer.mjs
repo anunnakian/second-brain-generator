@@ -25,6 +25,9 @@ import { tmpdir, homedir, totalmem } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
+import { runActivatedHealthChecks } from "./scripts/lib/health-check-runner.mjs";
+import { buildHealthCheckCaller } from "./scripts/lib/health-check-wiring.mjs";
+import { gateBlockers } from "./scripts/lib/health-check-gate.mjs";
 import { CONNECTORS } from "./scripts/lib/connectors-catalog.mjs";
 import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
 import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
@@ -46,7 +49,7 @@ import {
   buildLocalMirrorCmdLauncher,
   applyLocalMirrorLauncher,
 } from "./scripts/lib/rag-launcher.mjs";
-import { DEMO_BY_LOCALE, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
+import { DEMO_BY_LOCALE } from "./scripts/lib/demo.mjs";
 import {
   buildEmbedderOptions,
   recommendedEmbedderKey,
@@ -88,9 +91,10 @@ const warn = (m) => console.log(`${c.Y}!${c.X} ${m}`);
 const err = (m) => console.error(`${c.R}✗${c.X} ${m}`);
 const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 
-// DEMO (canary question) + DEMO_EXPECT: from scripts/lib/demo.mjs (source of truth
-// shared with verify-rag.mjs). Used by the post-flight probe and the final message
-// ("ask a question, e.g. …"). The question is resolved to the INSTALLED locale (see
+// DEMO (canary question): from scripts/lib/demo.mjs (source of truth shared with
+// verify-rag.mjs). Used in the final message ("ask a question, e.g. …"); the
+// post-flight gate now uses each module's MCP health_check (ADR 0030), not a
+// hard-coded demo probe. The question is resolved to the INSTALLED locale (see
 // `DEMO` below, once `locale` is known) so an fr brain probes with the fr question
 // against its fr vault — the launcher-root export would otherwise always be `en`.
 
@@ -701,14 +705,15 @@ if (embedderIsReady) {
 }
 
 // ── 8. Post-flight — verify the brain answers FROM the vault ─────────────────
-// "Loud failure" strategy: we don't try to prevent a broken install,
-// we CATCH it. Two levels:
+// "Loud failure" strategy: we don't try to prevent a broken install, we CATCH it.
+// Two levels:
 //   • structural — stdio handshake + `vault-rag` tools exposed (no key required).
-//   • functional (probe) — if the key is there, we actually call search_vault with
-//     the DEMO question and require a vault source to be cited ("vault/…"). That's
-//     what distinguishes a real brain from one that would answer off-target (failure B).
-// With key: a failing probe = LOUD FAIL + exit(1) BEFORE the success banner
-// (no false green). Without key: structural only + demo check honestly deferred.
+//   • functional (gate) — if the embedder is ready, ask every ACTIVATED module its
+//     standard MCP health_check (ADR 0030, F7-bis): vault-rag proves the brain
+//     answers FROM the vault (the dedicated Quibblethorne canary), which is what
+//     distinguishes a real brain from one that would answer off-target (failure B).
+// Embedder ready: a blocking health_check = LOUD FAIL + exit(1) BEFORE the success
+// banner (no false green). Not ready: structural only + demo check honestly deferred.
 step("9/9 · Post-flight — does the brain answer from the vault?");
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 try {
@@ -716,8 +721,37 @@ try {
   const srv = mcp.mcpServers?.["vault-rag"];
   if (!srv) {
     warn(".mcp.json without a \"vault-rag\" server — verification skipped.");
+  } else if (embedderIsReady) {
+    // Embedder ready → FUNCTIONAL gate: ask every ACTIVATED engine module its own
+    // standard health_check (ADR 0030, F7-bis) — the SAME runner verify-rag and the
+    // runtime probe use. vault-rag proves the brain answers FROM the vault (dedicated
+    // Quibblethorne canary + index intact + embedder ready); an unconfigured optional
+    // module (local-mirror) stays `unknown` → benign (gateBlockers never blocks on it).
+    const manifest = JSON.parse(readFileSync(join(TARGET, "engine-manifest.json"), "utf8"));
+    const { isRegistered, callHealthCheck } = buildHealthCheckCaller({
+      mcpServers: mcp.mcpServers,
+      // No OS toast during the post-flight (the MCP startup auto-reindex would pop one),
+      // and headroom for an in-process ONNX reload (30 s for network embedders).
+      env: { SBG_NO_NOTIFY: "1" },
+      timeoutMs: providerKey === "in-process" ? 60000 : 30000,
+    });
+    const verdict = await runActivatedHealthChecks({ manifest, isRegistered, callHealthCheck });
+    const blockers = gateBlockers(verdict, manifest);
+    if (blockers.length === 0) {
+      ok("post-flight OK — every activated module's health_check is green (RAG canary Quibblethorne found).");
+    } else {
+      err("POST-FLIGHT FAILURE — a required health_check is not green:");
+      for (const m of blockers) {
+        const bad = (m.checks ?? []).filter((ch) => ch.status !== "ok");
+        const why = bad.length ? bad.map((ch) => `${ch.name}: ${ch.detail}`).join("; ") : m.status;
+        err(`  • ${m.module} → ${m.status} — ${why}`);
+      }
+      err("Refusing to declare the install successful (a brain that answers off the vault is worse than a broken one).");
+      err("Troubleshooting: SETUP.md §8 (.env, index, MCP connection), then re-run the installer.");
+      process.exit(1); // LOUD FAIL — before any success banner
+    }
   } else {
-    // npx/npm carry .cmd on Windows (cf. NPM above).
+    // Embedder not ready → we can't prove retrieval; structural smoke only, KO = warn.
     const cmd =
       process.platform === "win32" && /^(npx|npm)$/.test(srv.command)
         ? `${srv.command}.cmd`
@@ -727,43 +761,21 @@ try {
       args: srv.args ?? [],
       cwd: srv.cwd ?? TARGET,
       expectTools: EXPECT_TOOLS,
-      // No OS toast during the post-flight (the MCP auto-reindex would otherwise
-      // pop one); the notify seam honours SBG_NO_NOTIFY.
       env: { SBG_NO_NOTIFY: "1" },
-      // In-process reloads an ONNX session in the smoke's MCP process → we
-      // allow more headroom (the fallback stays 30 s for network embedders).
-      timeoutMs: providerKey === "in-process" ? 60000 : 30000,
-      // Functional probe only if the embedder is ready (otherwise search_vault
-      // fails because the index doesn't exist yet — Gemini key absent, or endpoint
-      // not configured). In-process: ready with no key → the canary runs.
-      ...(embedderIsReady
-        ? { probe: { tool: "search_vault", args: { query: DEMO }, expectText: DEMO_EXPECT } }
-        : {}),
+      timeoutMs: 30000,
     });
-    if (embedderIsReady) {
-      if (res.ok) {
-        ok("post-flight OK — the RAG finds a fact unfindable outside the vault (canary Pélagie de Mollecuisse).");
-      } else {
-        err(`POST-FLIGHT FAILURE — the brain does NOT answer from the vault: ${res.error ?? "unknown reason"}`);
-        err("Refusing to declare the install successful (a brain that answers off the vault is worse than a broken one).");
-        err("Troubleshooting: SETUP.md §8 (.env, index, MCP connection), then re-run the installer.");
-        process.exit(1); // LOUD FAIL — before any success banner
-      }
+    if (res.ok) {
+      ok(`MCP connection OK — ${res.tools.length} tools exposed (${EXPECT_TOOLS.join(", ")}).`);
     } else {
-      // Embedder not ready → we can't prove retrieval; structural only, KO = warn.
-      if (res.ok) {
-        ok(`MCP connection OK — ${res.tools.length} tools exposed (${EXPECT_TOOLS.join(", ")}).`);
-      } else {
-        warn(`MCP connection KO: ${res.error ?? "unknown reason"}`);
-        warn("Claude Code might not see the vault. Troubleshooting: SETUP.md §8.");
-      }
-      if (embedderCfg.needsGeminiKey) {
-        warn("Demo check DEFERRED (no key) — next step: paste your Gemini key into .env,");
-      } else {
-        warn("Demo check DEFERRED (embedder still to be configured) — complete .env,");
-      }
-      warn("then validate the RAG with:  node scripts/verify-rag.mjs  (loud verdict, sourced from the vault).");
+      warn(`MCP connection KO: ${res.error ?? "unknown reason"}`);
+      warn("Claude Code might not see the vault. Troubleshooting: SETUP.md §8.");
     }
+    if (embedderCfg.needsGeminiKey) {
+      warn("Demo check DEFERRED (no key) — next step: paste your Gemini key into .env,");
+    } else {
+      warn("Demo check DEFERRED (embedder still to be configured) — complete .env,");
+    }
+    warn("then validate the RAG with:  node scripts/verify-rag.mjs  (loud verdict, sourced from the vault).");
   }
 } catch (e) {
   warn(`MCP verification impossible (${e.message}) — see SETUP.md §8.`);

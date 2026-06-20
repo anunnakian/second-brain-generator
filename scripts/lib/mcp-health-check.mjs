@@ -8,7 +8,7 @@
 
 import { smokeTestMcp } from "./mcp-smoke.mjs";
 
-export async function callMcpHealthCheck({ server, platform = process.platform, smoke = smokeTestMcp }) {
+export async function callMcpHealthCheck({ server, platform = process.platform, timeoutMs, env, smoke = smokeTestMcp }) {
   // npx/npm are shell-wrapped .cmd on Windows (cf. installer/verify-rag, ADR 0015).
   const command =
     platform === "win32" && /^(npx|npm)$/.test(server.command) ? `${server.command}.cmd` : server.command;
@@ -16,6 +16,12 @@ export async function callMcpHealthCheck({ server, platform = process.platform, 
     command,
     args: server.args ?? [],
     cwd: server.cwd,
+    // Forwarded by the loud-gate callers: more headroom for an in-process ONNX reload
+    // (installer/verify-rag use 60 s) and SBG_NO_NOTIFY to mute the startup auto-reindex
+    // toast. Left undefined → smokeTestMcp's defaults (15 s, process.env) — what the
+    // detached runtime probe wants (it DOES notify).
+    timeoutMs,
+    env,
     probe: { tool: "health_check", args: {} },
   });
   // A registered server that won't even complete the handshake is wired-but-dead:

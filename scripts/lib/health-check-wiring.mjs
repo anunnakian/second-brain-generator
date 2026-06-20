@@ -9,10 +9,13 @@
 
 import { callMcpHealthCheck } from "./mcp-health-check.mjs";
 
-export function buildHealthCheckCaller({ mcpServers, platform, callHealthCheck = callMcpHealthCheck }) {
+export function buildHealthCheckCaller({ mcpServers, platform, timeoutMs, env, callHealthCheck = callMcpHealthCheck }) {
   const servers = mcpServers ?? {};
   return {
     isRegistered: (id) => Object.prototype.hasOwnProperty.call(servers, id),
-    callHealthCheck: (id) => callHealthCheck({ server: servers[id], platform }),
+    // timeoutMs/env are threaded to the seam: the loud gates (verify-rag, installer
+    // post-flight) pass 60 s headroom + SBG_NO_NOTIFY; the detached runtime probe
+    // leaves them undefined (it wants the default timeout AND the OS notification).
+    callHealthCheck: (id) => callHealthCheck({ server: servers[id], platform, timeoutMs, env }),
   };
 }
