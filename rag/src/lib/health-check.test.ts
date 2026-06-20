@@ -8,6 +8,7 @@ const HEALTHY: HealthVitals = {
   embedderReady: true,
   indexRows: 42,
   canaryHits: 3,
+  canaryNotePresent: true,
 };
 
 function checkNamed(result: { checks: { name: string; status: string }[] }, name: string) {
@@ -34,6 +35,34 @@ test("embedder could not run → canary unknown (not broken), embedder broken", 
   // We cannot conclude the RAG is broken when the search itself never ran.
   assert.equal(checkNamed(result, "canary").status, "unknown");
   assert.equal(checkNamed(result, "embedder").status, "broken");
+});
+
+test("dedicated health-check note absent → canary unknown (not broken), even with embedder ready", () => {
+  // A purged/missing engine-health note must NOT be read as a broken RAG: we simply
+  // cannot run the canary, so the verdict is "unknown" — never a scary false alarm.
+  const result = buildHealthCheck({ ...HEALTHY, canaryNotePresent: false, canaryHits: 0 });
+  assert.equal(checkNamed(result, "canary").status, "unknown");
+  assert.equal(result.status, "unknown");
+});
+
+test("gatherVitals: canaryNoteExists seam wired → canaryNotePresent captured", async () => {
+  const present = await gatherVitals({
+    embedderMode: "in-process",
+    keyConfigured: true,
+    readIndexRows: () => 12,
+    searchCanary: async () => 4,
+    canaryNoteExists: () => true,
+  });
+  assert.equal(present.canaryNotePresent, true);
+
+  const absent = await gatherVitals({
+    embedderMode: "in-process",
+    keyConfigured: true,
+    readIndexRows: () => 12,
+    searchCanary: async () => 0,
+    canaryNoteExists: () => false,
+  });
+  assert.equal(absent.canaryNotePresent, false);
 });
 
 test("index unreadable (rows < 0) → index unknown, not broken", () => {
@@ -63,6 +92,7 @@ test("gatherVitals: canary search resolves → embedderReady true, hits captured
     keyConfigured: true,
     readIndexRows: () => 12,
     searchCanary: async () => 4,
+    canaryNoteExists: () => true,
   });
   assert.equal(vitals.embedderReady, true);
   assert.equal(vitals.canaryHits, 4);
@@ -77,6 +107,7 @@ test("gatherVitals: a throwing index read → indexRows -1 (unreadable sentinel)
       throw new Error("db locked");
     },
     searchCanary: async () => 1,
+    canaryNoteExists: () => true,
   });
   assert.equal(vitals.indexRows, -1);
 });
@@ -87,6 +118,7 @@ test("runHealthCheck: composes gather + build → healthy seams give ok", async 
     keyConfigured: true,
     readIndexRows: () => 7,
     searchCanary: async () => 2,
+    canaryNoteExists: () => true,
   });
   assert.equal(result.status, "ok");
 });
@@ -99,6 +131,7 @@ test("gatherVitals: a throwing canary search → embedderReady false, 0 hits", a
     searchCanary: async () => {
       throw new Error("embedder boom");
     },
+    canaryNoteExists: () => true,
   });
   assert.equal(vitals.embedderReady, false);
   assert.equal(vitals.canaryHits, 0);

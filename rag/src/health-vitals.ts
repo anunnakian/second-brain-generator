@@ -11,10 +11,12 @@
 // nothing" (a true break) from "embedder could not run" (e.g. missing API key →
 // the .mjs maps that to "unknown", never a scary false "broken").
 // ═══════════════════════════════════════════════════════════════════════════
+import { existsSync } from "fs";
+import { resolve } from "path";
 import { createEmbedder } from "./lib/embedder.js";
 import { getStats, searchSimilar } from "./lib/vector-store.js";
-
-const CANARY_TOKEN = "Mollecuisse";
+import { VAULT_DIR } from "./lib/config.js";
+import { CANARY_TOKEN, HEALTH_CHECK_NOTE_RELPATH } from "./lib/health-check.js";
 
 async function gatherVitals() {
   const embedder = createEmbedder();
@@ -48,7 +50,11 @@ async function gatherVitals() {
     embedderReady = false;
   }
 
-  return { embedderMode, keyConfigured, embedderReady, indexRows, canaryHits };
+  // The dedicated engine-owned health-check note survives the demo purge; if it's
+  // gone, the canary is "unknown", never "broken" (ADR 0030 §2).
+  const canaryNotePresent = existsSync(resolve(VAULT_DIR, HEALTH_CHECK_NOTE_RELPATH));
+
+  return { embedderMode, keyConfigured, embedderReady, indexRows, canaryHits, canaryNotePresent };
 }
 
 gatherVitals()

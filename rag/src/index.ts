@@ -39,11 +39,11 @@ import { ReindexScheduler } from "./lib/reindex-scheduler.js";
 import { startVaultWatcher } from "./lib/vault-watcher.js";
 import { FileProgressStorage } from "./lib/reindex-reporter.js";
 import { formatLastRunMarkdown } from "./lib/progress-report.js";
-import { writeFileSync, appendFileSync } from "fs";
+import { writeFileSync, appendFileSync, existsSync } from "fs";
 import { spawn } from "child_process";
 import { capExceededSearchMessage } from "./lib/search-degradation.js";
 import { formatSearchCitations } from "./lib/citation-renderer.js";
-import { runHealthCheck } from "./lib/health-check.js";
+import { runHealthCheck, HEALTH_CHECK_NOTE_RELPATH } from "./lib/health-check.js";
 import { readFile } from "fs/promises";
 import { resolve, relative } from "path";
 
@@ -268,6 +268,9 @@ server.tool(
         const queryEmbedding = await embedder.embedQuery(token);
         return searchSimilar(queryEmbedding, 8).length;
       },
+      // The dedicated health-check note must still be on disk; if a user deleted it,
+      // the canary is "unknown" (we cannot run it), never a false "broken".
+      canaryNoteExists: () => existsSync(resolve(VAULT_DIR, HEALTH_CHECK_NOTE_RELPATH)),
     });
 
     return { content: [{ type: "text", text: JSON.stringify(result) }] };

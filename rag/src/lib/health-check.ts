@@ -28,18 +28,30 @@ export interface HealthVitals {
   embedderReady: boolean;
   indexRows: number;
   canaryHits: number;
+  // Whether the dedicated engine-owned health-check note still exists on disk. If a
+  // user purged it (it shouldn't, but it's just a file), we cannot run the canary →
+  // "unknown", never "broken" (ADR 0030 §2).
+  canaryNotePresent: boolean;
 }
 
-// The dedicated canary token. Baby-step 3 (ADR 0030 §2) moves this onto a dedicated
-// engine-owned health-check note so it survives a demo-note purge; until then the
-// probe still targets the seeded demo content.
-export const CANARY_TOKEN = "Mollecuisse";
+// The dedicated canary token — a deliberately UNIQUE, INVENTED word that appears
+// nowhere else on Earth (so a search hit proves real retrieval, not a coincidence).
+// It lives on the engine-owned health-check note (HEALTH_CHECK_NOTE_RELPATH), which
+// is EXCLUDED from the demo-note purge — so the canary survives `clear-example-notes`
+// (ADR 0030 §2). Distinct from the demo-question canary ("Mollecuisse" in demo.mjs),
+// which targets a deletable example note.
+export const CANARY_TOKEN = "Quibblethorne";
+
+// The dedicated health-check note, relative to the vault root. Single source of truth
+// for both the seeded note and the probe's existence check.
+export const HEALTH_CHECK_NOTE_RELPATH = "engine-health/health-check.md";
 
 export interface VitalsSeams {
   embedderMode: string;
   keyConfigured: boolean;
   readIndexRows: () => number;
   searchCanary: (token: string) => Promise<number>;
+  canaryNoteExists: () => boolean;
 }
 
 // Collects the engine's raw functional vitals through injected seams (the real I/O
@@ -64,12 +76,20 @@ export async function gatherVitals(seams: VitalsSeams): Promise<HealthVitals> {
     canaryHits = 0;
   }
 
+  let canaryNotePresent = false;
+  try {
+    canaryNotePresent = seams.canaryNoteExists();
+  } catch {
+    canaryNotePresent = false;
+  }
+
   return {
     embedderMode: seams.embedderMode,
     keyConfigured: seams.keyConfigured,
     embedderReady,
     indexRows,
     canaryHits,
+    canaryNotePresent,
   };
 }
 
@@ -89,14 +109,23 @@ export function buildHealthCheck(v: HealthVitals): HealthCheckResult {
   const checks: HealthCheckEntry[] = [
     {
       name: "canary",
-      // The search only proves anything if the embedder actually ran. If it could
-      // not, we cannot conclude the RAG is broken → "unknown", never a false alarm.
-      status: !v.embedderReady ? "unknown" : v.canaryHits > 0 ? "ok" : "broken",
-      detail: !v.embedderReady
-        ? "embedder could not run the canary search"
-        : v.canaryHits > 0
-          ? `canary found (${v.canaryHits})`
-          : "canary not found in the vault",
+      // The search only proves anything if BOTH the dedicated note still exists AND
+      // the embedder actually ran. A missing note or an embedder that couldn't run
+      // → "unknown" (we cannot conclude); never a scary false "broken".
+      status: !v.canaryNotePresent
+        ? "unknown"
+        : !v.embedderReady
+          ? "unknown"
+          : v.canaryHits > 0
+            ? "ok"
+            : "broken",
+      detail: !v.canaryNotePresent
+        ? `health-check note missing (${HEALTH_CHECK_NOTE_RELPATH})`
+        : !v.embedderReady
+          ? "embedder could not run the canary search"
+          : v.canaryHits > 0
+            ? `canary found (${v.canaryHits})`
+            : "canary not found in the vault",
     },
     {
       name: "index",
