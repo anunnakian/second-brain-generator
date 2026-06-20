@@ -4,8 +4,11 @@
 // into .env (the key is never there at install time).
 //
 // (Re)indexes the sample vault, then proves in a DETERMINISTIC and LOUD way that
-// the demo question answers FROM the vault — by requiring the unique canary token
-// "Mollecuisse" (not found outside the vault). This is the post-key failure-catch B:
+// the brain answers FROM the vault — a HEADLESS, read-only full health-check (real
+// embed + search of the dedicated "Quibblethorne" canary, ADR 0030 §3/§4/§6, F7-ter).
+// It NEVER boots a 2nd vault-rag: Thomas runs this while the live server is up, so we
+// read the on-disk data headless instead of spawning a duplicate process. This is the
+// post-key failure-catch B:
 //   exit 0 = the brain really works; exit 1 = failure, to relay as-is.
 // ─────────────────────────────────────────────────────────────────────────────
 import { existsSync, readFileSync } from "node:fs";
@@ -15,7 +18,7 @@ import { spawnSync } from "node:child_process";
 import { hasGeminiKey, geminiKeyRequired } from "./lib/gemini-key.mjs";
 import { DEMO_QUESTION } from "./lib/demo.mjs";
 import { runActivatedHealthChecks } from "./lib/health-check-runner.mjs";
-import { buildHealthCheckCaller } from "./lib/health-check-wiring.mjs";
+import { buildHeadlessHealthCheckCaller } from "./lib/headless-health-check.mjs";
 import { gateBlockers } from "./lib/health-check-gate.mjs";
 
 const tty = process.stdout.isTTY;
@@ -59,14 +62,15 @@ if (idx.status !== 0) {
 }
 ok("vault indexed");
 
-// 3. Health-check probe — LOUD. Every ACTIVATED engine module is asked its own
-//    standard `health_check` (ADR 0030, F7-bis); the SAME runner the installer
-//    post-flight and the runtime probe use. For vault-rag that proves the brain
-//    answers FROM the vault (dedicated "Quibblethorne" canary found + index intact
-//    + embedder ready). The gate blocks on any `broken` module and on a MANDATORY
-//    module that's `unknown` — but an unconfigured OPTIONAL module (e.g. a
-//    local-mirror nobody set up) stays `unknown` and is benign (no false failure).
-step("Verification: is the brain operational? (per-module health_check)");
+// 3. Health-check probe — LOUD, HEADLESS, read-only (ADR 0030 §4/§6, F7-ter). The
+//    SAME health-check definition (rag/src/health-check-cli.ts) the installer post-flight
+//    runs, but read HEADLESS at FULL depth — NEVER booting a 2nd vault-rag next to the
+//    live one. For vault-rag that proves the brain answers FROM the vault (dedicated
+//    "Quibblethorne" canary found via a real embed+search + index intact + embedder
+//    ready). A module with no headless reader (local-mirror) stays `unknown` and is not
+//    booted. The gate blocks on any `broken` module and on a MANDATORY module that's
+//    `unknown` — but an unconfigured OPTIONAL module stays `unknown` and is benign.
+step("Verification: is the brain operational? (headless full health-check)");
 let mcp;
 try {
   mcp = JSON.parse(readFileSync(join(ROOT, ".mcp.json"), "utf8"));
@@ -82,12 +86,13 @@ try {
   process.exit(1);
 }
 
-const { isRegistered, callHealthCheck } = buildHealthCheckCaller({
+const { isRegistered, callHealthCheck } = buildHeadlessHealthCheckCaller({
   mcpServers: mcp.mcpServers,
-  // Headroom for an in-process ONNX reload in the freshly-spawned server, and mute
-  // the startup auto-reindex toast (this is a deterministic verdict, not a session).
-  timeoutMs: 60000,
-  env: { SBG_NO_NOTIFY: "1" },
+  brainDir: ROOT,
+  platform: process.platform,
+  // FULL depth: a real embed + search of the canary (deliberate, on-demand — the extra
+  // ONNX/API cost is fine here, unlike the per-session light probe). Headless: no boot.
+  depth: "full",
 });
 const verdict = await runActivatedHealthChecks({ manifest, isRegistered, callHealthCheck });
 const blockers = gateBlockers(verdict, manifest);
