@@ -19,14 +19,14 @@ export interface NotionConnectorConfig {
  * (`local-mirror.config.json`), written by `setup_source` (PRD §2, §20.2).
  */
 export interface LocalMirrorConfig {
-  /** Short technical id = name of the subfolder under `mirrors/` (e.g. `pa-sc`). */
+  /** Short technical id = name of the subfolder under `mirrors/` (e.g. `team-a`). */
   name: string;
   /** Human label. */
   title: string;
   /** Natural-language topics covered — the harness routing key (PRD §2). */
   description: string;
   connector: NotionConnectorConfig;
-  /** Dedicated vault subfolder (e.g. `mirrors/pa-sc`). */
+  /** Dedicated vault subfolder (e.g. `mirrors/team-a`). */
   target_dir: string;
 }
 

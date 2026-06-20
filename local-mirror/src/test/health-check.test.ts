@@ -24,7 +24,7 @@ test('nothing configured → status unknown, never broken', async () => {
 test('a declared, synced source with readable state → status ok', async () => {
   const harness = aLocalMirror().withNotionPages(aNotionPage({ id: 'p1' }));
   const lm = harness.build();
-  await lm.sync('pa-sc');
+  await lm.sync('team-a');
 
   const report = await lm.healthCheck();
 

@@ -141,13 +141,13 @@ export interface StubPage extends SourceItem {
 
 /** A Notion page with sensible defaults (override per test). */
 export function aNotionPage(overrides: Partial<StubPage> = {}): StubPage {
-  const id = overrides.id ?? '304a2ca-page-1';
+  const id = overrides.id ?? '0123abc-page-1';
   return {
     id,
-    title: overrides.title ?? 'Chaintrust error catalog',
-    url: overrides.url ?? `https://www.notion.so/inqom/${id}`,
+    title: overrides.title ?? 'Sample error catalog',
+    url: overrides.url ?? `https://www.notion.so/acme/${id}`,
     lastEditedTime: overrides.lastEditedTime ?? '2026-06-12T14:21:00.000Z',
-    content: overrides.content ?? '# Chaintrust error catalog\n\nWhen the API returns 402…\n',
+    content: overrides.content ?? '# Sample error catalog\n\nWhen the API returns 402…\n',
     fetchError: overrides.fetchError,
   };
 }
@@ -161,16 +161,16 @@ export function anUnreadableNotionPage(overrides: Partial<StubPage> = {}): StubP
 export function aNotionLocalMirror(
   overrides: Partial<LocalMirrorConfig> = {},
 ): LocalMirrorConfig {
-  const name = overrides.name ?? 'pa-sc';
+  const name = overrides.name ?? 'team-a';
   return {
     name,
-    title: overrides.title ?? 'PA/SC — supplier accounting',
-    description: overrides.description ?? 'Questions about supplier accounting and e-invoicing.',
+    title: overrides.title ?? 'Team A — invoices',
+    description: overrides.description ?? 'Questions about team workflows.',
     connector: overrides.connector ?? {
       type: 'notion',
       config: {
-        root_page_url: 'https://www.notion.so/inqom/HUB-304a2ca0b1c24d6e8f0a1b2c3d4e5f60',
-        token_env: 'GOLDEN_PA_SC_NOTION_TOKEN',
+        root_page_url: 'https://www.notion.so/acme/Page-0123abc0b1c24d6e8f0a1b2c3d4e5f60',
+        token_env: 'GOLDEN_TEAM_A_NOTION_TOKEN',
       },
     },
     target_dir: overrides.target_dir ?? `mirrors/${name}`,

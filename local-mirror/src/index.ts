@@ -25,7 +25,7 @@ export function createMcpServer(api: ILocalMirror): McpServer {
     'setup_source',
     'Interactive onboarding of a local mirror: tests the connection/scope, does the first sync, explains each step. The token travels via an env var, never through this tool.',
     {
-      name: z.string().describe('Short technical id = vault subfolder name (e.g. pa-sc)'),
+      name: z.string().describe('Short technical id = vault subfolder name (e.g. team-a)'),
       title: z.string().describe('Human label'),
       description: z.string().describe('Natural-language topics covered (routing key)'),
       root_page_url: z.string().describe('Root Notion page URL of the zone'),
