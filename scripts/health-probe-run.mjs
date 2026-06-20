@@ -67,36 +67,45 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const brainDir = resolve(flag("brainDir") ?? join(__dirname, ".."));
   const platform = flag("platform") ?? process.platform;
-  const healthFile = join(brainDir, "engine-health.json");
-  const manifest = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
-  const mcpServers = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8")).mcpServers ?? {};
 
-  const { isRegistered, callHealthCheck } = buildHeadlessHealthCheckCaller({
-    mcpServers,
-    brainDir,
-    platform,
-    // Light depth: file/DB reads only, zero ONNX (ADR 0030 §6) — the per-session probe
-    // must never slow startup. The deeper full read (real embed+search) is verify-rag's job.
-    depth: "light",
-  });
+  // FAIL-OPEN (#5): a missing/corrupt/partially-written (mid-update) engine-manifest.json
+  // or .mcp.json must NEVER make this detached child exit non-zero. The JSON.parse reads
+  // used to run synchronously OUTSIDE the promise chain → an uncaught throw escaped the
+  // .catch and left the verdict cache silently un-refreshed. Wrap the WHOLE body so any
+  // throw — sync read or async probe — routes to exit 0 (ALWAYS, the header's contract).
+  try {
+    const healthFile = join(brainDir, "engine-health.json");
+    const manifest = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
+    const mcpServers = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8")).mcpServers ?? {};
 
-  runProbeChild({
-    runProbes: async () => {
-      const { modules } = await runActivatedHealthChecks({ manifest, isRegistered, callHealthCheck });
-      return toBannerVerdict(modules);
-    },
-    readPriorVerdict: () =>
-      existsSync(healthFile) ? JSON.parse(readFileSync(healthFile, "utf8")).verdict ?? null : null,
-    writeVerdict: (verdict) => writeFileSync(healthFile, JSON.stringify({ verdict }, null, 2) + "\n"),
-    notify: (probe) => {
-      const child = spawn(
-        npxExe(platform),
-        ["tsx", "rag/src/notify-cli.ts", "Second brain — health check", `${probe.capability} is broken: ${probe.detail}`],
-        { cwd: brainDir, detached: true, stdio: "ignore", windowsHide: true },
-      );
-      child.unref();
-    },
-  })
-    .then(() => process.exit(0))
-    .catch(() => process.exit(0));
+    const { isRegistered, callHealthCheck } = buildHeadlessHealthCheckCaller({
+      mcpServers,
+      brainDir,
+      platform,
+      // Light depth: file/DB reads only, zero ONNX (ADR 0030 §6) — the per-session probe
+      // must never slow startup. The deeper full read (real embed+search) is verify-rag's job.
+      depth: "light",
+    });
+
+    await runProbeChild({
+      runProbes: async () => {
+        const { modules } = await runActivatedHealthChecks({ manifest, isRegistered, callHealthCheck });
+        return toBannerVerdict(modules);
+      },
+      readPriorVerdict: () =>
+        existsSync(healthFile) ? JSON.parse(readFileSync(healthFile, "utf8")).verdict ?? null : null,
+      writeVerdict: (verdict) => writeFileSync(healthFile, JSON.stringify({ verdict }, null, 2) + "\n"),
+      notify: (probe) => {
+        const child = spawn(
+          npxExe(platform),
+          ["tsx", "rag/src/notify-cli.ts", "Second brain — health check", `${probe.capability} is broken: ${probe.detail}`],
+          { cwd: brainDir, detached: true, stdio: "ignore", windowsHide: true },
+        );
+        child.unref();
+      },
+    });
+  } catch {
+    // fail-open: swallow everything (a broken probe must never block / fail a session).
+  }
+  process.exit(0); // ALWAYS exit 0
 }

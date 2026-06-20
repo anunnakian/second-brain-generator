@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runProbeChild, toBannerVerdict } from "./health-probe-run.mjs";
+
+const PROBE = join(dirname(fileURLToPath(import.meta.url)), "health-probe-run.mjs");
 
 // runProbeChild (ADR 0028, F7, baby-step 4) is the DETACHED probe child's pure
 // orchestration: it runs the health probes, persists the fresh verdict, and fires
@@ -65,6 +72,35 @@ test("toBannerVerdict — preserves the per-module structured checks for the ban
   assert.equal(verdict[0].status, "broken");
   assert.ok(Array.isArray(verdict[0].checks), "checks array carried through");
   assert.deepEqual(verdict[0].checks[0], { name: "index", status: "broken", detail: "index empty" });
+});
+
+// #5 (code-review): the detached child's MAIN GLUE must honour its fail-open contract
+// ("ALWAYS exit 0"). A corrupt/partially-written engine-manifest.json (mid-update) made
+// the top-level JSON.parse throw OUTSIDE the promise chain → the child exited non-zero
+// and the verdict cache was silently never refreshed. Spawn the REAL child against a
+// corrupt brain and assert it still exits 0 (no verdict written, no throw).
+test("main glue — a corrupt engine-manifest.json yields exit 0 + no verdict write (fail-open #5)", () => {
+  const brainDir = mkdtempSync(join(tmpdir(), "sbg-probe-corrupt-"));
+  try {
+    writeFileSync(join(brainDir, "engine-manifest.json"), "{ not valid json");
+    writeFileSync(join(brainDir, ".mcp.json"), JSON.stringify({ mcpServers: {} }));
+
+    let exitCode = -1;
+    try {
+      execFileSync(process.execPath, [PROBE, "--brainDir", brainDir], { stdio: "ignore" });
+      exitCode = 0;
+    } catch (e) {
+      exitCode = e.status ?? 1;
+    }
+    assert.equal(exitCode, 0, "a corrupt manifest must never make the detached probe exit non-zero");
+    assert.equal(
+      existsSync(join(brainDir, "engine-health.json")),
+      false,
+      "a probe that never ran must not write a (misleading) verdict",
+    );
+  } finally {
+    rmSync(brainDir, { recursive: true, force: true });
+  }
 });
 
 test("runProbeChild — a still-broken capability does NOT re-nag (already broken last time)", async () => {
