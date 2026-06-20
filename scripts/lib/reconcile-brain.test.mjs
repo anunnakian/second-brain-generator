@@ -321,6 +321,27 @@ test("runReconcileCli — parses flags, loads the brain manifest, and converges 
   assert.deepEqual(calls.reindex, [], "the auto-finalize child must not reindex (it converges, it does not migrate)");
 });
 
+// ── Test 6: SessionStart self-heal mode — sourceDir === brainDir (ADR 0026, Layer B).
+//    The brain converges from its OWN on-disk code (no fetch, no network). The reconciler
+//    must NEVER copy an engine file onto itself: on Linux `copyFileSync(f, f)` truncates
+//    the destination before copying (a real cross-platform footgun, ADR 0015) → it would
+//    zero the engine. The self-copy guard makes this a TRUE no-op: nothing is reported as
+//    copied and the present engine file stays byte-identical. (Deterministic, OS-independent:
+//    asserts the guard via `report.copied`, not via the platform's self-copy behaviour.)
+test("reconcileBrain — self-heal mode (sourceDir === brainDir) copies nothing onto itself, engine files preserved", async (t) => {
+  const brainDir = buildBrain();
+  t.after(() => rmSync(brainDir, { recursive: true, force: true }));
+  const engineHash = sha256(join(brainDir, "rag/src/index.ts"));
+  const target = manifest({ ragVersion: "1.0.0" });
+  const local = manifest({ ragVersion: "1.0.0" }); // same schema → no reindex
+
+  const { ...s } = seams();
+  const report = await reconcile({ brainDir, platform: "posix", sourceDir: brainDir, target, local, ...s });
+
+  assert.deepEqual(report.copied, [], "no engine file may be copied onto itself (Linux would truncate it)");
+  assert.equal(sha256(join(brainDir, "rag/src/index.ts")), engineHash, "the present engine file must stay byte-identical");
+});
+
 // Tiny indirection so the helpers above read cleanly; resolves the lazily-loaded export.
 async function reconcile(args) {
   const reconcileBrain = await loadReconciler();

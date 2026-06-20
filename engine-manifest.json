@@ -15,6 +15,7 @@
       "scripts/update-engine.mjs",
       "scripts/import-brain.mjs",
       "scripts/open-env.mjs",
+      "scripts/session-self-heal.mjs",
       "scripts/lib/**"
     ],
     "regenerate": [

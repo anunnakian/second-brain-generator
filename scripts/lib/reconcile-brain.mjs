@@ -33,10 +33,17 @@ import {
   defaultRegenerateLaunchers,
 } from "./engine-seams.mjs";
 
+// Copies `rel` from srcDir into destDir. Returns true if it copied, false if it
+// SKIPPED a self-copy: in SessionStart self-heal mode srcDir === brainDir, so a file
+// would be copied onto itself — on Linux `copyFileSync(f, f)` truncates the dest before
+// copying (it would zero the engine file; ADR 0015 cross-platform safety). Skip it.
 function copyInto(srcDir, destDir, rel) {
+  const src = join(srcDir, rel);
   const dest = join(destDir, rel);
+  if (resolve(src) === resolve(dest)) return false;
   mkdirSync(dirname(dest), { recursive: true });
-  copyFileSync(join(srcDir, rel), dest);
+  copyFileSync(src, dest);
+  return true;
 }
 
 export async function reconcileBrain({
@@ -61,8 +68,10 @@ export async function reconcileBrain({
   //    locale-owned files (scripts/lib/demo-locale.mjs → no fr→en regression).
   const sourceFiles = listFilesRelPosix(sourceDir);
   const copyGlobs = [...plan.overwrite, ...plan.replaceScripts];
-  const copied = selectEngineFilesToCopy({ sourceFiles, copyGlobs });
-  for (const rel of copied) copyInto(sourceDir, brainDir, rel);
+  const copied = [];
+  for (const rel of selectEngineFilesToCopy({ sourceFiles, copyGlobs })) {
+    if (copyInto(sourceDir, brainDir, rel)) copied.push(rel);
+  }
 
   // 2.bis Install engine-declared skills the brain is MISSING (ADR 0025): additive,
   //    install-if-absent at the SKILL-DIR level. A skill dir that already exists
