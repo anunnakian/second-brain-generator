@@ -342,6 +342,108 @@ test("reconcileBrain — self-heal mode (sourceDir === brainDir) copies nothing 
   assert.equal(sha256(join(brainDir, "rag/src/index.ts")), engineHash, "the present engine file must stay byte-identical");
 });
 
+// The single, nominative vault carve-out (ADR 0026 amended, decision B): the ONLY
+// vault path the reconciler may ever write — and only write-if-absent.
+const HEALTH_NOTE = "vault/engine-health/health-check.md";
+
+// ── Test 7: UPGRADERS get the canary (ADR 0026, decision B). At a REAL update
+//    (sourceDir !== brainDir), if the engine-owned health-check note is absent from the
+//    brain, the reconciler SEEDS it from the source (write-if-absent) and runs a paired
+//    incremental reindex — even though the index schema did NOT move — so the freshly
+//    seeded note is findable (no false `broken`). Without this, an upgrader's vault never
+//    receives the dedicated note (vault is sacred + v3.3.0 forces no reindex).
+test("reconcileBrain — seeds the engine-health note on an upgrader (absent) and reindexes it", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  const noteBody = "---\ntitle: Engine health check\n---\nQuibblethorne canary — engine-owned.\n";
+  writeFile(sourceDir, HEALTH_NOTE, noteBody);
+  // Same index schema → needsReindex is false; any reindex here is the seed's pairing.
+  const target = manifest();
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const { calls, ...s } = seams();
+  const report = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s });
+
+  // The note now lives in the brain, byte-identical to the source.
+  assert.equal(readFileSync(join(brainDir, HEALTH_NOTE), "utf8"), noteBody, "the health-check note must be seeded");
+  // The paired incremental reindex ran so the note is findable — no false `broken`.
+  assert.deepEqual(calls.reindex, [brainDir], "seeding the note must trigger a paired reindex");
+  assert.equal(report.reindexed, true);
+});
+
+// ── Test 8: IDEMPOTENCE of the seed (ADR 0026, decision B safety invariant). Once the
+//    health-check note is present, a second update-time reconcile must NOT re-write it and
+//    must NOT reindex — write-if-absent only, zero churn (auto-finalize / repeated updates).
+test("reconcileBrain — does not re-seed an already-present health note, and does not reindex", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  writeFile(sourceDir, HEALTH_NOTE, "---\ntitle: src\n---\nQuibblethorne (source copy).\n");
+  // The brain already carries its OWN health note (a user could even have edited it).
+  writeFile(brainDir, HEALTH_NOTE, "---\ntitle: mine\n---\nQuibblethorne (brain copy, kept).\n");
+  const target = manifest();
+  const local = manifest({ ragVersion: "1.0.0" }); // same schema → reindex only if re-seeded
+  const noteHash = sha256(join(brainDir, HEALTH_NOTE));
+
+  const { calls, ...s } = seams();
+  const report = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s });
+
+  assert.equal(sha256(join(brainDir, HEALTH_NOTE)), noteHash, "an existing health note must never be overwritten");
+  assert.deepEqual(calls.reindex, [], "no re-seed → no reindex (zero churn)");
+  assert.equal(report.reindexed, false);
+});
+
+// ── Test 9: the carve-out is SCOPED to a single path (ADR 0026, decision B safety
+//    invariant: "one path only"). Even when the source's vault carries other notes, the
+//    reconciler seeds ONLY vault/engine-health/health-check.md — never any user note.
+test("reconcileBrain — seeds ONLY the engine-health path, never another vault note", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  writeFile(sourceDir, HEALTH_NOTE, "---\ntitle: health\n---\nQuibblethorne.\n");
+  // A decoy "user" note sitting in the source vault — must NOT be copied into the brain.
+  writeFile(sourceDir, "vault/some-demo-note.md", "# A note that is NOT the engine canary\n");
+  const target = manifest();
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const { ...s } = seams();
+  await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s });
+
+  assert.ok(existsSync(join(brainDir, HEALTH_NOTE)), "the engine-health note is seeded");
+  assert.equal(
+    existsSync(join(brainDir, "vault/some-demo-note.md")),
+    false,
+    "no other vault note may be seeded — the carve-out is one path only",
+  );
+});
+
+// ── Test 10: self-heal mode (sourceDir === brainDir) NEVER seeds (ADR 0026, decision B).
+//    Self-heal has nothing to copy FROM (same dir), and writing the vault on every session
+//    start would widen the blast radius. So even with the note absent, it stays absent and
+//    no reindex runs. (Upgraders get the note via auto-finalize, where sourceDir !== brainDir.)
+test("reconcileBrain — self-heal mode never seeds the health note (sourceDir === brainDir)", async (t) => {
+  const brainDir = buildBrain();
+  t.after(() => rmSync(brainDir, { recursive: true, force: true }));
+  const target = manifest({ ragVersion: "1.0.0" });
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const { calls, ...s } = seams();
+  await reconcile({ brainDir, platform: "posix", sourceDir: brainDir, target, local, ...s });
+
+  assert.equal(existsSync(join(brainDir, HEALTH_NOTE)), false, "self-heal must not seed (nothing to copy from)");
+  assert.deepEqual(calls.reindex, [], "self-heal seeds nothing → no reindex");
+});
+
 // Tiny indirection so the helpers above read cleanly; resolves the lazily-loaded export.
 async function reconcile(args) {
   const reconcileBrain = await loadReconciler();

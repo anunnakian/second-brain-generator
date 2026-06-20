@@ -33,6 +33,11 @@ import {
   defaultRegenerateLaunchers,
 } from "./engine-seams.mjs";
 
+// The single, nominative vault carve-out (ADR 0026 amended, decision B): the ONLY vault
+// path the reconciler may ever write, and only write-if-absent on a real update — so the
+// `health_check` canary (ADR 0030) also covers upgraders, never overwriting a user note.
+const HEALTH_NOTE = "vault/engine-health/health-check.md";
+
 // Copies `rel` from srcDir into destDir. Returns true if it copied, false if it
 // SKIPPED a self-copy: in SessionStart self-heal mode srcDir === brainDir, so a file
 // would be copied onto itself — on Linux `copyFileSync(f, f)` truncates the dest before
@@ -103,6 +108,22 @@ export async function reconcileBrain({
     mcpServersAdded.push(...Object.keys(reconciled.mcpServers).filter((id) => !before.has(id)));
   }
 
+  // 2.quater Seed the engine-owned health-check note on UPGRADERS (ADR 0026 amended,
+  //    decision B): the ONE narrow, nominative carve-out to the vault-sacred invariant.
+  //    At a REAL update (sourceDir !== brainDir) only, write-if-absent the single note
+  //    `vault/engine-health/health-check.md` from the source — NEVER overwrite, NEVER
+  //    delete, NEVER any other vault path. New installs already get it via the install
+  //    bulk-copy; self-heal runs with sourceDir === brainDir → nothing to copy from.
+  let seededHealthNote = false;
+  if (resolve(sourceDir) !== resolve(brainDir)) {
+    const srcNote = join(sourceDir, HEALTH_NOTE);
+    const destNote = join(brainDir, HEALTH_NOTE);
+    if (existsSync(srcNote) && !existsSync(destNote)) {
+      copyInto(sourceDir, brainDir, HEALTH_NOTE);
+      seededHealthNote = true;
+    }
+  }
+
   // 3. Regenerate the launchers (both halves, ADR 0015).
   const regenerated = plan.regenerate.length > 0;
   if (regenerated) await regenerateLaunchers({ brainDir, platform });
@@ -110,15 +131,20 @@ export async function reconcileBrain({
   // 4. npm install in the brain's rag/ (+ local-mirror/ when present).
   await runInstall({ ragDir: join(brainDir, "rag"), brainDir, platform });
 
-  // 5. Reindex IFF the index schema moved (else the existing index stays valid).
-  const reindexed = needsReindex({ local, target });
+  // 5. Reindex IFF the index schema moved OR we just seeded the health-check note. The
+  //    reindex is incremental (the index-manager skips unchanged docs → only the one new
+  //    note is encoded). ⚠️ Mandatory pairing: a seeded-but-unindexed note → 0 index hits
+  //    → a FALSE `broken` from `health_check` (ADR 0026, decision B). `reindexReason`
+  //    lets the report stay honest: a schema move re-encodes every note; a seed does not.
+  const reindexReason = needsReindex({ local, target }) ? "schema" : seededHealthNote ? "health-note-seed" : null;
+  const reindexed = reindexReason !== null;
   if (reindexed) await runReindex({ brainDir, platform });
 
   // 6. Count the notes the brain holds, for the user-facing recap (F2). Read after
   //    any reindex so it reflects the current vault.
   const vaultNoteCount = await countVaultNotes({ brainDir });
 
-  return { copied, regenerated, reindexed, vaultNoteCount, installedSkills, mcpServersAdded };
+  return { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded };
 }
 
 // ── CLI entry — what the auto-finalize child process runs (ADR 0026, Layer A) ──

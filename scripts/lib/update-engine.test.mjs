@@ -96,6 +96,23 @@ test("formatReport — schema unchanged → states no reindex was needed (never 
   assert.doesNotMatch(out, /reindexed —/);
 });
 
+// ADR 0026 (decision B): on an upgrader the schema does NOT move, but seeding the
+// engine-health note triggers an INCREMENTAL reindex of that one note. The report must
+// be honest — never claim "the index format changed" (it didn't) — and say only the
+// health-check note was added/indexed, the user's other notes were not re-encoded.
+test("formatReport — health-note seed reindex → honest incremental message, not 'index format changed'", () => {
+  const out = formatReport({
+    ref: "v3.3.0",
+    engineVersion: { rag: "1.1.4" },
+    copied: ["rag/src/index.ts"],
+    regenerated: true,
+    reindexed: true,
+    reindexReason: "health-note-seed",
+  });
+  assert.doesNotMatch(out, /format changed/i, "must not claim the index format changed on a seed-only reindex");
+  assert.match(out, /health[- ]check note|incremental/i, "names the incremental health-check seed");
+});
+
 // Finding A (ADR 0025 fix QA): an upgrader must SEE that the update delivered the
 // flagship engine skill + registered its MCP server — that is the whole point of
 // v3.2.1. Silent delivery leaves the user unaware they finally have the feature.

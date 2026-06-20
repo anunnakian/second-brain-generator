@@ -42,13 +42,19 @@ export { defaultCountVaultNotes };
 // Human summary the brain-side `update-engine` skill shows the user (Step 6, ADR
 // 0016). Pure so the wording is unit-tested; the CLI entry only wires the I/O.
 export function formatReport(report) {
-  const { ref, engineVersion, copied, regenerated, reindexed, vaultNoteCount, installedSkills = [], mcpServersAdded = [] } = report;
+  const { ref, engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills = [], mcpServersAdded = [] } = report;
+  // Honest reindex line: a schema move re-encodes EVERY note; a health-note seed (ADR
+  // 0026 decision B, upgraders) only adds + indexes the one engine-owned note — never
+  // claim "the index format changed" in that case.
+  const reindexLine = !reindexed
+    ? `   • index format unchanged — no reindex needed`
+    : reindexReason === "health-note-seed"
+      ? `   • added the engine health-check note and indexed it (incremental — your other notes were not re-encoded)`
+      : `   • reindexed — the index format changed (your notes were re-encoded, nothing lost)`;
   const lines = [
     `✅ Engine updated to ${ref} (rag ${engineVersion?.rag}).`,
     `   • ${copied.length} engine file(s) swapped` + (regenerated ? " + launchers regenerated" : ""),
-    reindexed
-      ? `   • reindexed — the index format changed (your notes were re-encoded, nothing lost)`
-      : `   • index format unchanged — no reindex needed`,
+    reindexLine,
   ];
   // F2: the number the USER cares about — how many notes the brain holds. When a
   // reindex is running, searchability catches up as indexing finishes.
@@ -120,7 +126,7 @@ export async function updateEngine({
   //    moved, and count the vault notes — all behind the deterministic, idempotent
   //    `reconcileBrain`. Extracted so the SAME converger runs at auto-finalize (a fresh
   //    child process at the end of this function) and at SessionStart self-heal.
-  const { copied, regenerated, reindexed, vaultNoteCount, installedSkills, mcpServersAdded } =
+  const { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded } =
     await reconcileBrain({
       brainDir,
       platform,
@@ -163,7 +169,7 @@ export async function updateEngine({
   //    already-recorded update.
   await finalizeReconcile({ brainDir, sourceDir, platform });
 
-  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, vaultNoteCount, installedSkills, mcpServersAdded };
+  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded };
 }
 
 // ── CLI entry (the command the brain-side `update-engine` skill runs) ─────────
