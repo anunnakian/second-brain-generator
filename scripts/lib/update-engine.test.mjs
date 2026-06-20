@@ -130,6 +130,10 @@ test("formatReport — when capabilities are installed, loudly says they aren't 
   assert.match(out, /not (yet )?active|aren't active/i);
   assert.match(out, /this conversation/i);
   assert.match(out, /restart/i);
+  // Strong framing (Thomas): not a polite "to load them" — make the consequence of
+  // NOT restarting explicit, so the user actually does it.
+  assert.match(out, /action needed/i);
+  assert.match(out, /can(?:no|')?t use|won't work/i);
 });
 
 // F1.6: the "counter" the user reads = how many new capabilities they just gained

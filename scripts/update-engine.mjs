@@ -75,10 +75,13 @@ export function formatReport(report) {
   const newCapabilities = installedSkills.length + mcpServersAdded.length;
   if (newCapabilities > 0) {
     const noun = newCapabilities === 1 ? "capability" : "capabilities";
+    const them = newCapabilities === 1 ? "it" : "them";
     lines.push(
-      `   ⚠️ ${newCapabilities} new ${noun} on disk but NOT active in THIS conversation` +
-        ` yet — fully restart Claude (or open a new conversation rooted here) to use them.`,
-      `   • If they're still missing after a restart, run /update-engine once more.`,
+      `   ⚠️ ACTION NEEDED — ${newCapabilities} new ${noun} ${newCapabilities === 1 ? "is" : "are"}` +
+        ` installed on disk but NOT active in THIS conversation.`,
+      `   Until you FULLY RESTART Claude (close it and reopen, or start a new conversation`,
+      `   rooted here), your brain CAN'T use ${them}. Restart, then come back here.`,
+      `   • If still missing after a restart, run /update-engine once more.`,
     );
   }
   lines.push(`   Your notes, .env, constitution, settings and custom skills were left untouched.`);

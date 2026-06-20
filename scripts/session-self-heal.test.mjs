@@ -41,6 +41,11 @@ test("sessionSelfHeal — a gap → spawns reconcile in the background + emits o
   assert.deepEqual(calls.spawned, [{ brainDir: "/brain" }]);
   assert.equal(calls.emitted.length, 1);
   assert.match(calls.emitted[0], /local-mirror/);
+  // Strong framing (Thomas): the line must make the restart non-optional in tone —
+  // an explicit "until you restart, your brain can't use it", not a polite hint.
+  assert.match(calls.emitted[0], /action needed/i);
+  assert.match(calls.emitted[0], /restart/i);
+  assert.match(calls.emitted[0], /can(?:no|')?t use|won't work/i);
 });
 
 test("sessionSelfHeal — fail-open: a throwing seam never propagates, logs loudly, spawns nothing", async () => {

@@ -44,8 +44,9 @@ export async function sessionSelfHeal({
       gap.missingServers.length ? `MCP: ${gap.missingServers.join(", ")}` : null,
     ].filter(Boolean);
     emit(
-      `⚙️ Finishing an engine update in the background (${parts.join("; ")}). ` +
-        `Restart the app once it completes to load the new capabilities.`,
+      `⚠️ ACTION NEEDED — finishing an engine update in the background (${parts.join("; ")}). ` +
+        `Until you RESTART Claude (close it and reopen) once this completes, your brain ` +
+        `CAN'T use these new capabilities. Restart, then come back here.`,
     );
     spawnReconcile({ brainDir });
     return { healed: true, ...gap };
