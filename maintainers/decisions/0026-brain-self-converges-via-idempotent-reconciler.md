@@ -63,6 +63,14 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
 > and regenerated launchers. The vault, `.env`, the constitution, settings, every user-added `.mcp.json`
 > server and every non-declared/custom skill are untouchable.
 
+> **⚠️ AMENDMENT (2026-06-20 — [ADR 0031](0031-reconciler-may-seed-the-engine-owned-health-check-note-the-only-vault-exception.md), decision B).**
+> The "vault is untouchable" clause now has **exactly one narrow, nominative exception**: the reconciler
+> MAY **create** (write-if-absent — **never** overwrite, **never** delete) the single engine-owned note
+> `vault/engine-health/health-check.md` (the `health_check` canary) when it is absent, and incrementally
+> reindex **only** that freshly-seeded note. `.env`, the constitution, settings, user `.mcp.json` servers,
+> custom skills **and every user note** remain fully untouchable; no other vault path is ever written.
+> See ADR 0031 for the full rationale and test invariants.
+
 ## Consequences
 
 - **Layer A solved**: one `/update-engine` invocation finishes the job (the auto-finalize child process).
