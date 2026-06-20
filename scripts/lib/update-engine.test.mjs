@@ -153,6 +153,28 @@ test("formatReport — when capabilities are installed, loudly says they aren't 
   assert.match(out, /can(?:no|')?t use|won't work/i);
 });
 
+// F4: the field finding — a full app restart, then RESUMING this same conversation,
+// is enough to pick up a freshly-installed skill+MCP. A brand-new conversation is NOT
+// required for that (that's the distinct initial-rooting rule, for a never-rooted
+// session). The notice must say "restart and come back here", not muddy it by offering
+// "or start a new conversation" as if one were needed just to load new capabilities.
+test("formatReport — the activation notice says a restart + resuming THIS conversation is enough, not a brand-new one", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: ["local-mirror"],
+    mcpServersAdded: ["local-mirror"],
+  });
+  // Restart, then come back to THIS conversation (resume) — the lighter sufficient action.
+  assert.match(out, /reopen/i);
+  assert.match(out, /come back here|this (same )?conversation/i);
+  // Do NOT present a brand-new conversation as required for picking up capabilities.
+  assert.doesNotMatch(out, /new conversation/i);
+});
+
 // F1.6: the "counter" the user reads = how many new capabilities they just gained
 // (skills + MCP servers), plus the "run once more" residual-bootstrap fallback for
 // the rare case a follow-up pass is still needed.

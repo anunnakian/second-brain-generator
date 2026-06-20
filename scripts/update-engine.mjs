@@ -76,8 +76,10 @@ export function formatReport(report) {
   // F1.6 (ADR 0026, point 4): a freshly-installed skill/MCP is on disk but Claude
   // loads skills/MCP/hooks when a conversation STARTS (Layer B config-freeze), so it
   // is NOT yet live in THIS conversation. Say so LOUDLY (silence reads as "ready to
-  // use") and point at the lighter sufficient action — a full restart (field-proven,
-  // F4) — rather than leaving the user to discover the gap.
+  // use") and point at the lighter sufficient action — a full restart, then RESUMING
+  // this same conversation (field-proven, F4). Do NOT muddy it with "start a new
+  // conversation": that is the distinct initial-rooting rule (a never-rooted session),
+  // not what is needed just to pick up new capabilities.
   const newCapabilities = installedSkills.length + mcpServersAdded.length;
   if (newCapabilities > 0) {
     const noun = newCapabilities === 1 ? "capability" : "capabilities";
@@ -85,8 +87,9 @@ export function formatReport(report) {
     lines.push(
       `   ⚠️ ACTION NEEDED — ${newCapabilities} new ${noun} ${newCapabilities === 1 ? "is" : "are"}` +
         ` installed on disk but NOT active in THIS conversation.`,
-      `   Until you FULLY RESTART Claude (close it and reopen, or start a new conversation`,
-      `   rooted here), your brain CAN'T use ${them}. Restart, then come back here.`,
+      `   A FULL RESTART of Claude (close it and reopen) is enough: come back to THIS same`,
+      `   conversation afterwards and your brain can use ${them}. You do NOT need to start a`,
+      `   brand-new chat for this. Until you restart, your brain CAN'T use ${them}.`,
       `   • If still missing after a restart, run /update-engine once more.`,
     );
   }
