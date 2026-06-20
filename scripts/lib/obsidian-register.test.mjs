@@ -81,6 +81,31 @@ test("registerVaultInObsidian — vault already registered under Obsidian's own 
   assert.equal(seams._backups.length, 0);
 });
 
+test("addVaultToObsidianConfig — on a case-insensitive FS, a path differing only in case is deduped (#7)", () => {
+  // macOS (APFS) and Windows are case-insensitive: ".../Brain/vault" and ".../brain/vault"
+  // are the SAME folder, so registering one when the other is present must NOT duplicate.
+  const existing = { vaults: { "deadbeefcafe0001": { path: "/Users/u/Brain/vault", ts: 9 } } };
+  const result = addVaultToObsidianConfig(existing, "/Users/u/brain/vault", { caseInsensitive: true });
+  assert.equal(Object.values(result.vaults).length, 1, "no duplicate for the same folder under a different case");
+});
+
+test("addVaultToObsidianConfig — on a case-sensitive FS (Linux), different-case paths stay distinct vaults", () => {
+  // Linux is case-sensitive: /data/Notes and /data/notes are genuinely different folders,
+  // so we must NOT merge them — register the second.
+  const existing = { vaults: { "deadbeefcafe0002": { path: "/data/Notes", ts: 9 } } };
+  const result = addVaultToObsidianConfig(existing, "/data/notes", { caseInsensitive: false });
+  assert.equal(Object.values(result.vaults).length, 2, "case-sensitive FS → distinct folders stay distinct");
+});
+
+test("registerVaultInObsidian — macOS dedups a manually-registered vault that differs only in case (#7)", () => {
+  const cfg = "/Users/u/Library/Application Support/obsidian/obsidian.json";
+  const pre = { vaults: { "f00dabcd12345678": { path: "/Users/u/Brain/vault", ts: 3 } } };
+  const seams = makeSeams({ files: { [cfg]: JSON.stringify(pre) } }); // platform: "darwin"
+  const result = registerVaultInObsidian("/Users/u/brain/vault", seams);
+  assert.deepEqual(result, { registered: true, reason: "already-registered" });
+  assert.equal(seams._writes.length, 0, "no second entry written for the same case-insensitive folder");
+});
+
 test("shouldRegisterObsidian — plain desktop session → true", () => {
   assert.equal(shouldRegisterObsidian({}, "darwin"), true);
 });

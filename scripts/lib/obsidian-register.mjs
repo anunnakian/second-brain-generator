@@ -17,22 +17,36 @@ function vaultIdFor(vaultPath) {
 }
 
 // Normalise a vault path for equality: drop any trailing slash/backslash so
-// ".../vault" and ".../vault/" are the same registration.
-const normalizeVaultPath = (p) => String(p ?? "").replace(/[\\/]+$/, "");
+// ".../vault" and ".../vault/" match, and case-fold when the host filesystem is
+// case-insensitive (macOS/Windows) so ".../Brain/vault" and ".../brain/vault" — the
+// SAME folder there — match too. On a case-sensitive FS (Linux) those are genuinely
+// distinct folders, so case is preserved.
+const normalizeVaultPath = (p, caseInsensitive) => {
+  const stripped = String(p ?? "").replace(/[\\/]+$/, "");
+  return caseInsensitive ? stripped.toLowerCase() : stripped;
+};
 
 // Pure: return a NEW obsidian.json object with `vaultPath` registered. Never
 // mutates the input, never clobbers other vaults. Dedup is by PATH, not only by our
 // SHA-derived id: the user may already have registered this very folder via Obsidian's
 // "Open folder as vault", which stores it under Obsidian's OWN random id — adding our
 // id-keyed entry would then show the vault twice in the switcher. If ANY existing entry
-// already points at this path, the config is returned verbatim (preserving its id + ts),
-// so re-registering is a true no-op the I/O wrapper can detect and skip writing.
-export function addVaultToObsidianConfig(json, vaultPath, { ts = 0 } = {}) {
+// already points at this path (per the host's case-sensitivity), the config is returned
+// verbatim (preserving its id + ts), so re-registering is a true no-op the I/O wrapper
+// can detect and skip writing. `caseInsensitive` is injected by the I/O wrapper from the
+// platform (default false → safe on a case-sensitive FS).
+export function addVaultToObsidianConfig(json, vaultPath, { ts = 0, caseInsensitive = false } = {}) {
   const vaults = { ...(json.vaults ?? {}) };
-  const target = normalizeVaultPath(vaultPath);
-  const alreadyByPath = Object.values(vaults).some((v) => normalizeVaultPath(v?.path) === target);
+  const target = normalizeVaultPath(vaultPath, caseInsensitive);
+  const alreadyByPath = Object.values(vaults).some((v) => normalizeVaultPath(v?.path, caseInsensitive) === target);
   if (!alreadyByPath) vaults[vaultIdFor(vaultPath)] = { path: vaultPath, ts };
   return { ...json, vaults };
+}
+
+// Is the host filesystem case-insensitive for path equality? macOS (APFS default) and
+// Windows are; Linux is not. Used to decide vault-path dedup above.
+export function isCaseInsensitiveFs(platform) {
+  return platform === "darwin" || platform === "win32";
 }
 
 // Pure: where Obsidian keeps its `obsidian.json` (the vault registry) on this OS.
@@ -110,7 +124,10 @@ export function registerVaultInObsidian(vaultPath, seams) {
     return { registered: false, reason: "unreadable-config" };
   }
 
-  const updated = addVaultToObsidianConfig(config, vaultPath, { ts: now() });
+  const updated = addVaultToObsidianConfig(config, vaultPath, {
+    ts: now(),
+    caseInsensitive: isCaseInsensitiveFs(platform),
+  });
   // Already registered → the builder returns an equal config → nothing to write.
   if (JSON.stringify(updated) === JSON.stringify(config)) {
     return { registered: true, reason: "already-registered" };
