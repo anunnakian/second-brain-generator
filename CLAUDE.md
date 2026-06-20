@@ -12,6 +12,13 @@
 > (`--non-interactive`) — so you do NOT need the user to launch it at the keyboard. You gather the
 > answers **in chat**, then you call **a single command**.
 
+> 🛠️ **Maintainer note (only if you are DEVELOPING the launcher itself — not installing a brain):**
+> also follow [`maintainers/CONVENTIONS.md`](maintainers/CONVENTIONS.md). It carries the repo's
+> durable rules (checkboxes on every plan step, one canonical plan = the repo's, artifacts in English,
+> TDD baby-steps + green-only commits, ADR `Scope:` field, plan-done = archived) so they travel with
+> the clone instead of living only on one machine. This note is part of the **installer stub**, so it
+> is **overwritten at install** and never reaches a generated brain.
+
 ## Step 1 — Get the launcher (normal clone)
 
 *(Often already done if you are reading this file from inside the folder.)* If you start from a URL:
