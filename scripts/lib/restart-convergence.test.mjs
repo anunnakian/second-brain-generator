@@ -199,6 +199,15 @@ test(
     //    so pass-1 never delivered its source).
     assert.ok(existsSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md")), "the local-mirror skill must be on disk after the restart");
 
+    // 3.bis) The health-check canary note is seeded into the vault (F-B7b, RED pre-fix:
+    //    the note lives only in sacred vault/, and the old seed required sourceDir !==
+    //    brainDir — so self-heal never seeded it). Pass-1 delivered engine-health/health-
+    //    check.md (a non-sacred `replace` file); self-heal seeds the vault note from it.
+    assert.ok(
+      existsSync(join(brainDir, "vault/engine-health/health-check.md")),
+      "the engine health-check note must be seeded into the vault after the restart",
+    );
+
     // 4) The NEXT restart is a true no-op — convergence is reached in ONE pass.
     const settingsAfter = readFileSync(join(brainDir, ".claude/settings.json"), "utf8");
     const mcpAfter = readFileSync(join(brainDir, ".mcp.json"), "utf8");
