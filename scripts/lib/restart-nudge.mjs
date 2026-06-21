@@ -20,8 +20,21 @@
 // Flag path, relative to the brain root. Under .cache/ → gitignored (cf. .gitignore).
 export const RESTART_FLAG_REL = ".cache/restart-needed";
 
-// Given whether a restart is pending (the flag is present), return the loud statusLine
-// segment, or null when nothing is pending (keep the status line clean).
+// A restart is pending when the on-disk engine is ahead of what THIS session loaded, by
+// EITHER of two independent signals (status-line ORs them):
+//   • gapNeeded  — engine-delivered skills/MCP are on disk but not yet installed/registered.
+//     This is the signal that fires in the SAME session right after an update whose OLD
+//     orchestrator stayed silent: the new status-line.mjs runs on the next refresh, sees the
+//     gap, and nudges — no fresh session (and no flag) required. (Thomas's rig-QA failure.)
+//   • flagExists — an explicit marker the self-heal / new core writes when it converged code
+//     this session predates. Covers "converged on disk, but this conversation hasn't loaded it".
+// Pure so the OR-policy is unit-pinned; the I/O (flag read, gap derivation) is the caller's.
+export function isRestartPending({ flagExists, gapNeeded }) {
+  return Boolean(flagExists || gapNeeded);
+}
+
+// Given whether a restart is pending, return the loud statusLine segment, or null when
+// nothing is pending (keep the status line clean).
 export function restartNudgeSegment(pending) {
   return pending ? "⚠️ RESTART Claude to finish the engine update" : null;
 }

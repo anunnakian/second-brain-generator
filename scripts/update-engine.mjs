@@ -17,9 +17,11 @@
 // Everything outside the plan is untouchable BY CONSTRUCTION (the plan is an
 // allowlist) — the Gate asserts byte-identity of the user's sacred files.
 // ─────────────────────────────────────────────────────────────────────────────
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { RESTART_FLAG_REL } from "./lib/restart-nudge.mjs";
 
 import {
   fetchSource as defaultFetchSource,
@@ -216,6 +218,20 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const brainDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   updateEngine({ brainDir })
     .then((report) => {
+      // A2 (F-B7d): if this update placed anything a restart is needed for, arm the
+      // persistent restart flag so the statusLine keeps nudging until the user restarts —
+      // a belt for the in-session converged case (the report banner alone scrolls away).
+      // The next fresh, converged session clears it (session-self-heal). Fail-soft.
+      const newCaps = (report.installedSkills?.length ?? 0) + (report.mcpServersAdded?.length ?? 0) + (report.hooksAdded?.length ?? 0);
+      if (report.copied?.length > 0 || report.regenerated || newCaps > 0) {
+        try {
+          const flagPath = join(brainDir, RESTART_FLAG_REL);
+          mkdirSync(dirname(flagPath), { recursive: true });
+          writeFileSync(flagPath, "restart needed to finish the engine update\n");
+        } catch {
+          /* fail-soft: the nudge is a convenience, never a blocker */
+        }
+      }
       process.stdout.write(formatReport(report) + "\n");
       process.exit(0);
     })
