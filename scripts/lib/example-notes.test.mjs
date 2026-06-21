@@ -47,14 +47,14 @@ test("findExampleNotes — returns only the notes tagged exemple", () => {
 test("the dedicated engine-owned health-check note is NOT an example note (survives the purge)", () => {
   // ADR 0030 §2: the RAG canary lives on a dedicated engine note that must outlive
   // `clear-example-notes`. Lock it against the REAL shipped artifact: no `exemple` tag.
-  const note = readFileSync(join(REPO_ROOT, "vault", "engine-health", "health-check.md"), "utf8");
+  const note = readFileSync(join(REPO_ROOT, "engine-health", "health-check.md"), "utf8");
   assert.equal(isExampleNote(note), false);
 });
 
 test("clearExampleNotes — leaves the engine health-check note in place", () => {
   const dir = makeVault();
   try {
-    const engineNote = readFileSync(join(REPO_ROOT, "vault", "engine-health", "health-check.md"), "utf8");
+    const engineNote = readFileSync(join(REPO_ROOT, "engine-health", "health-check.md"), "utf8");
     mkdirSync(join(dir, "engine-health"), { recursive: true });
     writeFileSync(join(dir, "engine-health", "health-check.md"), engineNote);
     clearExampleNotes(dir);

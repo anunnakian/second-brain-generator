@@ -1,6 +1,11 @@
 {
   "manifestVersion": 1,
-  "engineVersion": { "rag": "1.1.5", "local-mirror": "0.2.0", "constitutionTemplate": "1.0.0", "scripts": "1.1.0" },
+  "engineVersion": {
+    "rag": "1.1.5",
+    "local-mirror": "0.2.0",
+    "constitutionTemplate": "1.0.0",
+    "scripts": "1.1.0"
+  },
   "indexSchemaVersion": 1,
   "regimes": {
     "replace": [
@@ -23,7 +28,8 @@
       "scripts/lib/**",
       ".claude/settings.json.template",
       ".mcp.json.template",
-      "engine-skills/**"
+      "engine-skills/**",
+      "engine-health/**"
     ],
     "regenerate": [
       "rag/launch.sh",
@@ -50,7 +56,13 @@
       "scripts/verify-rag.mjs"
     ]
   },
-  "engineMcpServers": ["vault-rag", "local-mirror"],
-  "engineModuleRequirements": { "vault-rag": "mandatory", "local-mirror": "optional" },
+  "engineMcpServers": [
+    "vault-rag",
+    "local-mirror"
+  ],
+  "engineModuleRequirements": {
+    "vault-rag": "mandatory",
+    "local-mirror": "optional"
+  },
   "provenance": {}
 }
