@@ -88,3 +88,20 @@ test("engine-manifest — vault-rag is tagged mandatory, so an absent vault-rag 
     "vault-rag must be mandatory: an unregistered vault-rag has to surface as broken, not be skipped",
   );
 });
+
+// Pre-ship belt (Thomas, 2026-06-21): the rig repoints a DISPOSABLE brain's manifest
+// `source` at a LOCAL bare repo + a branch ref (e.g. /Users/…/qa-v33-src.git) so
+// /update-engine pulls the not-yet-pushed work. That QA pointer must NEVER leak into the
+// COMMITTED launcher manifest: a generated brain derives its source from the launcher's
+// `git remote get-url origin` at install time (installer.mjs), so the launcher manifest
+// must carry NO `source` at all. A committed `source` — especially a local filesystem path
+// or a non-GitHub ref — would make a shipped brain try to pull from a repo that only exists
+// on the maintainer's machine. This guard fails loud if that QA trace is ever committed.
+test("engine-manifest — the committed launcher manifest pins NO `source` (no QA repo/ref leak)", () => {
+  assert.equal(
+    manifest.source,
+    undefined,
+    "the launcher manifest must not pin a `source`; the installer injects the GitHub origin per-brain. " +
+      "A committed source is almost certainly a leaked QA repoint (local bare repo / branch ref) — remove it.",
+  );
+});
