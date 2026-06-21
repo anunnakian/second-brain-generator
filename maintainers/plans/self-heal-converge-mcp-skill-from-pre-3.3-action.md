@@ -56,14 +56,14 @@ restart self-heal converge the manifest-sourced capabilities (skill + MCP), clos
   > staged source is on the brain's own disk, so `sourceDir === brainDir` works — src path
   > `engine-health/…` ≠ dest `vault/engine-health/…`, no self-copy). This OVERTURNS ADR 0026 decision B
   > ("self-heal never seeds"); amend it in place.
-  - [ ] 5a — RED: extend `restart-convergence.test.mjs` F-B7 test to assert `vault/engine-health/health-check.md` is seeded after the self-heal (RED today, GREEN after fix)
-  - [ ] 5b — new helper `scripts/lib/staged-health-note.mjs` → `seedHealthNote({ sourceDir, brainDir })`: if `<sourceDir>/engine-health/health-check.md` exists and `<brainDir>/vault/engine-health/health-check.md` absent → copy it in; return whether the vault note is present (for the reindex pairing). Pure I/O, win32-safe. TDD baby-steps.
-  - [ ] 5c — RELOCATE the canonical note: `git mv vault/engine-health/health-check.md engine-health/health-check.md` (single source); add `engine-health/**` to `regimes.replace` (so update + pass-1 deliver it, non-sacred)
-  - [ ] 5d — `reconcile-brain.mjs`: replace the vault-source carve-out block (l.170-176) with `seedHealthNote` sourced from `engine-health/`; DROP the `sourceDir !== brainDir` guard; keep the reindex pairing (`healthNotePresent → "health-note-seed"`, incremental)
-  - [ ] 5e — `installer.mjs`: call `seedHealthNote({ sourceDir: TARGET, brainDir: TARGET })` next to `installStagedSkills` (~l.305) so a FRESH brain seeds the vault note from the staged copy (the bulk copy no longer brings it under `vault/`)
-  - [ ] 5f — flip/repoint tests: `reconcile-brain.test.mjs` test 10 (self-heal NOW seeds from staged copy) + tests 8/9/11 seed-source `vault/…` → `engine-health/…`; `staged-health-note.test.mjs` unit cases; the v3.1.0 brain builder in `restart-convergence.test.mjs` keeps its own user note untouched
-  - [ ] 5g — amend **ADR 0026 in place** (decision B): the note seeds in BOTH modes from a non-sacred staged source — the SAME delivered-files principle as skills/MCP; self-heal CAN seed
-  - [ ] 5h — full harness + `cd rag … --test` + `cd local-mirror … --test` + both `tsc --noEmit` GREEN; re-verify on the rig (reset → ONE update → restart → note converges)
+  - [x] 5a — extend `restart-convergence.test.mjs` F-B7 test to assert `vault/engine-health/health-check.md` is seeded after the self-heal _(2026-06-21 · aca7423 — GREEN end-to-end: pass-1 delivers the staged note, self-heal seeds the vault)_
+  - [x] 5b — new helper `scripts/lib/staged-health-note.mjs` → `seedHealthNote({ sourceDir, brainDir })` (seed-if-absent vault note from `engine-health/health-check.md`, returns `{present}`); 4 unit tests _(2026-06-21 · 9d376e4)_
+  - [x] 5c — RELOCATE the canonical note: `git mv vault/engine-health/health-check.md engine-health/health-check.md`; add `engine-health/**` to `regimes.replace`; repoint the 2 example-notes tests to the new path _(2026-06-21 · 9590ba8)_
+  - [x] 5d — `reconcile-brain.mjs`: replaced the vault-source carve-out with `seedHealthNote` sourced from `engine-health/`; DROPPED the `sourceDir !== brainDir` guard; kept the incremental reindex pairing _(2026-06-21 · d3c3368)_
+  - [x] 5e — `installer.mjs`: calls `seedHealthNote({ sourceDir: TARGET, brainDir: TARGET })` next to `installStagedSkills`; source-level structural guard `installer-health-note.test.mjs` _(2026-06-21 · 4a15d47)_
+  - [x] 5f — flipped `reconcile-brain.test.mjs` test 10 (self-heal NOW seeds) + 10b (nothing staged → no seed); repointed tests 7/8/9/11 seed-source to `engine-health/`; new `staged-health-note.test.mjs` _(2026-06-21 · d3c3368/9d376e4)_
+  - [ ] 5g — amend **ADR 0026 in place** (decision B): the note seeds in BOTH modes from a non-sacred staged source — the SAME delivered-files principle as skills/MCP; self-heal CAN seed. ⚠️ STILL TO DO (decision B prose at `0026-…md` lines ~130-195 still says "real update only / self-heal has nothing to copy from").
+  - [ ] 5h — re-verify on the rig (reset → ONE update → restart → note converges). _(harness 478/478, rag 207/207, local-mirror 87/87, both tsc clean as of 5a)_
 
 ---
 
