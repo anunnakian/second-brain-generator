@@ -23,6 +23,7 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { geminiKeyWarning } from "./lib/gemini-key.mjs";
 import { formatEngineVersion } from "./lib/engine-version.mjs";
+import { restartNudgeSegment, RESTART_FLAG_REL } from "./lib/restart-nudge.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, "..");
@@ -110,5 +111,11 @@ function readEngineSeg() {
 }
 const engineSeg = readEngineSeg();
 
-// ─── A single line, segments separated by "·" ────────────────────────────────
-process.stdout.write([gitSeg, ragSeg, engineSeg, keySeg].filter(Boolean).join(" · "));
+// ─── Restart nudge (A2, F-B7d): the PERSISTENT, Desktop-visible "⚠️ RESTART Claude"
+// the SessionStart self-heal can't deliver (Desktop drops its systemMessage). A pure
+// flag read under the gitignored .cache/ — present iff a background converge left this
+// session's loaded engine state stale; cleared by the next fresh, converged session.
+const restartSeg = restartNudgeSegment(existsSync(join(REPO, RESTART_FLAG_REL)));
+
+// ─── A single line, segments separated by "·" — the restart nudge leads (unmissable) ─
+process.stdout.write([restartSeg, gitSeg, ragSeg, engineSeg, keySeg].filter(Boolean).join(" · "));

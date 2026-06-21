@@ -16,7 +16,7 @@ const WANTED = {
 
 // Build the seam bundle with spies; override per test.
 function seams(overrides = {}) {
-  const calls = { spawned: [], emitted: [] };
+  const calls = { spawned: [], emitted: [], restartPending: [] };
   const base = {
     brainDir: "/brain",
     readWanted: () => WANTED,
@@ -24,6 +24,7 @@ function seams(overrides = {}) {
     mcpServerRegistered: () => true,
     spawnReconcile: (arg) => calls.spawned.push(arg),
     emit: (msg) => calls.emitted.push(msg),
+    setRestartPending: (pending) => calls.restartPending.push(pending),
   };
   return { args: { ...base, ...overrides }, calls };
 }
@@ -48,6 +49,25 @@ test("sessionSelfHeal — a gap → spawns reconcile in the background + emits o
   assert.match(calls.emitted[0], /action needed/i);
   assert.match(calls.emitted[0], /restart/i);
   assert.match(calls.emitted[0], /can(?:no|')?t use|won't work/i);
+});
+
+// F-B7d (A2): a gap means a background reconcile is about to install capabilities this
+// session won't pick up → the on-disk state will be AHEAD of what this session loaded.
+// Mark a restart as pending so the PERSISTENT statusLine nudges the (Desktop) user, since
+// the emitted systemMessage is dropped by Desktop.
+test("sessionSelfHeal — a gap → marks a restart as PENDING (the Desktop-visible nudge)", async () => {
+  const { args, calls } = seams({ mcpServerRegistered: (id) => id !== "local-mirror" });
+  await sessionSelfHeal(args);
+  assert.deepEqual(calls.restartPending, [true]);
+});
+
+// F-B7d (A2) — the clear: a fresh, converged session HAS loaded the on-disk state, so the
+// pending nudge is stale → clear it. This is what makes the statusLine nudge disappear once
+// the user actually restarted (and not before).
+test("sessionSelfHeal — converged brain → CLEARS any pending restart nudge", async () => {
+  const { args, calls } = seams(); // all present → converged
+  await sessionSelfHeal(args);
+  assert.deepEqual(calls.restartPending, [false]);
 });
 
 test("sessionSelfHeal — fail-open: a throwing seam never propagates, logs loudly, spawns nothing", async () => {

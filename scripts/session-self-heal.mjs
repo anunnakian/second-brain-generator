@@ -19,13 +19,14 @@
 // Wired as a SessionStart hook BEFORE session-status.mjs (cf. .claude/settings.json).
 // Cross-OS: pure Node, no bash/jq dependency.
 // ─────────────────────────────────────────────────────────────────────────────
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { detectSelfHealGap } from "./lib/self-heal-detect.mjs";
 import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
+import { RESTART_FLAG_REL } from "./lib/restart-nudge.mjs";
 
 export async function sessionSelfHeal({
   brainDir,
@@ -34,11 +35,25 @@ export async function sessionSelfHeal({
   mcpServerRegistered,
   spawnReconcile,
   emit,
+  setRestartPending = () => {},
 }) {
   try {
     const { wantedSkillDirs, wantedServerIds } = readWanted();
     const gap = detectSelfHealGap({ wantedSkillDirs, wantedServerIds, skillDirExists, mcpServerRegistered });
-    if (!gap.needed) return { healed: false };
+    if (!gap.needed) {
+      // F-B7d (A2): a fresh, converged session HAS loaded the on-disk engine state, so any
+      // restart nudge left by a previous session is now stale → clear it. This is what makes
+      // the persistent statusLine nudge disappear exactly when the user has actually restarted.
+      setRestartPending(false);
+      return { healed: false };
+    }
+
+    // F-B7d (A2): a background reconcile is about to converge the brain, but THIS session
+    // already loaded the pre-reconcile config → on-disk will be ahead of what's loaded.
+    // Mark a restart as PENDING so the persistent statusLine nudges the Desktop user (whose
+    // systemMessage we are about to emit is dropped by the Code tab). Cleared by the next
+    // fresh, converged session start (the branch just above).
+    setRestartPending(true);
 
     const parts = [
       gap.missingSkills.length ? `skills: ${gap.missingSkills.map((d) => d.split("/").pop()).join(", ")}` : null,
@@ -125,6 +140,22 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         { detached: true, stdio: "ignore", windowsHide: true },
       );
       child.unref();
+    },
+    // A2: persist the "restart pending" flag under the gitignored .cache/ so the statusLine
+    // (status-line.mjs) can show the Desktop-visible nudge. Fail-soft: a flag-write hiccup
+    // must never break self-heal, so swallow errors (the systemMessage line still ships).
+    setRestartPending: (pending) => {
+      const flagPath = join(brainDir, RESTART_FLAG_REL);
+      try {
+        if (pending) {
+          mkdirSync(dirname(flagPath), { recursive: true });
+          writeFileSync(flagPath, "restart needed to finish the engine update\n");
+        } else {
+          rmSync(flagPath, { force: true });
+        }
+      } catch {
+        /* fail-soft: the nudge is a convenience, never a blocker */
+      }
     },
     emit: (msg) => lines.push(msg),
   })
