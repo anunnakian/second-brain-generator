@@ -56,6 +56,14 @@ Explain, plainly:
   `npm install` means installing the RAG engine's **dependencies locally** — nothing is
   published to or pulled from a package registry.
 
+> **Phrasing — make the ENGINE the visible actor, never the user.** These are things the
+> update *will do*, not commands addressed to the reader. Always use an **explicit subject +
+> future tense** ("it will fetch a newer engine", "it will never touch what's yours", "it will
+> reindex only if the format changed") — **never a bare verb** that could read as an order. This
+> matters especially when you answer in a **pro-drop language** (French, Spanish, Italian…),
+> where a subjectless present ("récupère un moteur…", "ne touche pas à…") looks like an
+> imperative aimed at the user instead of a description of what the engine does.
+
 Then ask for an explicit **yes** before proceeding.
 
 ### Step 2 — Run the deterministic core
