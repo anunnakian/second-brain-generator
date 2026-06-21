@@ -132,6 +132,30 @@ revised", "the original §N said…", commit hashes, and "(amended date, person)
   and 0026 were amended pre-publication with dated "AMENDED IN PLACE" scars; rewritten timeless once we saw
   the ADR addresses a fresh reader, not a witness.)
 
+## 6quater. Lead every ADR with a Crux block
+
+Every ADR opens with a short **Crux** block placed **right under the metadata** (STATUS / Scope / Related),
+**before** Context: 2–4 bold-led lines giving the **decision** in one sentence, the single **key guarantee**,
+and — where it applies (§6quinquies) — the **prior art** it mirrors. The crucial information must stand out
+at a glance; the Context / Decision / Consequences detail stays below. **Applies to every future ADR**, not
+just the ones touched when this convention was written.
+
+> Thomas asked for this explicitly (2026-06-21): make the essential decision + its key guarantee jump out
+> for a fresh reader instead of being buried in the body.
+
+## 6quinquies. Name the prior art — say when a decision isn't NIH
+
+When an ADR adopts an **established pattern**, **say so explicitly** and **cite the prior art** — we are not
+reinventing the wheel. Name the industry standard the design mirrors, in a real *"Prior art / why this isn't
+NIH"* subsection (or folded into the Crux), so "why this design is right" is obvious to a fresh reader.
+Example: ADR 0026 names the **desired-state reconciliation loop** (Kubernetes controllers, GitOps Argo/Flux,
+Terraform plan→apply, Chef/Puppet converge, Microsoft DSC Test/Set, Windows Installer self-healing) and
+explains the SessionStart tick as its *level-triggered* tick — not a local hack. **Applies to every future
+ADR.**
+
+> Thomas asked for this explicitly (2026-06-21): an ADR that quietly re-derives a known standard reads as
+> NIH; naming the prior art shows the design is deliberate and battle-tested.
+
 ## 7. Plan done = archived
 
 The moment a plan ships, **in the same change**: set its top `STATUS` to ✅ (with proof — commit
@@ -139,6 +163,25 @@ SHAs / what was verified) **and `git mv` it into [`plans/archived/`](plans/archi
 shipped plan at the root; never delete it (the archive keeps the step detail). A plan whose core
 shipped but that still carries an open conditional/exploratory tail goes to `plans/prospective/`.
 Update the plans listing in [`README.md`](README.md). Full convention: [`README.md`](README.md).
+
+## 8. Terminology — `reconcile` (mechanism) vs `self-heal` (runtime/user)
+
+Use the cloud-native 2020s vocabulary consistently, so code and prose name the same thing the same way:
+
+- **Mechanism / code → `reconcile` / "the reconciler"** (Kubernetes + GitOps + Terraform, and our own
+  `reconcileMcpServers` / `reconcileHooks` / `reconcileBrain`). **Do NOT call the component "the
+  converger"** — that noun is retired.
+- **Runtime / user-facing → `self-heal` / "auto-réparation"** (Argo, Windows Installer, our
+  `session-self-heal` hook). This is what the brain *tells the user*.
+- **Precise nouns:** *desired state* (the manifest / `target`), *drift* (the gap), *idempotent*,
+  *level-triggered* (the SessionStart tick), *converged* (the steady state). **Keep `converge` /
+  `converged` / `convergence` as verb/state only** — they are correct and stay (~30 sites); only the
+  component **noun** "the converger" was renamed to "the reconciler".
+- Optional mental frame: DSC's **Test** (= `self-heal-detect` / `detectHookGap`) → **Set**
+  (= `reconcileBrain`).
+
+> Origin (2026-06-21): code said `reconcile`, prose said "converge"/"the converger" — the industry's two
+> names for one thing. Locked one term per usage to keep the desired-state-reconciliation design legible.
 
 ## See also (operative rules already homed in the repo)
 

@@ -132,9 +132,10 @@ export async function updateEngine({
   // 2.→6. CONVERGE the brain's on-disk engine state to the target manifest (ADR 0026):
   //    compute the write-allowlist, copy the engine files (F1/F2 refinements), install
   //    -if-absent the engine-declared skills, reconcile .mcp.json against
-  //    engineMcpServers, regenerate the launchers, run install, reindex IFF the schema
-  //    moved, and count the vault notes — all behind the deterministic, idempotent
-  //    `reconcileBrain`. Extracted so the SAME converger runs at auto-finalize (a fresh
+  //    engineMcpServers, add-if-absent the engine-owned hook entries into settings.json,
+  //    regenerate the launchers, run install, reindex IFF the schema moved, and count the
+  //    vault notes — all behind the deterministic, idempotent
+  //    `reconcileBrain`. Extracted so the SAME reconciler runs at auto-finalize (a fresh
   //    child process at the end of this function) and at SessionStart self-heal.
   const { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded } =
     await reconcileBrain({

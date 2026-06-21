@@ -4,10 +4,11 @@
   v3.1.0 → v3.2.2 upgrader (a throwaway "legacy" brain); scope locked, implemented in **v3.3.0**.
   Index format unchanged → no schema bump, no forced reindex. The "residual bootstrap" caveat in
   *Consequences* is accepted as the deliberate trade-off (declarative-data convergence in one pass;
-  only a rare reconciler-engine change still lags one update). The vault-sacred *Safety invariant* carries
-  **one narrow, nominative exception** (Decision §5 + invariant below): the reconciler may **seed
-  (write-if-absent)** the engine-owned health-check note + incrementally reindex it, so the `health_check`
-  canary (ADR 0030) also works on upgraders.
+  only a rare reconciler-engine change still lags one update). The blanket-sacred *Safety invariant* carries
+  **two narrow, nominative exceptions** (Decision §5 and §6 + invariant below): the reconciler may **seed
+  (write-if-absent)** the engine-owned health-check note + incrementally reindex it (so the `health_check`
+  canary, ADR 0030, also works on upgraders), and may **merge (add-if-absent)** engine-owned hook entries
+  into `settings.json` (so the v3.3.0 SessionStart runtime hooks reach upgraders, not just fresh installs).
 - **Scope:** Second brain (runtime) + Installer — a brain-side **deterministic reconciler** invoked by
   `update-engine` (as a child process) and by the **SessionStart** hook; the installer may reuse the
   same pure libs at install time.
@@ -16,6 +17,20 @@
   (the install-if-absent capability this **generalizes**), [`0015-mac-windows-parity...`](0015-mac-windows-parity-regenerate-launchers.md)
   (Mac/Win/Linux parity), [`0016-update-engine-is-a-skill-not-an-mcp-tool.md`](0016-update-engine-is-a-skill-not-an-mcp-tool.md)
   (skill vs MCP), the write-allowlist safety core. Field findings: [`../plans/prospective/post-v3.2.2-field-qa-findings-action.md`](../plans/prospective/post-v3.2.2-field-qa-findings-action.md).
+
+## Crux
+
+> - **Decision —** the brain converges its own on-disk engine state to the manifest's *desired state*
+>   through one idempotent **reconciler**, run after every update (an auto-finalize child process) and at
+>   every **SessionStart** (self-heal — plus, for the one-time pre-3.2 jump, a bootstrap tick on the
+>   already-wired `session-status` hook).
+> - **Guarantee —** the reconciler only ever **adds** manifest-declared, engine-owned things **when
+>   absent**: engine skill dirs, `.mcp.json` servers, `settings.json` **hook entries**, regenerated
+>   launchers, and the single health-check note. It **never** overwrites or deletes the vault, `.env`, the
+>   constitution, a user skill, or any user-authored `.mcp.json` server or `settings.json` entry.
+> - **Prior art (not NIH) —** this is the canonical **desired-state reconciliation loop** (Kubernetes
+>   controllers, GitOps Argo/Flux, Terraform plan→apply, Chef/Puppet converge, Microsoft DSC Test/Set,
+>   Windows Installer self-healing); **SessionStart is its level-triggered tick**.
 
 ## Context
 
@@ -38,12 +53,42 @@ were observed:
 **The pain:** the user had to *know* to run the update twice; the brain neither **auto-finalized** nor
 **warned**. That is fragile onboarding for the flagship feature.
 
+**A second, structurally identical gap — the SessionStart runtime hooks.** The runtime trio added with
+this convergence work — `session-self-heal`, `session-health`, `session-obsidian-hint` — is wired in
+`.claude/settings.json`, which the write-allowlist treats as **blanket-sacred** (it is never in the
+manifest, so no engine path writes it). The hook *script files* reach upgraders (they are in the `replace`
+regime), but their *wiring* does not: a pre-3.2 brain stays at `SessionStart = [session-status]` no matter
+how many updates run, so the trio — including the very self-heal hook meant to converge the brain — would
+reach **fresh installs only**. This is the **same shape** as the `.mcp.json`-never-reconciled gap ADR 0025
+closed, one level up: an engine-owned, purely-additive entry that the blanket sacred boundary blocks.
+
+## Prior art — the desired-state reconciliation loop (this is not NIH)
+
+This design deliberately mirrors an **established industry standard** rather than reinventing one. "Make
+the on-disk state match a declared desired state, idempotently, on a recurring tick" is the **desired-state
+reconciliation loop** at the heart of:
+
+- **Kubernetes controllers** and **GitOps** (Argo CD, Flux) — a control loop continuously reconciles live
+  state toward a declarative spec.
+- **Terraform** `plan → apply` — diff the world against declared state, converge the gap.
+- **Chef / Puppet** convergence runs and **Microsoft DSC** `Get → Test → Set` — periodic agents that
+  re-assert desired configuration.
+- **Windows Installer self-healing** — a missing managed resource is re-provisioned on next use.
+
+Our mapping is one-to-one: `engine-manifest.json` (`target`) is the **desired state**; `reconcileBrain` is
+the **reconciler** (the *Set*); `self-heal-detect` / `detectHookGap` is the **drift gate** (the *Test*);
+and **SessionStart is the level-triggered tick** (the equivalent of chef-client's interval or Argo's
+continuous loop). Running an idempotent, true-no-op reconciler at every session start is therefore the
+**canonical** continuous-reconciliation pattern — which is exactly why the "the first update runs the old
+code" bootstrap worry dissolves: a level-triggered loop self-corrects on the next tick by design. The only
+thing we add on top is naming discipline (see the terminology note in `CONVENTIONS.md`).
+
 ## Decision
 
 **Extract the "converge the brain's on-disk state to the manifest's desired state" half of `updateEngine`
 into a standalone, deterministic, idempotent reconciler, and run it at two points.**
 
-1. **`reconcile-brain.mjs` (the converger).** Driven entirely by the declarative `engine-manifest.json`:
+1. **`reconcile-brain.mjs` (the reconciler).** Driven entirely by the declarative `engine-manifest.json`:
    ensure engine-owned skill dirs present (**install-if-absent**, ADR 0025), `.mcp.json` carries the
    declared `engineMcpServers`, launchers regenerated. **No network.** Same **write-allowlist safety
    core** — never touch the vault, `.env`, the constitution, settings, or any non-declared/custom skill.
@@ -73,13 +118,38 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
      schema-change full re-encode v3.3.0 avoids). If nothing was seeded, **no reindex** runs.
      ⚠️ Mandatory pairing: seeding **without** indexing → note on disk + 0 index hits + embedder ran →
      `health_check` returns a **false `broken`** (worse than `unknown`).
+6. **Merge engine-owned hook entries into `settings.json` so the runtime hooks reach upgraders.** The
+   reconciler reconciles the brain's `.claude/settings.json` against the engine's desired hook set
+   (`.claude/settings.json.template`, itself in the `replace` regime so a brain compares against the
+   *current* desired state, not its own stale template) — the **exact twin** of the `.mcp.json` reconcile
+   (`reconcileMcpServers`) and the install-if-absent skills (ADR 0025), now one level up:
+   - **Add-if-absent, dedup by the script the hook runs.** An engine hook entry is appended under its
+     event (`SessionStart`, `PostToolUse`, `Stop`, …) **only if** no existing group there already runs
+     that script (e.g. `scripts/session-health.mjs`). **Never overwrite, never remove, never touch a user
+     entry.** Re-running is a **byte-identical no-op** once converged. The appended command reuses the
+     brain's own interpreter (the `{{NODE}}` prefix is parsed from an existing hook command) and POSIX
+     `{{PROJECT_ROOT}}` = `brainDir`, so it is correct on every OS (ADR 0015).
+   - **The bootstrap tick (the one-time pre-3.2 jump).** On a pre-3.2 brain the *only* already-wired
+     SessionStart hook is `session-status`, so **it is the bootstrap anchor**: when the now-v3.3.0
+     `session-status` detects a hook-wiring gap (`detectHookGap`, drift gate), it spawns the reconciler
+     **once** (the same detached, fail-soft shape as `session-self-heal`) to wire the missing hooks; the
+     next restart loads them and `session-self-heal` owns steady state thereafter. The two spawners are
+     **mutually exclusive by construction** — `session-status` spawns only when `session-self-heal` is not
+     yet wired — so there is no race and zero steady-state overhead (a converged brain's gate is always
+     false). **SessionStart is the level-triggered reconcile tick**; running an idempotent no-op
+     reconciler at every start is the canonical pattern, not a hack.
+   - **One-time reassurance, localized.** When the bootstrap tick wires the hooks, the brain surfaces a
+     single calm message ("self-healing is now active — restart one last time; future updates apply in a
+     single pass"). It is **localized via the brain's `BRAIN_LOCALE` marker** (the first localized runtime
+     hook string; a tiny tested catalog, fail-soft to English), carried both in the `update-engine` report
+     (Desktop-visible) and as a deterministic `session-status` CLI belt.
 
 ### Safety invariant (every test asserts it)
 
 > The reconciler only ever writes manifest-declared engine-owned skills/MCP servers (install-if-absent)
-> and regenerated launchers. The vault, `.env`, the constitution, settings, every user-added `.mcp.json`
-> server and every non-declared/custom skill are untouchable — **EXCEPT** the single, nominative
-> carve-out below.
+> and regenerated launchers. The vault, `.env`, the constitution, every user-added `.mcp.json`
+> server, every user-authored `settings.json` entry and every non-declared/custom skill are untouchable —
+> **EXCEPT** the two narrow, nominative carve-outs below.
 
 > **⚠️ The one vault exception.** The "vault is untouchable" rule **stands**;
 > its **only** exception is that the reconciler MAY **create** (write-if-absent — **never** overwrite,
@@ -95,14 +165,37 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
 >   findable, so the post-seed verdict is `ok` (or `unknown` on a missing key), never a seeded-but-unindexed
 >   `broken`.
 
+> **⚠️ The one settings exception.** The "`settings.json` is untouchable" rule **stands** for everything a
+> user authors (permissions, env, their own hooks); its **only** exception is that the reconciler MAY
+> **append** (add-if-absent — **never** overwrite, **never** remove) an **engine-owned hook entry** whose
+> script the brain does not yet run. This is a surgical side-channel **outside** the `computeApplyPlan`
+> write-allowlist (exactly like the `.mcp.json` reconcile), so the blanket "settings is sacred" rule is
+> preserved for the write-allowlist core. Enforced by tests:
+> - **Engine-owned only** — only hooks the engine template declares are ever appended; a user-added hook
+>   entry is never modified or removed, and no non-hook section of `settings.json` is touched.
+> - **Add-if-absent, dedup by script** — an event group already running that script is left as-is; entries
+>   are matched by the script the hook runs, not by position.
+> - **Idempotent** — a converged brain's `settings.json` is left **byte-identical** (no write → no
+>   auto-commit noise); `settings.json` is written **only** when at least one hook entry was added.
+> - **Cross-OS** — the appended command carries the win32-safe shape (the brain's own `{{NODE}}` prefix +
+>   POSIX `{{PROJECT_ROOT}}`), unit-pinned on darwin and win32 (ADR 0015).
+
 ## Consequences
 
 - **Layer A solved**: one `/update-engine` invocation finishes the job (the auto-finalize child process).
 - **Layer B mitigated**: SessionStart self-heal guarantees correctness from the **next** conversation; a
   full app restart (field-proven) suffices for the current one, and the brain can **say so**.
-- **Aligns with ADR 0009**: deterministic, idempotent, fail-open. This is **desired-state convergence /
-  drift remediation** (the Terraform / k8s-controller pattern) — light "compliance automation" framed as
-  *make on-disk state match the manifest*, not *run a sequence of migrations*.
+- **The v3.3.0 runtime trio now reaches upgraders, not just fresh installs**: the additive hook-entry
+  merge wires `session-self-heal`, `session-health` and `session-obsidian-hint` into a pre-3.2 brain's
+  `settings.json`, so self-heal auto-convergence (F1), the runtime health probe + OS toast (F7) and the
+  Obsidian hint (F8.3) stop being new-install-only. The first pre-3.2 jump converges via the
+  `session-status` bootstrap tick; from v3.3.0 onward it converges in-band (one update + one restart).
+- **First localized runtime hook string**: the one-time "self-healing is now active" reassurance follows
+  the brain's locale (`BRAIN_LOCALE`), establishing the seam for future localized hook output; every other
+  hook string stays English-only for now.
+- **Aligns with ADR 0009**: deterministic, idempotent, fail-open — see the *Prior art* section above for
+  the industry standard this mirrors, framed as *make on-disk state match the manifest*, not *run a sequence
+  of migrations*.
 - **Residual bootstrap (honest):** the reconciler is itself part of the payload, so if its **algorithm**
   changes, that change still lags one update. By keeping it a **stable interpreter of declarative
   manifest DATA**, **feature additions** (a new skill dir, MCP server, settings entry) land in **one
@@ -121,7 +214,7 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
   but it is **fragile onboarding**: this ADR proposes to remove the manual second run.
 - **Re-exec the FETCHED `update-engine`** (ADR 0025 already rejected this): doesn't help the installed
   cohort and adds spawn / anti-loop complexity. The **reconciler-as-child-process** is the same idea but
-  scoped to a small, stable, tested converger rather than re-running the whole update.
+  scoped to a small, stable, tested reconciler rather than re-running the whole update.
 - **An aggressive SessionStart reconciler that writes on every start.** Rejected unless strictly
   idempotent + fail-open: the blast radius is **every** conversation, so conservatism is mandatory.
 - **Auto-register the brain's vault in Obsidian inside this reconciler at runtime.** Tempting (it
@@ -138,3 +231,12 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
   nothing to copy from; writing the vault on every start widens the blast radius for no gain) and
   **widening the carve-out to "engine-owned notes" in general** (premature; stays nominative to this one
   path until a second engine note ever justifies revisiting).
+- **A separate ADR for the hook-entry merge, or for the localized message.** Rejected: both belong to the
+  **same topic** as this ADR — *what the reconciler may write, and how it reaches upgraders* — so they are
+  folded in here per the amend-in-place convention (`CONVENTIONS.md` §6bis), not spun off as new ADRs.
+- **Make the engine write `settings.json` through the `computeApplyPlan` write-allowlist** (drop it from
+  `SACRED_FILES`). Rejected: that would expose the user's permissions/env/own-hooks to engine writes. The
+  additive side-channel keeps the blanket "settings is sacred" rule intact and only ever **appends**
+  engine-owned hook entries — the exact shape `.mcp.json` already takes.
+- **Localize every runtime hook string now.** Deferred: only the one-time reassurance is user-facing
+  enough to justify the locale seam; the rest stay English-only until a concrete need appears.

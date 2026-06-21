@@ -13,7 +13,7 @@ import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// reconcile-brain — the CONVERGE half of update-engine, extracted (ADR 0026).
+// reconcile-brain — the RECONCILE half of update-engine, extracted (ADR 0026).
 //
 // `reconcileBrain()` makes the brain's on-disk engine state MATCH a desired-state
 // manifest (`target`) by copying engine files, install-if-absent engine skills,

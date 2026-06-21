@@ -1,11 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// reconcile-brain.mjs — the CONVERGE half of update-engine (ADR 0026). Makes the
+// reconcile-brain.mjs — the RECONCILE half of update-engine (ADR 0026). Makes the
 // brain's on-disk engine state MATCH a desired-state `target` manifest, deterministic
 // and idempotent: copy the engine files, install-if-absent the engine-declared skills,
-// reconcile `.mcp.json` against `engineMcpServers`, regenerate the launchers, run
-// install, and reindex IFF the index schema moved. It NEVER touches the vault, `.env`,
-// the constitution, settings, user-added `.mcp.json` servers or any non-declared /
-// custom skill (the write-allowlist safety core is `computeApplyPlan`).
+// reconcile `.mcp.json` against `engineMcpServers`, add-if-absent the engine-owned
+// SessionStart hook entries into `settings.json`, regenerate the launchers, run install,
+// and reindex IFF the index schema moved. It NEVER touches the vault, `.env`, the
+// constitution, user-added `.mcp.json` servers, user-authored `settings.json` entries or
+// any non-declared / custom skill (the write-allowlist safety core is `computeApplyPlan`;
+// the `.mcp.json` and hook-entry merges are additive side-channels OUTSIDE it — ADR 0026).
 //
 // Why standalone (ADR 0026): the same reconciler runs at TWO points —
 //   • auto-finalize: re-exec'd as a fresh child process at the end of update-engine,
