@@ -39,8 +39,31 @@ restart self-heal converge the manifest-sourced capabilities (skill + MCP), clos
   - [x] 3a — amend **ADR 0026 in place** (not a new ADR): the engine derives its desired-state from the files it DELIVERS (`settings.json.template` hooks, `.mcp.json.template` server keys, `engine-skills/` skill presence), NEVER the frozen user manifest; a NEW upgrader-bound skill rides in via a non-sacred `engine-skills/` staging dir + install-if-absent (because the sacred scrub forbids delivering skills under `.claude/skills/`). Explicitly note this SUPERSEDES the `engine-spec.json` sketch (no 2nd source of truth to keep synced — same anti-duplication reasoning as b1). Add `- **Scope:**` line. _(2026-06-21 · 055e20f — Crux + Decision §1/§7 + prior-art mapping + 3 rejected alts; Scope already present)_
   - [x] 3b — update the QA plan `v3.3.0-qa-plan-action.md` (record F-B7 + the fix) and the in-progress memory _(2026-06-21 · F-B7 section added, corrects the F-B2 manifest-as-desired-state framing)_
 - [ ] **4 — RE-VERIFY on the real rig** (the proof that matters)
-  - [ ] 4a — reset rig (commands below), run `/update-engine` ONCE in Desktop, restart + resume, confirm `local-mirror` skill + MCP + health note converge **without a 2nd update**
+  - [x] 4a — reset rig, run `/update-engine` ONCE in Desktop, restart + resume, confirm convergence **without a 2nd update** _(2026-06-21 — skill + MCP + 4 hooks DO converge via self-heal; but the **health-check note does NOT** → finding **F-B7b** below)_
   - [ ] 4b — purge the rig if it mirrored a real Notion zone; `git tag -d v3.3.0` (disposable) before any real release
+
+- [ ] **5 — F-B7b: the health-check note does NOT converge for a pre-3.3.0 upgrader** _(found 2026-06-21 during Task 4)_
+  > **The WHAT:** skill + MCP + hooks now converge from a v3.1.0 brain (Tasks 1–3), but the
+  > `health_check` canary note (`vault/engine-health/health-check.md`, Quibblethorne) **never arrives**
+  > on an upgrader → the canary would read `broken` forever. **Same bug class as F-B7**: the note's only
+  > home is `vault/`, which `computeApplyPlan` scrubs as SACRED (`engine-apply-plan.mjs` `SACRED_TREES`),
+  > so the engine can't deliver it; and the seed carve-out in `reconcileBrain` requires `sourceDir !==
+  > brainDir` (a fetched clone), which **self-heal never has**. The old in-process update (v3.1.0 code,
+  > no auto-finalize) doesn't seed it either → permanent gap until a future real update.
+  > **The fix mirrors `staged-skills` exactly**: relocate the note to a NON-sacred staging path
+  > `engine-health/health-check.md` (a `replace` file the engine DOES deliver), then seed
+  > `vault/engine-health/health-check.md` install-if-absent from that staged copy in BOTH modes (the
+  > staged source is on the brain's own disk, so `sourceDir === brainDir` works — src path
+  > `engine-health/…` ≠ dest `vault/engine-health/…`, no self-copy). This OVERTURNS ADR 0026 decision B
+  > ("self-heal never seeds"); amend it in place.
+  - [ ] 5a — RED: extend `restart-convergence.test.mjs` F-B7 test to assert `vault/engine-health/health-check.md` is seeded after the self-heal (RED today, GREEN after fix)
+  - [ ] 5b — new helper `scripts/lib/staged-health-note.mjs` → `seedHealthNote({ sourceDir, brainDir })`: if `<sourceDir>/engine-health/health-check.md` exists and `<brainDir>/vault/engine-health/health-check.md` absent → copy it in; return whether the vault note is present (for the reindex pairing). Pure I/O, win32-safe. TDD baby-steps.
+  - [ ] 5c — RELOCATE the canonical note: `git mv vault/engine-health/health-check.md engine-health/health-check.md` (single source); add `engine-health/**` to `regimes.replace` (so update + pass-1 deliver it, non-sacred)
+  - [ ] 5d — `reconcile-brain.mjs`: replace the vault-source carve-out block (l.170-176) with `seedHealthNote` sourced from `engine-health/`; DROP the `sourceDir !== brainDir` guard; keep the reindex pairing (`healthNotePresent → "health-note-seed"`, incremental)
+  - [ ] 5e — `installer.mjs`: call `seedHealthNote({ sourceDir: TARGET, brainDir: TARGET })` next to `installStagedSkills` (~l.305) so a FRESH brain seeds the vault note from the staged copy (the bulk copy no longer brings it under `vault/`)
+  - [ ] 5f — flip/repoint tests: `reconcile-brain.test.mjs` test 10 (self-heal NOW seeds from staged copy) + tests 8/9/11 seed-source `vault/…` → `engine-health/…`; `staged-health-note.test.mjs` unit cases; the v3.1.0 brain builder in `restart-convergence.test.mjs` keeps its own user note untouched
+  - [ ] 5g — amend **ADR 0026 in place** (decision B): the note seeds in BOTH modes from a non-sacred staged source — the SAME delivered-files principle as skills/MCP; self-heal CAN seed
+  - [ ] 5h — full harness + `cd rag … --test` + `cd local-mirror … --test` + both `tsc --noEmit` GREEN; re-verify on the rig (reset → ONE update → restart → note converges)
 
 ---
 
