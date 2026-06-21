@@ -7,9 +7,11 @@ import { sessionSelfHeal } from "./session-self-heal.mjs";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-const CONVERGED = {
-  installSkills: [".claude/skills/local-mirror/**"],
-  engineMcpServers: ["vault-rag", "local-mirror"],
+// The DESIRED-STATE the wrapper derives from delivered files (F-B7 2g): the wanted
+// skill dirs + wanted MCP server ids, fed straight into the gate.
+const WANTED = {
+  wantedSkillDirs: [".claude/skills/local-mirror"],
+  wantedServerIds: ["vault-rag", "local-mirror"],
 };
 
 // Build the seam bundle with spies; override per test.
@@ -17,7 +19,7 @@ function seams(overrides = {}) {
   const calls = { spawned: [], emitted: [] };
   const base = {
     brainDir: "/brain",
-    readManifest: () => CONVERGED,
+    readWanted: () => WANTED,
     skillDirExists: () => true,
     mcpServerRegistered: () => true,
     spawnReconcile: (arg) => calls.spawned.push(arg),
@@ -50,7 +52,7 @@ test("sessionSelfHeal — a gap → spawns reconcile in the background + emits o
 
 test("sessionSelfHeal — fail-open: a throwing seam never propagates, logs loudly, spawns nothing", async () => {
   const { args, calls } = seams({
-    readManifest: () => {
+    readWanted: () => {
       throw new Error("manifest unreadable");
     },
   });

@@ -19,24 +19,25 @@
 // Wired as a SessionStart hook BEFORE session-status.mjs (cf. .claude/settings.json).
 // Cross-OS: pure Node, no bash/jq dependency.
 // ─────────────────────────────────────────────────────────────────────────────
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { detectSelfHealGap } from "./lib/self-heal-detect.mjs";
+import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
 
 export async function sessionSelfHeal({
   brainDir,
-  readManifest,
+  readWanted,
   skillDirExists,
   mcpServerRegistered,
   spawnReconcile,
   emit,
 }) {
   try {
-    const manifest = readManifest();
-    const gap = detectSelfHealGap({ manifest, skillDirExists, mcpServerRegistered });
+    const { wantedSkillDirs, wantedServerIds } = readWanted();
+    const gap = detectSelfHealGap({ wantedSkillDirs, wantedServerIds, skillDirExists, mcpServerRegistered });
     if (!gap.needed) return { healed: false };
 
     const parts = [
@@ -57,6 +58,41 @@ export async function sessionSelfHeal({
   }
 }
 
+// "<…>/local-mirror/**" → "<…>/local-mirror" (mirror reconcile-brain's skill-dir derivation).
+function skillGlobToDir(glob) {
+  return glob.replace(/\/\*\*?$/, "");
+}
+
+// Derive the engine's DESIRED-STATE from the files it DELIVERS to this brain (F-B7 2g),
+// proven by restart-convergence.test.mjs. NEVER the frozen `engineMcpServers`/manifest
+// regimes alone — update-engine never refreshes those, which is the whole bug:
+//   • wanted skills  = engine merge skills (computeApplyPlan, for v3.3.0+ skills) ∪ the
+//                      staged `engine-skills/<name>/` dirs (upgrader-bound skills the
+//                      sacred scrub forbids delivering under `.claude/skills/`);
+//   • wanted servers = keys of the delivered `.mcp.json.template` (the local-mirror
+//                      server arrives here once pass-1 lays the template on disk).
+function deriveWanted(brainDir) {
+  const manifest = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
+  const mergeSkillDirs = computeApplyPlan(manifest).installSkills.map(skillGlobToDir);
+
+  const stagingDir = join(brainDir, "engine-skills");
+  const stagedSkillDirs = existsSync(stagingDir)
+    ? readdirSync(stagingDir, { withFileTypes: true })
+        .filter((e) => e.isDirectory())
+        .map((e) => `.claude/skills/${e.name}`)
+    : [];
+
+  const templatePath = join(brainDir, ".mcp.json.template");
+  const wantedServerIds = existsSync(templatePath)
+    ? Object.keys(JSON.parse(readFileSync(templatePath, "utf8")).mcpServers ?? {})
+    : [];
+
+  return {
+    wantedSkillDirs: [...new Set([...mergeSkillDirs, ...stagedSkillDirs])],
+    wantedServerIds,
+  };
+}
+
 // ── main: wire the real I/O seams (deterministic glue, not unit-tested) ───────
 // The reconcile runs DETACHED in the background (its npm install / launcher regen
 // can outlast the hook timeout) so session start never blocks. The brain converges
@@ -69,7 +105,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 
   sessionSelfHeal({
     brainDir,
-    readManifest: () => JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8")),
+    // Desired-state from the files the engine DELIVERS, never the frozen manifest
+    // (F-B7 2g): wanted skills = engine merge skills ∪ staged `engine-skills/`;
+    // wanted MCP servers = keys of the delivered `.mcp.json.template`.
+    readWanted: () => deriveWanted(brainDir),
     skillDirExists: (dir) => existsSync(join(brainDir, dir)),
     mcpServerRegistered: (() => {
       const mcpPath = join(brainDir, ".mcp.json");
