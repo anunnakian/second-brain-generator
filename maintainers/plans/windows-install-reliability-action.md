@@ -123,7 +123,12 @@ path** (Capability E) — otherwise the next Windows regression slips the same w
   - [x] Harness green on macOS locally (511/511). _(audited: only these 2 of 492 tests were red; the
     `session-status … untouched` assertion compares a verbatim-preserved entry, consistent on either OS.)_
   - [ ] **CI green on Windows** (the real gate) — pending the PR run.
-- [ ] **Ship** *(depends on: A–F)*
+- [ ] **Capability G — The REST of the Windows CI is green (cascade revealed once F unblocked the harness step)** 🧪 *(discovered 2026-06-22 on PR #17 / run 27979285365: with the harness step finally green on Windows, the later CI steps ran for the first time and surfaced two more Windows-only failures that were masked all along)*
+  - [x] **F proven green on CI**: harness step is **505/505, 0 fail on `windows-latest`** (run 27979285365). The 2 path false-negatives are fixed for real.
+  - [ ] **G1 — engine tests (`rag/`) red on Windows (2 tests).** `rag/src/lib/citation-renderer.test.ts` (tests "a mirror note renders both…" + "a non-mirror note renders only…"). **Root cause:** the test passes a **hardcoded POSIX absolute root `"/brain/vault"`** and expects `file:///brain/vault/…`; on Windows that driveless path resolves to `D:/brain`, so `pathToFileURL` emits `file:///D:/brain/vault/…` → mismatch. **In real Windows use the vaultRoot is a real `C:\…` path and the URL is correct → test false-negative, NOT a prod bug.** Fix: make the test root cross-OS (e.g. build the expected `file://` URL via `pathToFileURL`/the same logic, or use an OS-appropriate absolute root). Verify on CI.
+  - [ ] **G2 — `install-e2e` job failed AND was abnormally slow (>15–20 min on the installer step).** Exit 1. Cause not yet diagnosed (run was still in progress at /clear — grab logs: `gh api repos/tpierrain/second-brain-generator/actions/jobs/82804942174/logs`). Suspects: in-process ONNX weight download slow/hung on Windows CI, or the install genuinely failing late. **Decide:** is this a real install regression, a CI-environment slowness, or should the e2e use a lighter/no-embedder path / a timeout? (Possibly the install-e2e assertion or a hang — confirm from logs first.)
+  - [ ] Re-run CI on the PR; **all Windows cells green** (the real gate).
+- [ ] **Ship** *(depends on: A–G)*
   - [ ] Full suite green (harness + `rag/`), `tsc` clean, CI green on macOS **and** Windows.
   - [ ] PR with a "The One Where…" codename (memory `release-naming-the-one-with`); body in English.
   - [ ] Tag + GitHub release (QA-before-main discipline, ADR 0020 context).
