@@ -168,6 +168,17 @@ built-in `node --test`. Two realistic paths, in tension:
       not flagged weak by the Step 2 audit; a full-`rag` re-audit (refresh RESULTS.md) is the
       natural closer before moving on.
   - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
+    - [x] `server.ts` **0 % → 85.71 %** (10 killed + 2 timeout / 14) — composition root: extracted
+      + exported the boot seams (`buildDeps`, `buildApi`, `boot(BootDeps)`, `fatal`) and named the
+      real wiring (`createRealServer`, `createRealTransport`, `realBootDeps`) so no inline arrows
+      survive; TDD'd with fakes (connect spy, log/exit spies, `instanceof` on the real factories).
+      Guarded the top-level boot behind an `import.meta.url` entry-point check so importing for tests
+      is side-effect-free. Also tuned `stryker.local-mirror.config.mjs` (concurrency 4 / timeout 30 s)
+      to kill the false-timeout trap (bogus 87.5 % with 14/16 "timeouts" at defaults → honest 56 %
+      pre-refactor). The 2 residual survivors are documented equivalents: the entry-point guard +
+      its `boot(realBootDeps).catch(fatal)` body (run only when server.ts IS the process) → effective
+      12/12 = 100 % on non-equivalents. _(2026-07-15)_
+    - [ ] Next local-mirror survivors: `index.ts` (2.2 %), `notion-gateway` (21 %).
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
   "how do we stop badly-written tests from recurring?" — three layers, cheapest/most-deterministic first:
