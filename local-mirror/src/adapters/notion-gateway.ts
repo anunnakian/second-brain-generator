@@ -65,14 +65,27 @@ export async function queryNotionDatabaseRows(
   return rows;
 }
 
-class NotionSdkGateway implements NotionGateway {
-  private readonly n2m: NotionToMarkdown;
+/** The slice of notion-to-md the gateway drives — injected so the wiring is unit-testable. */
+export interface Notion2Md {
+  setCustomTransformer(type: string, transformer: (block: unknown) => Promise<string> | string): void;
+  pageToMarkdown(pageId: string): Promise<unknown>;
+  toMarkdownString(blocks: unknown): { parent?: string };
+}
+type Notion2MdInit = ConstructorParameters<typeof NotionToMarkdown>[0];
+export type Notion2MdFactory = (init: Notion2MdInit) => Notion2Md;
+const defaultNotion2Md: Notion2MdFactory = (init) => new NotionToMarkdown(init) as unknown as Notion2Md;
 
-  constructor(private readonly client: Client) {
+export class NotionSdkGateway implements NotionGateway {
+  private readonly n2m: Notion2Md;
+
+  constructor(
+    private readonly client: Client,
+    makeN2m: Notion2MdFactory = defaultNotion2Md,
+  ) {
     // B1 (R2-5): `parseChildPages` must be on or notion-to-md drops `child_page` blocks before
     // any custom transformer runs (it skips them in the outer loop). With it on, our transformer
     // takes precedence and emits a clickable link instead of inlining the sub-page's content.
-    this.n2m = new NotionToMarkdown({ notionClient: client, config: { parseChildPages: true } });
+    this.n2m = makeN2m({ notionClient: client, config: { parseChildPages: true } });
     // B1: internal Notion navigation blocks render empty / with a literal "link_to_page" label by
     // default — emit clickable www.notion.so links so a mirrored hub keeps its sub-tree navigable.
     this.n2m.setCustomTransformer('child_page', (block) =>

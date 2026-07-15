@@ -184,7 +184,17 @@ built-in `node --test`. Two realistic paths, in tension:
       and each `callTool` maps its (snake_case) args to the right port method and returns the exact
       `asText` envelope. End-to-end kills names, descriptions, zod schemas, handlers and `asText`.
       _(2026-07-15)_
-    - [ ] Next local-mirror survivor: `notion-gateway` (21 %).
+    - [x] `notion-gateway.ts` **21 % → 97.44 %** (38/38, 1 documented equivalent) — the real
+      `@notionhq/client` adapter: exported the pagination logic behind a minimal `NotionDbClient`
+      slice (data-source paging + older-shape fallback) and injected a notion-to-md factory into
+      `NotionSdkGateway` so the transformer wiring (`parseChildPages`, the 3 custom transformers,
+      each invoked to prove delegation), `search` arg-mapping/response and the `pageToMarkdown`
+      `?? ''` fallback are all unit-testable. The 1 residual survivor is the `new Client({auth})`
+      real-SDK construction (live-network-only) → effective 38/38 = 100 % on non-equivalents.
+      _(2026-07-15)_
+    - **3-local-mirror enumerated worst-files DONE** (`server.ts`, `index.ts`, `notion-gateway.ts` —
+      the three the Step 2 audit flagged weak). A full-`local-mirror` re-audit (refresh RESULTS.md)
+      is the natural closer before moving to 3-scripts.
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
   "how do we stop badly-written tests from recurring?" — three layers, cheapest/most-deterministic first:
