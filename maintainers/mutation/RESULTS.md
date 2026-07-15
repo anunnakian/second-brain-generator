@@ -4,6 +4,8 @@
 > brain copy** (`scripts/lib/tracked-files.mjs` → `DEV_ONLY_PREFIXES` has `maintainers/`),
 > so neither the tooling nor these results are ever deployed into a generated brain.
 > See the plan: [`../plans/prospective/mutation-testing-stryker.md`](../plans/prospective/mutation-testing-stryker.md).
+> For **what the survivors taught us** (recurring shapes → durable rules), see the
+> retrospective: [`RETROSPECTIVE.md`](RETROSPECTIVE.md).
 
 ## Baseline run — 2026-06-23 (engine at v3.4.0, commit `49e46a9`)
 

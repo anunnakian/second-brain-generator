@@ -126,12 +126,62 @@ dismissal is the bug. I/O glue still hides logic — a `.md` filter, a `.obsidia
   When the obstacle is a real boundary (filesystem, chokidar, network), **extract the logic behind a
   small port / DI seam** and unit-test that; cover the thin adapter itself with one deterministic test
   (e.g. "the default factory builds a live, closeable watcher" — no event-timing).
+- **"Unreachable" is the diagnosis, not the exemption (broadened 2026-07).** The 2026-07 retrospective
+  found the same 0 %-driver beyond plain I/O: **pure branches unreachable via the public API**
+  (`aggregateHealth`'s `unknown` verdict), **top-level side-effect scripts never imported**
+  (`clear-example-notes`/`auto-push`/`auto-commit`), and **composition roots** (`server.ts` boot). Same
+  fix everywhere: **if a test can't reach a branch, that's a design smell** — extract a pure seam,
+  inject a port, or name every wiring factory (no inline arrows) until every branch is reachable. For a
+  top-level script: extract an injectable core (`runX(argv, deps)` + a `realXDeps` default) and shrink
+  the entry guard to one line; keep **one subprocess integration test** to kill the entry-body mutants a
+  pure import cannot.
 - **Coverage ≠ verification.** A suite can show high line coverage and still kill ~0 % of mutants. The
   objective signal is the **mutation score**, not coverage. See the plan
   [`plans/prospective/mutation-testing-stryker.md`](plans/prospective/mutation-testing-stryker.md).
 - **Two durable guardrails back this up** (Step 4 of that plan): a deterministic **sibling-test guard**
   (`rag/src/lib/lib-coverage-guard.test.ts` fails loud if a `src/lib` module has no `*.test.ts`), and a
   targeted **non-regression re-run** (`npm --prefix maintainers/mutation run mutate:changed`).
+
+## 5ter. Assertion quality — what the mutation retrospective taught (2026-07)
+
+The mutation audit + hardening of all three packages (plan
+[`plans/prospective/mutation-testing-stryker.md`](plans/prospective/mutation-testing-stryker.md),
+Step 6) found **recurring shapes** of surviving mutant. Two homes:
+
+- **The 5 language-agnostic assertion habits** (assert the message not the fact; assert the whole
+  object/call-sequence not one field; triangulate boundaries **and** operators; feed the null/absent
+  twin of every `?.`/`??`/default-arg; test collections with ≥2 unsorted elements + a decoy) live in
+  the **global `tdd-discipline` skill** (§ "Qualité des assertions") — they apply to every project.
+- **The repo-specific / infra-shaped ones** are recorded **here**:
+
+  1. **CLI/script fakes must key on the FULL command, and assert the whole call sequence.** A fake git
+     keyed on `args[0]` lets every *later* arg-string mutant survive (`--get`, `@{u}..HEAD`, the commit
+     `-m <message>`). Key the fake on `args.join(" ")` and `deepEqual` the full command list, message
+     included. Mirror real trailing-newline output so the production `.trim()`s are pinned.
+  2. **Composition roots / entry guards.** Name every wiring seam (no inline arrows Stryker can't
+     observe), inject a `BootDeps`, and guard the boot behind `import.meta.url` so the module is
+     import-testable. The entry guard itself is an **accepted equivalent** (runs only when the file IS
+     the process) — earn it back with **one** subprocess integration test where it matters (that lone
+     test is the whole gap between `auto-commit` 98 % and `auto-push` 92 %).
+  3. **LLM-facing string surfaces** (MCP tool names + every tool/field description) never affect a
+     return value, so behavioural tests miss them — **assert them explicitly** (drive the real
+     registered surface via an in-memory `Client`/`InMemoryTransport`, assert names + non-empty
+     descriptions). They steer the model; a blanked description is a silent contract regression.
+
+**Equivalent-mutant literacy — don't chase these** (document + count as "effective 100 % on
+non-equivalents"): the default-wiring of an injected port (only exercised in a real I/O run), a
+`?? []`/`?? null` whose result is immediately `.map().join('')`ed back to the same string, a greedy
+regex masked by a downstream `.trim()`, real-SDK/real-network construction (`new Client({auth})`),
+`import.meta.url` entry guards, and `Number()`/parse that already trims. **Tooling trap:** Stryker
+**inflates** the score via false timeouts (a bogus 87.5–100 % that masks the honest ~56 %) — bridle
+`concurrency`/`timeout` in the config before trusting a run.
+
+**Deterministic guard (ADR 0009 spirit).** Only one cluster is cheaply catchable mechanically — C1
+(bare `throws`/`rejects`). [`scripts/lib/assert-matcher-lint.mjs`](../scripts/lib/assert-matcher-lint.mjs)
++ its `*.test.mjs` guard fail CI loud if any engine test file calls `assert.throws(…)`/`assert.rejects(…)`
+with no matcher/2nd argument (dev-only, excluded from the brain copy via `DEV_ONLY_PREFIXES`). The
+other clusters stay **written rules** (no cheap reliable check) — the on-demand net is
+`npm --prefix maintainers/mutation run mutate:changed`.
 
 ## 6. ADRs carry a `Scope:` field
 
