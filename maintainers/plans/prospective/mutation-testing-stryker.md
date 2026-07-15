@@ -200,9 +200,9 @@ built-in `node --test`. Two realistic paths, in tension:
       97.44 %) lifted the package. RESULTS.md refreshed with the per-file table. _(2026-07-15)_
     - **3-local-mirror enumerated worst-files DONE** (`server.ts`, `index.ts`, `notion-gateway.ts` —
       the three the Step 2 audit flagged weak).
-    - [ ] **3-local-mirror OPTIONAL weak tier** (NOT in the Step-2 worst-first list — a follow-up
+    - [x] **3-local-mirror OPTIONAL weak tier DONE** (NOT in the Step-2 worst-first list — a follow-up
       Thomas green-lit 2026-07-15). `local-mirror` runs `inPlace` (non-destructive, files restored),
-      no worktree needed; config bridled (concurrency 4). Worst-first:
+      no worktree needed; config bridled (concurrency 4). Worst-first: _(2026-07-15)_
       - [x] `notion-transformers.ts` **57.26 % → 94.87 %** (111/117, 6 documented equivalents) —
         exported the pure helpers (`notionPageUrl`, `rowTitle`, `propertyToText`, `rowFields`) and
         unit-tested each `propertyToText` switch case (rich_text/select/status/multi_select/number
@@ -219,7 +219,19 @@ built-in `node --test`. Two realistic paths, in tension:
         throw cluster by pinning the error message. The 1 residual survivor is a documented
         equivalent (line 33 `canonical === url ? whole : …` rebuilds the identical string) →
         effective 46/46 = 100 % on non-equivalents. _(2026-07-15)_
-      - [ ] `local-mirror.ts` **77 %** (61 survivors) — the big Domain Service.
+      - [x] `local-mirror.ts` **77 % → 98.52 %** (264 killed + 2 timeout / 4 survived) — the big
+        Domain Service. Exported the pure helpers (`aggregateHealth`, `aggregateStatus`,
+        `aggregateReports`, `failedReport`, `maxLastEditedTime`, `rootPageIdOf`,
+        `configFromRequest`, `errorMessage`) and unit-tested them directly (branches like
+        `aggregateHealth`'s `unknown` verdict are unreachable via the public API); strengthened the
+        `setupSource`/`healthCheck` message + per-check-detail assertions; added sync/freshness edge
+        tests (unknown source, empty-perimeter-never-synced stays `ok`, NEW-vs-TRACKED write-error
+        persistence, frozen watermark on partial, `sync("all")` over rejecting sources, empty remote
+        not-behind); covered `removeSource` some-not-every + null-state cleanup and `configOrThrow`
+        name lookup; added a `withUnreadableConfig` builder seam. The 4 residual survivors are
+        documented equivalents (L110 ×2 post-upsert sync never `failed`; L388 length-0 shortcut ==
+        `every([])`; L398 `>` vs `>=` on equal values) → effective 100 % on non-equivalents.
+        _(2026-07-15)_
   - [x] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory —
     a `clear-example-notes` mutant deletes the real `vault/`; never reuse a worktree, its vault
     gets corrupted by run-1 mutants)*. Worst-first: `clear-example-notes` 28.6 %, `auto-push`
