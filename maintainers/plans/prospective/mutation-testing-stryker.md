@@ -200,7 +200,19 @@ built-in `node --test`. Two realistic paths, in tension:
       the three the Step 2 audit flagged weak). Remaining weak tier (NOT in the Step-2 worst-first
       list, optional follow-up): `notion-transformers.ts` 57 % (50 survivors), `local-mirror.ts` 77 %
       (61 survivors), `notion-url.ts` 74 %.
-  - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
+  - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory —
+    a `clear-example-notes` mutant deletes the real `vault/`; never reuse a worktree, its vault
+    gets corrupted by run-1 mutants)*. Worst-first: `clear-example-notes` 28.6 %, `auto-push`
+    41.4 %, `auto-commit` 47.5 % (the git/vault side-effect scripts).
+    - [x] `clear-example-notes.mjs` **28.6 % → 100 %** (46/46, no equivalents) — extracted
+      `main` into an injectable `runClear(argv, deps)` with a `realClearDeps` real-wiring default
+      (cwd/clear/spawnSync/platform/log/error behind a port); TDD'd every branch with a
+      recording fake (nothing-to-do, per-file + count report, `npm`/`npm.cmd`+shell by platform,
+      spawn arg shape, reindex-failure → 1, `--no-reindex` skip) + a vault-scope test (an
+      exemple-tagged note OUTSIDE `vault/` is left untouched) + direct `realClearDeps` tests
+      (console forwarding, real fn identity). _(2026-07-15)_
+    - [ ] `auto-push.mjs` **41.4 %** (51 survivors).
+    - [ ] `auto-commit.mjs` **47.5 %** (21 survivors).
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
   "how do we stop badly-written tests from recurring?" — three layers, cheapest/most-deterministic first:
   - [x] **Floor guard (runs every CI test pass, free): a sibling test is mandatory.** `rag/src/lib/lib-coverage-guard.test.ts`
