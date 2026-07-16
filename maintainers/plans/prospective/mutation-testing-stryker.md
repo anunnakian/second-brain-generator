@@ -21,39 +21,97 @@ unchecked box below.
 
 ### Do-first (the "sellable numbers" ask)
 
-- [ ] **A0 — Merge PR #22** → `main`'s RESULTS.md shows **82.59 %** (baseline superseded), so the repo page
-  linked from the badge stops surfacing the stale 57 %.
-- [ ] **A1 — Pin the aggregate scores into the GitHub release notes.**
-  - [ ] Edit the **v3.4.1** note's "Hardened (test quality)" section to state the package aggregates:
+- [x] **A0 — Merge PR #22** → `main`'s RESULTS.md shows **82.59 %** (baseline superseded), so the repo page
+  linked from the badge stops surfacing the stale 57 %. _(2026-07-16 · merge 89a7fa0)_
+- [x] **A1 — Pin the aggregate scores into the GitHub release notes.** _(2026-07-16)_
+  - [x] Edit the **v3.4.1** note's "Hardened (test quality)" section to state the package aggregates:
     **rag 82.59 %, scripts 97.27 %, local-mirror 78.69 %** (honest — the release is frozen).
-  - [ ] Adopt the convention: every future release note carries a mutation-score snapshot pinned to its tag.
+    _(prod code identical between tag v3.4.1 and HEAD → the pinned number is the tag's real score)_
+  - [x] Adopt the convention: every future release note carries a mutation-score snapshot pinned to its
+    tag. _(engraved in `CONVENTIONS.md` §5ter)_
 - [ ] **A2 — After B2+B3 raise the score, cut the improved numbers as the NEXT release** so the *latest*
   release shows the *improved* scores (e.g. rag ~90-93 %). This is what actually satisfies "associate the
   better numbers with the latest release".
+  - [x] **Re-audit rag production-only (post-B2/B3): 82.59 % → 90.42 %** (1279 killed + 5 timeout / 1420
+    covered, 136 survived). RESULTS.md refreshed (re-audit #2; the 82.59 % closer marked superseded).
+    _(2026-07-16)_
+  - [x] **Decision (Thomas, 2026-07-16): v3.4.1 predates the B3 tests → do NOT retro-edit its note.** Cut
+    a **new patch release v3.4.2** that actually contains the hardened tests and pin 90.42 % there;
+    v3.4.1's note stays the honest tag-time snapshot. Codename: **"The One Where the Survivors Run Out of
+    Places to Hide"**.
+  - [ ] Build **B1 (nightly)** first, then cut **v3.4.2** bundling the hardening + the nightly (Thomas,
+    2026-07-16). Merge branch → `main`, tag `v3.4.2` on `main`, GitHub release with the codename + the
+    pinned `rag 90.42 %, scripts 97.27 %, local-mirror 78.69 %` snapshot.
 
 ### Improve + keep-fresh
 
 - [ ] **B1 — Anti-rot NIGHTLY workflow** *(agreed next build; latency analysis done — nightly wins over a PR gate)*
-  - [ ] New `.github/workflows/mutation-nightly.yml` on **`ubuntu-latest`** (NOT macOS/Windows: mutation
-    is OS-agnostic, and macOS billing is ×10). `schedule:` cron + `workflow_dispatch` for manual test.
-  - [ ] Run `mutate:all` — but `scripts/**` must run in a **disposable git worktree** (destructive inPlace,
-    see RESULTS.md § How each package is run). rag + local-mirror run inPlace.
-  - [ ] **Re-tune `concurrency`** for a 4-core runner (start at 2-3; verify no FALSE timeouts before
-    trusting the score — the documented bogus-100 % trap).
-  - [ ] Upload the HTML reports (`maintainers/mutation/reports/`) as a build artifact; non-blocking (informational).
-  - [ ] Ship it via `workflow_dispatch` FIRST (run once, confirm honest scores), THEN enable the cron.
+  - [x] New `.github/workflows/mutation-nightly.yml` on **`ubuntu-latest`** (NOT macOS/Windows: mutation
+    is OS-agnostic, and macOS billing is ×10). `schedule:` cron (`0 3 * * *`) + `workflow_dispatch`.
+    _(2026-07-16 · uncommitted)_
+  - [x] Run the three packages. **Divergence from the original note (justified):** they fan out as a
+    **parallel matrix** (`package: [rag, local-mirror, scripts]`), not a serial `mutate:all`, so the slow
+    `scripts` run doesn't block the others. **No worktree needed for `scripts` in CI**: the committed
+    `stryker.scripts.config.mjs` runs `inPlace: false` (Stryker sandbox), and the runner is itself
+    ephemeral — the worktree guidance in RESULTS.md is for LOCAL inPlace runs that would wipe the real
+    `vault/`. rag + local-mirror run their inPlace configs (non-destructive, restored). _(2026-07-16)_
+  - [x] **Re-tune `concurrency`** for a 4-core runner: workflow passes `--concurrency 2` (GitHub's 4-vCPU
+    runner over-subscribes at the local configs' 4-5 → the bogus-100 % false-timeout trap). _(2026-07-16)_
+    - [ ] **Verify empirically** (via the first `workflow_dispatch` run) that scores are honest at
+      concurrency 2 (no false timeouts); bump/lower if needed.
+  - [x] Upload the HTML reports as a build artifact; non-blocking (informational, `if: always()`).
+    thresholds.break is null in every config → a low score exits 0. _(2026-07-16)_
+  - [ ] Ship it via `workflow_dispatch` FIRST (run once, confirm honest scores), THEN trust the cron.
+    *(workflow_dispatch only fires from the default branch → validate right after the v3.4.2 merge to `main`.)*
   - [ ] (stretch) Add the Stryker **dashboard reporter** → unlocks the LIVE badge we deferred (replace the
     static capability badge in README + release notes).
-- [ ] **B2 — Config hygiene: stop mutating test doubles.** `rag/src/lib/fake-embedder.ts` (62.5 %) is a
+- [x] **B2 — Config hygiene: stop mutating test doubles.** `rag/src/lib/fake-embedder.ts` (62.5 %) is a
   **test helper**, not production code — mutating it measures the wrong thing. Exclude it from the rag
   mutate glob (and sweep for other `fake-*`/stub files across the three configs). Improves signal, not just score.
-- [ ] **B3 — Harden the newly-surfaced rag weak tier** (optional; lifts ~82.6 % → ~90-93 %). Worst-first,
+  _(2026-07-16 · uncommitted)_ Swept all three packages: only two real test doubles in a mutate scope —
+  `rag/src/lib/fake-embedder.ts` (imported solely by its own test) and `scripts/lib/__fixtures__/stub-mcp-server.mjs`
+  (spawned only by `mcp-search`/`mcp-smoke` tests). Excluded both via negation globs (`!…fake-embedder.ts`,
+  `!scripts/lib/__fixtures__/**`); local-mirror already excludes `src/test/**`. All three configs re-parse
+  clean. Note: v3.4.1's pinned 82.59 % *included* fake-embedder — the NEXT rag re-audit (production-only)
+  is expected to tick up, which is exactly the improved number A2 will cut as the next release.
+- [x] **B3 — Harden the newly-surfaced rag weak tier** (optional; lifts ~82.6 % → ~90-93 %). **DONE**
+  — all 5 weak-tier files hardened (health-check 92.31 %, usage-tracker 92.65 %, citation-renderer 100 %,
+  reindex-lock 94.52 %, status-report 100 %). _(2026-07-16)_ Worst-first,
   TDD baby-steps, 6 engraved reflexes (+ reflex #6 = extract a pure seam when I/O glue resists):
-  - [ ] `health-check.ts` 63.25 % (43 survivors — most in the package)
-  - [ ] `usage-tracker.ts` 55.88 % (30)
-  - [ ] `citation-renderer.ts` 45.45 % (18 — lowest score)
-  - [ ] `reindex-lock.ts` 75.34 % (18)
-  - [ ] `status-report.ts` 78.87 % (15)
+  - [x] `health-check.ts` 63.25 % → **92.31 %** (108/108 non-equivalent killed; 9 survivors are all
+    documented equivalents = effective 100 %) _(2026-07-16 · uncommitted)_ — 13 tests: exact `{ status,
+    checks }` deepEqual per scenario (reflex #2, pins every `detail` string + the RELPATH/CANARY_TOKEN
+    constants), boundary triangulation on `canaryHits` (0/3/null) and `indexRows` (-1/0/42), and the
+    fail-safe gatherVitals seams (weightsReady absent/throws, canaryNoteExists throws). The 9 equivalents:
+    the `depth="full"→""` default (routes identically), redundant `let x=<init>` (always overwritten) and
+    `catch {}` blocks whose fail-safe value equals the init — unkillable without touching prod for nothing.
+  - [x] `usage-tracker.ts` 55.88 % → **92.65 %** (63 killed, 5 survivors: 4 equivalents + 1 accepted gap)
+    _(2026-07-16 · uncommitted)_ — 7 tests: the `DailyCapExceededError` full message/name/fields (reflex
+    #1/#2), the `timeZone` default (custom honored vs Pacific fallback, reflex #4), and `FileUsageStorage`
+    driven on a real temp file (roundtrip, missing/corrupt/wrong-shape → null, with both `&&`-side twins).
+    Survivors: clock default `()=>undefined` (equiv, `Intl.format(undefined)`=now), the redundant
+    `existsSync` guard (equiv w/ the catch), `"utf-8"`→`""` on read/write (equiv, Node tolerates it), and
+    the no-arg default filename (only reachable via the real-CACHE_DIR constructor — not tested, won't clobber).
+  - [x] `citation-renderer.ts` 45.45 % → **100 %** (33/33 killed, 0 survived) _(2026-07-16 · uncommitted)_
+    — 7 hardening tests (reflexes #2/#3/#4/#5): verbatim relay banner + `some`/`every` on a mixed set,
+    exact 1./2. numbering + `---` join separator, no-noise no-mirror prefix, the 500-char slice/ellipsis
+    boundary (500 vs 501), a byte-for-byte single-block assertion, and a tab (`%09`) pinning the hex zero-pad.
+  - [x] `reindex-lock.ts` 75.34 % → **94.52 %** (69 killed, 4 survivors, all equivalents/accepted)
+    _(2026-07-16 · uncommitted)_ — 9 tests: the `now`/`staleAfterMs` defaults (omitted → real clock &
+    30-min default), the `isStale` `>` boundary (age == staleAfterMs), the private `defaultIsAlive`
+    exercised via `activeHolder()` with our live PID vs a dead one, and `FileLockStorage` corrupt +
+    wrong-shape → null and `clear()` on an absent file (the `{ force: true }`). Survivors: `defaultIsAlive`
+    catch→undefined (equiv via boolean coercion), redundant existsSync guard (equiv), `"utf-8"`→`""`
+    (equiv), and the no-arg default filename (real-CACHE_DIR only, not tested).
+  - [x] `status-report.ts` 78.87 % → **100 %** (71/71 killed, 0 survivors, no equivalents)
+    _(2026-07-16 · `0e6398d`)_ — all 15 survivors were loose regex assertions (fragments, not the
+    whole line). Converted to exact whole-string/whole-report equality (reflex #2) + triangulated the
+    open branches: `formatWatcherLiveness` exact lines + a null/absent-state case pinning the
+    `state?.running`/`state?.scheduled` optional chaining and the no-burst `... : ""` else; whole-report
+    equality pinning the `"\n"` join + the no-null-push when lock/progress absent; all three
+    `embeddingLine` provider branches (explicit `gemini`, transformers-js, openai-compatible, generic
+    `mistral-embed`) asserted verbatim; and the running progress line proving `now` (not startedAt)
+    drives rate/ETA + a now-omitted case pinning the `?? startedAt` fallback.
   - Ceiling ~96 % (documented equivalents can't be killed — do NOT chase 100 %).
 - [ ] **B4 — (optional) local-mirror weak tier** (from the local-mirror re-audit, never worst-listed):
   `local-mirror.ts` 77.41 %, `notion-url.ts` 74.47 %, `config.ts`/`fresh-env.ts` 62.5 %/71.4 %.
@@ -221,13 +279,14 @@ built-in `node --test`. Two realistic paths, in tension:
       chunker, vector-store, embedder, index-manager, config).
     - [x] **Full `rag` re-audit (closer)** — **57.23 % → 82.59 %** (1177 killed + 9 timeout / 1436
       covered, 250 survived). RESULTS.md refreshed with the per-file table. _(2026-07-16)_
-    - [ ] **Optional follow-up — newly-surfaced weak tier** (not in the Step-2 worst-first list; they
-      were dwarfed by the near-0 % files at baseline). Worst-first, ~124 survivors across 5 files:
-      - [ ] `health-check.ts` 63.25 % (43 survivors — most in the package)
-      - [ ] `usage-tracker.ts` 55.88 % (30)
-      - [ ] `citation-renderer.ts` 45.45 % (18 — lowest score)
-      - [ ] `reindex-lock.ts` 75.34 % (18)
-      - [ ] `status-report.ts` 78.87 % (15)
+    - [x] **Optional follow-up — newly-surfaced weak tier** (not in the Step-2 worst-first list; they
+      were dwarfed by the near-0 % files at baseline). **DONE** _(2026-07-16)_. Worst-first, ~124
+      survivors across 5 files — all hardened (see B3 above for the per-file write-ups):
+      - [x] `health-check.ts` 63.25 % → **92.31 %** (effective 100 %) _(2026-07-16 · `7797106`)_
+      - [x] `usage-tracker.ts` 55.88 % → **92.65 %** _(2026-07-16 · `c8cf06f`)_
+      - [x] `citation-renderer.ts` 45.45 % → **100 %** _(2026-07-16 · `71899da`)_
+      - [x] `reindex-lock.ts` 75.34 % → **94.52 %** _(2026-07-16 · `a5f740e`)_
+      - [x] `status-report.ts` 78.87 % → **100 %** _(2026-07-16 · `0e6398d`)_
       - Target ~90-93 %; ceiling ~96 % (documented equivalents can't be killed — do not chase 100 %).
   - [x] **3-local-mirror** — harden `local-mirror/src/**` survivors. Enumerated worst-files done +
     re-audit closer (67.63 % → 78.69 %). _(2026-07-15)_
