@@ -182,9 +182,35 @@
         **ADR 0032** written (session-scoped refresh timer + single-flight lock, rung 4 of ADR 0009); 0009 gains a
         back-reference to it.
   - [x] 5e — Commit (docs) _(2026-07-16 · `a57d11f`)_
-- [ ] **Step 6 — Ship** (on Thomas's green light): push → PR (codename « The One With… ») →
-      `/code-review` → fix accepted findings (TDD) → final QA → merge + tag → archive this plan →
-      purge throwaway brains
+- [ ] **Step 6 — Ship** (Thomas's green light given 2026-07-16: *"si la QA est concluante, tu peux pousser
+      la PR et la release"*).
+  - [x] 6a — Push branch + PR #28 « The One Where the Mirror Refreshes Itself » _(2026-07-16)_
+  - [x] 6b — `/code-review` (high effort, 7 finder angles + verify) → **2 accepted findings fixed in TDD**
+        _(2026-07-16 · `bb01798`)_: (1) `aggregateStatus` had no `'skipped'` case → `sync('all')` reported a
+        false `'partial'` when a live window held a source (all-skipped too); now excluded, all-skipped → ok.
+        (2) `installShutdown` SIGINT/SIGTERM listeners suppressed Node's default terminate-on-signal → the MCP
+        server no longer died on Ctrl-C/SIGTERM; now stops the timer AND exits (128+sig), stdin EOF still only
+        stops; exported + unit-tested via a hooks seam. **Suite 205 green, tsc clean.**
+  - [ ] 6c — Final QA (suites green) → merge + tag → archive this plan → purge throwaway brains.
+
+> **🔎 Code-review residuals (2026-07-16) — logged, NOT blocking this ship (pre-existing bounds / narrow
+> edges, none a regression from the auto-refresh work).** Follow-ups for a later pass:
+> - **Stale-lock reclaim vs a slow LIVE sync.** `FsSyncLock` reclaims a lock older than `staleAfterMs`
+>   (10 min) even when the holder is alive. A first full sync of a very large Notion zone that exceeds 10 min
+>   could have its lock stolen by a second window → concurrent sync → last-write-wins on `state.json`.
+>   **Bounded in practice:** dead holders are reclaimed *immediately* by the liveness probe (`kill(pid,0)`),
+>   so the stale timeout only bites a genuinely hung/slow ALIVE sync — uncommon for MVP zones (personal-home =
+>   15 pages ≈ 60 s). Proper fix later: a lock heartbeat during long syncs, or a larger default timeout
+>   (near-zero downside since liveness already catches crashes).
+> - **In-process re-entrant same-source sync** (pre-existing, Step 1): the lock is re-entrant per pid and
+>   `release()` is unconditional, so two *concurrent same-process* syncs of the same source (e.g. a scheduler
+>   tick overlapping a question-time sync) aren't mutually excluded and the first `finally` frees the lockfile
+>   mid-flight. Atomic state writes keep the file un-torn; residual is an in-process lost update + an early
+>   unlock window. Fix later: owner hold-count, or make re-entrant acquire return `skipped`.
+> - **`setup_source` first sync `skipped` → success copy** says "0 written" as if onboarding succeeded (only
+>   if another window holds the brand-new source's lock — rare). **`errorMessage` duplicated** in scheduler/
+>   boot/server vs the exported one (cleanup). **Provisional same-minute flag** can re-attempt a sync each tick
+>   while the lock is held elsewhere (self-heals; cheap `check_freshness`).
 
 ---
 
