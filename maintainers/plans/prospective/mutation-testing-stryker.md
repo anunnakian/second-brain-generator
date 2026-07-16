@@ -55,7 +55,9 @@ unchecked box below.
   `!scripts/lib/__fixtures__/**`); local-mirror already excludes `src/test/**`. All three configs re-parse
   clean. Note: v3.4.1's pinned 82.59 % *included* fake-embedder — the NEXT rag re-audit (production-only)
   is expected to tick up, which is exactly the improved number A2 will cut as the next release.
-- [ ] **B3 — Harden the newly-surfaced rag weak tier** (optional; lifts ~82.6 % → ~90-93 %). Worst-first,
+- [x] **B3 — Harden the newly-surfaced rag weak tier** (optional; lifts ~82.6 % → ~90-93 %). **DONE**
+  — all 5 weak-tier files hardened (health-check 92.31 %, usage-tracker 92.65 %, citation-renderer 100 %,
+  reindex-lock 94.52 %, status-report 100 %). _(2026-07-16)_ Worst-first,
   TDD baby-steps, 6 engraved reflexes (+ reflex #6 = extract a pure seam when I/O glue resists):
   - [x] `health-check.ts` 63.25 % → **92.31 %** (108/108 non-equivalent killed; 9 survivors are all
     documented equivalents = effective 100 %) _(2026-07-16 · uncommitted)_ — 13 tests: exact `{ status,
@@ -82,7 +84,15 @@ unchecked box below.
     wrong-shape → null and `clear()` on an absent file (the `{ force: true }`). Survivors: `defaultIsAlive`
     catch→undefined (equiv via boolean coercion), redundant existsSync guard (equiv), `"utf-8"`→`""`
     (equiv), and the no-arg default filename (real-CACHE_DIR only, not tested).
-  - [ ] `status-report.ts` 78.87 % (15)
+  - [x] `status-report.ts` 78.87 % → **100 %** (71/71 killed, 0 survivors, no equivalents)
+    _(2026-07-16 · `0e6398d`)_ — all 15 survivors were loose regex assertions (fragments, not the
+    whole line). Converted to exact whole-string/whole-report equality (reflex #2) + triangulated the
+    open branches: `formatWatcherLiveness` exact lines + a null/absent-state case pinning the
+    `state?.running`/`state?.scheduled` optional chaining and the no-burst `... : ""` else; whole-report
+    equality pinning the `"\n"` join + the no-null-push when lock/progress absent; all three
+    `embeddingLine` provider branches (explicit `gemini`, transformers-js, openai-compatible, generic
+    `mistral-embed`) asserted verbatim; and the running progress line proving `now` (not startedAt)
+    drives rate/ETA + a now-omitted case pinning the `?? startedAt` fallback.
   - Ceiling ~96 % (documented equivalents can't be killed — do NOT chase 100 %).
 - [ ] **B4 — (optional) local-mirror weak tier** (from the local-mirror re-audit, never worst-listed):
   `local-mirror.ts` 77.41 %, `notion-url.ts` 74.47 %, `config.ts`/`fresh-env.ts` 62.5 %/71.4 %.
@@ -250,13 +260,14 @@ built-in `node --test`. Two realistic paths, in tension:
       chunker, vector-store, embedder, index-manager, config).
     - [x] **Full `rag` re-audit (closer)** — **57.23 % → 82.59 %** (1177 killed + 9 timeout / 1436
       covered, 250 survived). RESULTS.md refreshed with the per-file table. _(2026-07-16)_
-    - [ ] **Optional follow-up — newly-surfaced weak tier** (not in the Step-2 worst-first list; they
-      were dwarfed by the near-0 % files at baseline). Worst-first, ~124 survivors across 5 files:
-      - [ ] `health-check.ts` 63.25 % (43 survivors — most in the package)
-      - [ ] `usage-tracker.ts` 55.88 % (30)
-      - [ ] `citation-renderer.ts` 45.45 % (18 — lowest score)
-      - [ ] `reindex-lock.ts` 75.34 % (18)
-      - [ ] `status-report.ts` 78.87 % (15)
+    - [x] **Optional follow-up — newly-surfaced weak tier** (not in the Step-2 worst-first list; they
+      were dwarfed by the near-0 % files at baseline). **DONE** _(2026-07-16)_. Worst-first, ~124
+      survivors across 5 files — all hardened (see B3 above for the per-file write-ups):
+      - [x] `health-check.ts` 63.25 % → **92.31 %** (effective 100 %) _(2026-07-16 · `7797106`)_
+      - [x] `usage-tracker.ts` 55.88 % → **92.65 %** _(2026-07-16 · `c8cf06f`)_
+      - [x] `citation-renderer.ts` 45.45 % → **100 %** _(2026-07-16 · `71899da`)_
+      - [x] `reindex-lock.ts` 75.34 % → **94.52 %** _(2026-07-16 · `a5f740e`)_
+      - [x] `status-report.ts` 78.87 % → **100 %** _(2026-07-16 · `0e6398d`)_
       - Target ~90-93 %; ceiling ~96 % (documented equivalents can't be killed — do not chase 100 %).
   - [x] **3-local-mirror** — harden `local-mirror/src/**` survivors. Enumerated worst-files done +
     re-audit closer (67.63 % → 78.69 %). _(2026-07-15)_
