@@ -428,11 +428,17 @@ export function aggregateReports(sources: SyncReport[]): SyncReport {
   };
 }
 
-/** `ok` iff every source is ok; `failed` iff every source failed; otherwise `partial`. */
+/**
+ * `ok` iff every attempted source is ok; `failed` iff every attempted source failed; otherwise
+ * `partial`. A `skipped` source (another live window already holds its lock) is BENIGN — it is
+ * excluded from the verdict, so a healthy concurrent fan-out never reads as `partial`, and an
+ * all-skipped batch is `ok` (nothing failed; the other window is handling them).
+ */
 export function aggregateStatus(sources: SyncReport[]): SyncStatus {
-  if (sources.length === 0) return 'ok';
-  if (sources.every((r) => r.status === 'ok')) return 'ok';
-  if (sources.every((r) => r.status === 'failed')) return 'failed';
+  const attempted = sources.filter((r) => r.status !== 'skipped');
+  if (attempted.length === 0) return 'ok';
+  if (attempted.every((r) => r.status === 'ok')) return 'ok';
+  if (attempted.every((r) => r.status === 'failed')) return 'failed';
   return 'partial';
 }
 
