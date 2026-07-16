@@ -21,6 +21,7 @@ import { FsConfigStore } from './adapters/fs-config-store.js';
 import { FsStateStore } from './adapters/fs-state-store.js';
 import { FsVaultWriter } from './adapters/fs-vault-writer.js';
 import { SystemClock } from './adapters/system-clock.js';
+import { FsSyncLock } from './adapters/fs-sync-lock.js';
 import { notionConnectorFactory } from './adapters/notion-gateway.js';
 import { VAULT_DIR, SIDECAR_DIR, CONFIG_PATH } from './lib/config.js';
 
@@ -32,6 +33,7 @@ export function buildDeps(): LocalMirrorDeps {
     vaultWriter: new FsVaultWriter(VAULT_DIR),
     clock: new SystemClock(),
     connectorFor: notionConnectorFactory,
+    syncLock: new FsSyncLock({ sidecarDir: SIDECAR_DIR }),
   };
 }
 

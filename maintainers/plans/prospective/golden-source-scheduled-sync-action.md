@@ -27,17 +27,19 @@
 
 ## Tracking
 
-- [ ] **Step 0 — Pre-flight & branching**
-  - [ ] 0a — QA ship merged (or decide to stack on the open branch); pick the branch for this feature
-  - [ ] 0b — Baseline green (`golden-source-sync` suite + `tsc`); record counts
+- [x] **Step 0 — Pre-flight & branching** _(2026-07-16)_
+  - [x] 0a — Branch `feat/local-mirror-auto-refresh` created off `main` _(2026-07-16)_
+  - [x] 0b — Baseline green: **170 tests pass, `tsc --noEmit` exit 0** in `local-mirror/` _(2026-07-16)_
   - [ ] 0c — Re-read PRD §8 (freshness/routing) — this feature **adds** a scheduled path alongside the
         question-time path; note the doc deltas to do at Step 5
-- [ ] **Step 1 — Concurrency lock (PREREQUISITE — subsumes a deferred `/code-review` finding)**
-  - [ ] 1a — RED: two interleaved `sync()` of the same source must not corrupt `state.json`
-        (last-write-wins today). Reproduce with a test.
-  - [ ] 1b — GREEN: a per-source **single-flight lock** (lockfile in `.golden-source-sync/`, stale-lock
-        timeout). If locked, a tick **skips** that source rather than racing.
-  - [ ] 1c — Suite green + `tsc`. Tick the deferred finding in the QA plan's backlog as resolved.
+- [x] **Step 1 — Concurrency lock (PREREQUISITE — subsumes a deferred `/code-review` finding)** _(2026-07-16)_
+  - [x] 1a — RED: acceptance at the API port — a source already synced by another window must not
+        race on `state.json`. `src/test/sync-single-flight.test.ts` _(2026-07-16)_
+  - [x] 1b — GREEN: per-source **single-flight lock** `ISyncLock` (port) + `FsSyncLock` adapter
+        (lockfile `.local-mirror/<name>.sync.lock`, dead-holder & stale-lock reclaim, 10-min timeout).
+        `sync()` acquires → skips (`status: 'skipped'`) if held by another live process; releases in
+        `finally`. 6 unit tests (`fs-sync-lock.test.ts`) + 1 acceptance. Lockfiles gitignored. _(2026-07-16)_
+  - [x] 1c — Suite green (**177 pass**) + `tsc` clean. _(2026-07-16)_
 - [ ] **Step 2 — Scheduler (Outside-in TDD, injectable clock)**
   - [ ] 2a — Introduce an injectable **timer/clock SPI port** so ticks fire synchronously in tests (no
         real 5-min waits) — keep the deterministic test seam (ADR 0009).

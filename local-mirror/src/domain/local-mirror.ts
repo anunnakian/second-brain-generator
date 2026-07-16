@@ -16,6 +16,7 @@ import type {
   IClock,
   IConfigStore,
   IStateStore,
+  ISyncLock,
   IVaultWriter,
   PersistedItem,
   PersistedState,
@@ -49,6 +50,8 @@ export interface LocalMirrorDeps {
   vaultWriter: IVaultWriter;
   clock: IClock;
   connectorFor: ConnectorFactory;
+  /** Single-flight lock per source, across processes (auto-refresh study, S2 item 1). */
+  syncLock: ISyncLock;
 }
 
 /** The Domain Service — the concrete API port. Pure orchestration, no transport. */
@@ -134,6 +137,20 @@ export class LocalMirror implements ILocalMirror {
     if (!config) {
       return { name, status: 'failed', written: 0, deleted: 0, unchanged: 0 };
     }
+    // Single-flight across processes: if another live MCP window is already syncing this
+    // source, skip rather than race on its state.json (last-write-wins would corrupt it).
+    if (!this.deps.syncLock.acquire(config.name)) {
+      return { name, status: 'skipped', written: 0, deleted: 0, unchanged: 0 };
+    }
+    try {
+      return await this.syncLocked(config, name);
+    } finally {
+      this.deps.syncLock.release(config.name);
+    }
+  }
+
+  /** The critical section of a single-source sync — runs while holding the source's lock. */
+  private async syncLocked(config: LocalMirrorConfig, name: string): Promise<SyncReport> {
     const previous = await this.deps.stateStore.load(config.name);
     const connector = this.deps.connectorFor(config);
     const now = this.deps.clock.now().toISOString();
