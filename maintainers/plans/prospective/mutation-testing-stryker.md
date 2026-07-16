@@ -75,7 +75,13 @@ unchecked box below.
     — 7 hardening tests (reflexes #2/#3/#4/#5): verbatim relay banner + `some`/`every` on a mixed set,
     exact 1./2. numbering + `---` join separator, no-noise no-mirror prefix, the 500-char slice/ellipsis
     boundary (500 vs 501), a byte-for-byte single-block assertion, and a tab (`%09`) pinning the hex zero-pad.
-  - [ ] `reindex-lock.ts` 75.34 % (18)
+  - [x] `reindex-lock.ts` 75.34 % → **94.52 %** (69 killed, 4 survivors, all equivalents/accepted)
+    _(2026-07-16 · uncommitted)_ — 9 tests: the `now`/`staleAfterMs` defaults (omitted → real clock &
+    30-min default), the `isStale` `>` boundary (age == staleAfterMs), the private `defaultIsAlive`
+    exercised via `activeHolder()` with our live PID vs a dead one, and `FileLockStorage` corrupt +
+    wrong-shape → null and `clear()` on an absent file (the `{ force: true }`). Survivors: `defaultIsAlive`
+    catch→undefined (equiv via boolean coercion), redundant existsSync guard (equiv), `"utf-8"`→`""`
+    (equiv), and the no-arg default filename (real-CACHE_DIR only, not tested).
   - [ ] `status-report.ts` 78.87 % (15)
   - Ceiling ~96 % (documented equivalents can't be killed — do NOT chase 100 %).
 - [ ] **B4 — (optional) local-mirror weak tier** (from the local-mirror re-audit, never worst-listed):
