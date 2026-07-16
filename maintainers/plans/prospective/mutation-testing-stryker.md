@@ -64,7 +64,13 @@ unchecked box below.
     fail-safe gatherVitals seams (weightsReady absent/throws, canaryNoteExists throws). The 9 equivalents:
     the `depth="full"→""` default (routes identically), redundant `let x=<init>` (always overwritten) and
     `catch {}` blocks whose fail-safe value equals the init — unkillable without touching prod for nothing.
-  - [ ] `usage-tracker.ts` 55.88 % (30)
+  - [x] `usage-tracker.ts` 55.88 % → **92.65 %** (63 killed, 5 survivors: 4 equivalents + 1 accepted gap)
+    _(2026-07-16 · uncommitted)_ — 7 tests: the `DailyCapExceededError` full message/name/fields (reflex
+    #1/#2), the `timeZone` default (custom honored vs Pacific fallback, reflex #4), and `FileUsageStorage`
+    driven on a real temp file (roundtrip, missing/corrupt/wrong-shape → null, with both `&&`-side twins).
+    Survivors: clock default `()=>undefined` (equiv, `Intl.format(undefined)`=now), the redundant
+    `existsSync` guard (equiv w/ the catch), `"utf-8"`→`""` on read/write (equiv, Node tolerates it), and
+    the no-arg default filename (only reachable via the real-CACHE_DIR constructor — not tested, won't clobber).
   - [x] `citation-renderer.ts` 45.45 % → **100 %** (33/33 killed, 0 survived) _(2026-07-16 · uncommitted)_
     — 7 hardening tests (reflexes #2/#3/#4/#5): verbatim relay banner + `some`/`every` on a mixed set,
     exact 1./2. numbering + `---` join separator, no-noise no-mirror prefix, the 500-char slice/ellipsis
