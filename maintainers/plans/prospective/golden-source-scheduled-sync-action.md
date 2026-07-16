@@ -79,11 +79,38 @@
         `lastSyncStatus: ok`. Citation truthfulness confirmed on the Desktop screenshot:
         « 🧠 copie locale · 🔗 source Notion », **no « source d'or »**. Non-blocking by construction
         (scheduler lives in the server event loop, independent of Claude turns).
-  - [x] 4c — Two open windows don't corrupt state (lock holds). **Decided: accept the unit coverage** _(2026-07-16)_,
-        no 2-window integration harness — the single-flight lock is deterministically proven by Step 1 (6 unit +
-        1 acceptance), and a full 2-process test would be disproportionate to a risk already mitigated (no
-        over-engineering against an unproven risk). · `interval=0` disables cleanly — **PROVEN** live
+  - [ ] 4c — **Concurrent-access validation across windows — REQUIRED before release (Thomas, 2026-07-16).**
+        Decision **reversed** from the earlier "accept unit coverage": Thomas wants a real concurrent test,
+        proposing **3 windows at a ~5 s polling cadence**. Chosen approach (his pick): an **automated
+        multi-process** harness (offline, no token). · `interval=0` disables cleanly — **PROVEN** live
         _(2026-07-16)_: `[local-mirror] auto-sync disabled (LOCAL_MIRROR_SYNC_INTERVAL=0)`.
+    - [ ] 4c-i — **Test-only worker entry.** Build a `LocalMirror` with the REAL fs adapters
+          (`FsConfigStore`/`FsStateStore`/`FsVaultWriter`/`FsSyncLock`/`SystemClock`) pointing at a **shared
+          dir**, but an **injected stub connector** that reads the "remote" from a `remote.json` in that dir
+          (so the orchestrator mutates the remote and all 3 processes observe it). No real Notion, offline.
+          The domain accepts injected `connectorFor` (see `src/test/builder.ts`), so no `server.ts` needed.
+    - [ ] 4c-ii — **Orchestrator** (maintainers QA script, binary verdict à la `verify-rag.mjs` — ADR 0009
+          rung 2). Seed one `team-a` config + initial `remote.json`; spawn **3 real node processes**, each
+          looping `check_freshness` + `sync` at an aggressive cadence (~5 s, or tighter to force tick
+          collisions) for N cycles; mutate `remote.json` a few times mid-run; stop them; then **assert**:
+          `state.json` always valid JSON, **watermark monotonic** (never regresses; equals the max remote
+          `last_edited_time` at the end), vault files match the final remote, no crash. `exit 0`/`exit 1`.
+    - [ ] 4c-iii — **If it reproduces the `acquire()` race** (finding below) → harden `FsSyncLock.acquire`
+          to an **atomic create** (`O_EXCL`, i.e. `writeFileSync(path, …, { flag: 'wx' })`) in TDD; re-run
+          the harness until clean.
+    - [ ] 4c-iv — Record the verdict in this plan + tick.
+
+> **🔎 Step 4c pre-work finding (2026-07-16) — the cross-process single-flight has a TOCTOU window.**
+> `FsSyncLock.acquire()` (`src/adapters/fs-sync-lock.ts`) does read → check → `writeFileSync` **without an
+> exclusive flag** (no `wx`/`O_EXCL`). In ONE node process (single-thread event loop) a synchronous
+> `acquire()` cannot interleave → the lock holds, which is all the current tests (6 unit + 1 acceptance,
+> single event loop) prove. Across **real OS processes** (true multi-window), two ticks firing at once can
+> BOTH read "no lock", BOTH write, BOTH sync the same source. Mitigations already in place: `state.json`
+> writes are **atomic** (temp + rename, `FsStateStore`) → no torn file; reconcile is content-hash idempotent
+> → redundant vault writes are harmless. **Residual risk to prove or kill: watermark regression** if an
+> older-snapshot writer lands after a newer one (last-write-wins on `state.json`) → at worst one extra
+> corrective sync later. The 3-process @ ~5 s harness is built to force this. Clean fix if reproduced:
+> atomic `O_EXCL` acquire (cheap, deterministic, ADR 0009 rung 4).
   - [x] 4d — **Auto-arm on first mirror (fixes finding #1 below, option (a))** _(2026-07-16 · `3024606`)_: a re-triggerable,
         idempotent `AutoSyncSupervisor` (`src/auto-sync-supervisor.ts`) wraps the boot decision so it can be
         (re-)attempted; `createMcpServer` gained an optional `onSourceDeclared` hook fired after every
